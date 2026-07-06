@@ -76,7 +76,8 @@ class ProfileUpdateTest extends TestCase
             ->assertRedirect('/');
 
         $this->assertGuest();
-        $this->assertNull($user->fresh());
+        // Users soft-delete (schema: users SD) so booking history survives.
+        $this->assertSoftDeleted('users', ['id' => $user->id]);
     }
 
     public function test_correct_password_must_be_provided_to_delete_account()

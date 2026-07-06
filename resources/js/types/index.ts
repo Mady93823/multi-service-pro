@@ -22,11 +22,87 @@ export interface NavItem {
     isActive?: boolean;
 }
 
+export interface Flash {
+    success?: string | null;
+    error?: string | null;
+}
+
 export interface SharedData {
     name: string;
     quote: { message: string; author: string };
     auth: Auth;
+    flash: Flash;
     [key: string]: unknown;
+}
+
+export interface Category {
+    id: number;
+    parent_id: number | null;
+    name: string;
+    slug: string;
+    icon_url: string | null;
+    image_url: string | null;
+    sort_order: number;
+    is_active: boolean;
+    children?: Category[];
+    services?: Service[];
+    services_count?: number;
+}
+
+export type PricingType = 'fixed' | 'hourly' | 'inspection';
+
+export interface ServiceAddon {
+    id: number;
+    name: string;
+    price: string;
+    is_active: boolean;
+}
+
+export interface Service {
+    id: number;
+    category_id: number;
+    name: string;
+    slug: string;
+    short_description: string | null;
+    description: string | null;
+    pricing_type: PricingType;
+    price: string;
+    duration_minutes: number | null;
+    is_featured: boolean;
+    is_active: boolean;
+    sort_order: number;
+    image_thumb_url: string | null;
+    image_card_url: string | null;
+    image_hero_url: string | null;
+    category?: Category;
+    addons?: ServiceAddon[];
+    related?: Service[];
+    addons_count?: number;
+}
+
+export interface PaginationLinkItem {
+    url: string | null;
+    label: string;
+    active: boolean;
+}
+
+export interface Paginated<T> {
+    data: T[];
+    links: {
+        first: string | null;
+        last: string | null;
+        prev: string | null;
+        next: string | null;
+    };
+    meta: {
+        current_page: number;
+        from: number | null;
+        last_page: number;
+        per_page: number;
+        to: number | null;
+        total: number;
+        links: PaginationLinkItem[];
+    };
 }
 
 export interface User {

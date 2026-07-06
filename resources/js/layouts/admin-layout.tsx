@@ -1,12 +1,22 @@
 import AppSidebarLayout from '@/layouts/app/app-sidebar-layout';
 import { type BreadcrumbItem, type NavItem } from '@/types';
-import { LayoutGrid } from 'lucide-react';
+import { FolderTree, LayoutGrid, Wrench } from 'lucide-react';
 
 const navItems: NavItem[] = [
     {
         title: 'Dashboard',
         url: '/admin/dashboard',
         icon: LayoutGrid,
+    },
+    {
+        title: 'Categories',
+        url: '/admin/categories',
+        icon: FolderTree,
+    },
+    {
+        title: 'Services',
+        url: '/admin/services',
+        icon: Wrench,
     },
 ];
 

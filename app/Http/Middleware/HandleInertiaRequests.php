@@ -2,8 +2,9 @@
 
 namespace App\Http\Middleware;
 
-use Illuminate\Foundation\Inspiring;
+use App\Domain\Settings\SettingsRegistry;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -36,12 +37,21 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
+        $settings = app(SettingsRegistry::class);
+        $logoPath = $settings->string('branding.logo_path');
 
         return array_merge(parent::share($request), [
             ...parent::share($request),
-            'name' => config('app.name'),
-            'quote' => ['message' => trim($message), 'author' => trim($author)],
+            'name' => $settings->string('branding.app_name', (string) config('app.name')),
+            'branding' => [
+                'logo_url' => $logoPath !== '' ? Storage::disk('public')->url($logoPath) : null,
+                'primary_color' => $settings->string('branding.primary_color') ?: null,
+            ],
+            'localization' => [
+                'currency' => $settings->string('localization.currency', 'INR'),
+                'locale' => $settings->string('localization.locale', 'en'),
+                'timezone' => $settings->string('localization.timezone', 'Asia/Kolkata'),
+            ],
             'auth' => [
                 'user' => $request->user(),
                 'roles' => $request->user()?->getRoleNames() ?? [],

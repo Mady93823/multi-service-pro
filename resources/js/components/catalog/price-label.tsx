@@ -1,3 +1,4 @@
+import { useMoney } from '@/lib/format';
 import { type PricingType } from '@/types';
 
 interface PriceLabelProps {
@@ -7,11 +8,12 @@ interface PriceLabelProps {
 }
 
 /**
- * Currency symbol intentionally omitted until the settings registry (M14)
- * provides the configured currency — no hardcoded branding or locale.
+ * Money display driven by the settings registry (M14): currency code comes
+ * from shared localization props — no hardcoded symbol or locale (D8/D9).
  */
 export function PriceLabel({ price, pricingType, className }: PriceLabelProps) {
-    const amount = Number(price).toLocaleString();
+    const money = useMoney();
+    const amount = money(price);
 
     return (
         <span className={className}>

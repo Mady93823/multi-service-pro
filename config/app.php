@@ -13,7 +13,20 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'HomeServices'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Installed Flag
+    |--------------------------------------------------------------------------
+    |
+    | Escape hatch for the web-installer gate (M15). Normally installation
+    | state is tracked by storage/app/installed.lock; set APP_INSTALLED=true
+    | to bypass the installer in tests or pre-provisioned environments.
+    |
+    */
+
+    'installed' => env('APP_INSTALLED', false),
 
     /*
     |--------------------------------------------------------------------------

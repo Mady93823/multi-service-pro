@@ -27,9 +27,21 @@ export interface Flash {
     error?: string | null;
 }
 
+export interface Branding {
+    logo_url: string | null;
+    primary_color: string | null;
+}
+
+export interface Localization {
+    currency: string;
+    locale: string;
+    timezone: string;
+}
+
 export interface SharedData {
     name: string;
-    quote: { message: string; author: string };
+    branding: Branding;
+    localization: Localization;
     auth: Auth;
     flash: Flash;
     [key: string]: unknown;

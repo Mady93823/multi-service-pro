@@ -1,5 +1,6 @@
 import { PriceLabel } from '@/components/catalog/price-label';
 import { ServiceCard } from '@/components/catalog/service-card';
+import { useMoney } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +14,8 @@ interface CatalogShowProps {
 }
 
 export default function CatalogShow({ service }: CatalogShowProps) {
+    const money = useMoney();
+
     return (
         <PublicLayout>
             <Head title={service.name} />
@@ -86,7 +89,7 @@ export default function CatalogShow({ service }: CatalogShowProps) {
                                     {service.addons.map((addon) => (
                                         <li key={addon.id} className="flex items-center justify-between text-sm">
                                             <span>{addon.name}</span>
-                                            <span className="font-medium">{Number(addon.price).toLocaleString()}</span>
+                                            <span className="font-medium">{money(addon.price)}</span>
                                         </li>
                                     ))}
                                 </ul>

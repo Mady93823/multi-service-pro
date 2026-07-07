@@ -1,6 +1,6 @@
 import AppSidebarLayout from '@/layouts/app/app-sidebar-layout';
 import { type BreadcrumbItem, type NavItem } from '@/types';
-import { FolderTree, LayoutGrid, Wrench } from 'lucide-react';
+import { FolderTree, LayoutGrid, Settings, Wrench } from 'lucide-react';
 
 const navItems: NavItem[] = [
     {
@@ -17,6 +17,11 @@ const navItems: NavItem[] = [
         title: 'Services',
         url: '/admin/services',
         icon: Wrench,
+    },
+    {
+        title: 'Settings',
+        url: '/admin/settings',
+        icon: Settings,
     },
 ];
 

@@ -26,6 +26,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('dashboard', Admin\DashboardController::class)->name('dashboard');
     Route::resource('categories', Admin\CategoryController::class)->except(['show']);
     Route::resource('services', Admin\ServiceController::class)->except(['show']);
+    Route::get('settings', [Admin\SettingsController::class, 'edit'])->name('settings.edit');
+    Route::put('settings', [Admin\SettingsController::class, 'update'])->name('settings.update');
 });
 
 // Phase 1 WebSocket smoke test; removed when Phase 3 realtime features land.
@@ -33,5 +35,6 @@ Route::post('demo/ping', DemoPingController::class)
     ->middleware(['auth', 'throttle:10,1'])
     ->name('demo.ping');
 
+require __DIR__.'/installer.php';
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

@@ -4,7 +4,23 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title inertia>{{ config('app.name', 'Laravel') }}</title>
+        @php
+            $settings = app(\App\Domain\Settings\SettingsRegistry::class);
+            $primaryColor = $settings->string('branding.primary_color');
+        @endphp
+
+        <title inertia>{{ $settings->string('branding.app_name', (string) config('app.name')) }}</title>
+
+        @if ($primaryColor !== '')
+            <style>
+                :root, .dark {
+                    --primary: {{ $primaryColor }};
+                    --ring: {{ $primaryColor }};
+                    --sidebar-primary: {{ $primaryColor }};
+                    --sidebar-ring: {{ $primaryColor }};
+                }
+            </style>
+        @endif
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />

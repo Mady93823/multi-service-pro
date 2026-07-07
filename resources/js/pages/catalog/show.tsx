@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import PublicLayout from '@/layouts/public-layout';
+import { useTrans } from '@/lib/i18n';
 import { type Service } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { ChevronRight, Clock, ImageIcon } from 'lucide-react';
@@ -15,6 +16,7 @@ interface CatalogShowProps {
 
 export default function CatalogShow({ service }: CatalogShowProps) {
     const money = useMoney();
+    const t = useTrans();
 
     return (
         <PublicLayout>
@@ -22,7 +24,7 @@ export default function CatalogShow({ service }: CatalogShowProps) {
 
             <nav className="text-muted-foreground flex items-center gap-1 text-sm">
                 <Link href={route('catalog.index')} className="hover:text-foreground">
-                    Services
+                    {t('Services')}
                 </Link>
                 <ChevronRight className="h-4 w-4" />
                 {service.category && (
@@ -48,7 +50,7 @@ export default function CatalogShow({ service }: CatalogShowProps) {
 
                     {service.description && (
                         <section>
-                            <h2 className="mb-2 text-lg font-semibold">About this service</h2>
+                            <h2 className="mb-2 text-lg font-semibold">{t('About this service')}</h2>
                             <p className="text-muted-foreground whitespace-pre-line">{service.description}</p>
                         </section>
                     )}
@@ -59,7 +61,7 @@ export default function CatalogShow({ service }: CatalogShowProps) {
                         <CardHeader>
                             <div className="flex items-start justify-between gap-2">
                                 <CardTitle className="text-xl">{service.name}</CardTitle>
-                                {service.is_featured && <Badge variant="secondary">Popular</Badge>}
+                                {service.is_featured && <Badge variant="secondary">{t('Popular')}</Badge>}
                             </div>
                             {service.short_description && <p className="text-muted-foreground text-sm">{service.short_description}</p>}
                         </CardHeader>
@@ -69,12 +71,12 @@ export default function CatalogShow({ service }: CatalogShowProps) {
                                 {service.duration_minutes !== null && (
                                     <span className="text-muted-foreground flex items-center gap-1 text-sm">
                                         <Clock className="h-4 w-4" />
-                                        {service.duration_minutes} min
+                                        {t(':minutes min', { minutes: service.duration_minutes })}
                                     </span>
                                 )}
                             </div>
-                            <Button className="w-full" size="lg" disabled title="Booking opens in an upcoming release">
-                                Book now — coming soon
+                            <Button className="w-full" size="lg" disabled title={t('Booking opens in an upcoming release')}>
+                                {t('Book now — coming soon')}
                             </Button>
                         </CardContent>
                     </Card>
@@ -82,7 +84,7 @@ export default function CatalogShow({ service }: CatalogShowProps) {
                     {service.addons && service.addons.length > 0 && (
                         <Card>
                             <CardHeader>
-                                <CardTitle className="text-base">Available add-ons</CardTitle>
+                                <CardTitle className="text-base">{t('Available add-ons')}</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <ul className="space-y-2">
@@ -101,7 +103,7 @@ export default function CatalogShow({ service }: CatalogShowProps) {
 
             {service.related && service.related.length > 0 && (
                 <section className="space-y-4 py-4">
-                    <h2 className="text-lg font-semibold">People also book</h2>
+                    <h2 className="text-lg font-semibold">{t('People also book')}</h2>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         {service.related.map((related) => (
                             <ServiceCard key={related.id} service={related} />

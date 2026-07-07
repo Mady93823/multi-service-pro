@@ -7,15 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AdminLayout from '@/layouts/admin-layout';
+import { useTrans } from '@/lib/i18n';
 import { type BreadcrumbItem, type Category, type Paginated, type Service } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { ImageIcon, Pencil, Plus, Search } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
-
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/admin/dashboard' },
-    { title: 'Services', href: '/admin/services' },
-];
 
 const ALL = 'all';
 
@@ -26,7 +22,13 @@ interface ServicesIndexProps {
 }
 
 export default function ServicesIndex({ services, categories, filters }: ServicesIndexProps) {
+    const t = useTrans();
     const [search, setSearch] = useState(filters.search);
+
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: t('Dashboard'), href: '/admin/dashboard' },
+        { title: t('Services'), href: '/admin/services' },
+    ];
     const [categoryId, setCategoryId] = useState(filters.category_id?.toString() ?? ALL);
 
     const applyFilters = (nextSearch: string, nextCategoryId: string) => {
@@ -47,22 +49,22 @@ export default function ServicesIndex({ services, categories, filters }: Service
 
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
-            <Head title="Services" />
+            <Head title={t('Services')} />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex items-center justify-between">
-                    <h1 className="text-xl font-semibold">Services</h1>
+                    <h1 className="text-xl font-semibold">{t('Services')}</h1>
                     <Button asChild>
                         <Link href={route('admin.services.create')}>
                             <Plus className="h-4 w-4" />
-                            New service
+                            {t('New service')}
                         </Link>
                     </Button>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
                     <form onSubmit={submitSearch} className="flex items-center gap-2">
-                        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search services..." className="w-64" />
-                        <Button type="submit" variant="outline" size="icon" aria-label="Search">
+                        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('Search services...')} className="w-64" />
+                        <Button type="submit" variant="outline" size="icon" aria-label={t('Search')}>
                             <Search className="h-4 w-4" />
                         </Button>
                     </form>
@@ -77,7 +79,7 @@ export default function ServicesIndex({ services, categories, filters }: Service
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value={ALL}>All categories</SelectItem>
+                            <SelectItem value={ALL}>{t('All categories')}</SelectItem>
                             {categories.map((category) => (
                                 <SelectItem key={category.id} value={category.id.toString()}>
                                     {category.parent_id !== null ? `— ${category.name}` : category.name}
@@ -91,11 +93,11 @@ export default function ServicesIndex({ services, categories, filters }: Service
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Service</TableHead>
-                                <TableHead>Category</TableHead>
-                                <TableHead>Price</TableHead>
-                                <TableHead className="text-center">Add-ons</TableHead>
-                                <TableHead>Status</TableHead>
+                                <TableHead>{t('Service')}</TableHead>
+                                <TableHead>{t('Category')}</TableHead>
+                                <TableHead>{t('Price')}</TableHead>
+                                <TableHead className="text-center">{t('Add-ons')}</TableHead>
+                                <TableHead>{t('Status')}</TableHead>
                                 <TableHead />
                             </TableRow>
                         </TableHeader>
@@ -103,7 +105,7 @@ export default function ServicesIndex({ services, categories, filters }: Service
                             {services.data.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={6} className="text-muted-foreground py-8 text-center">
-                                        No services found.
+                                        {t('No services found.')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -122,7 +124,7 @@ export default function ServicesIndex({ services, categories, filters }: Service
                                                 <span className="font-medium">{service.name}</span>
                                                 {service.is_featured && (
                                                     <Badge variant="secondary" className="ml-2">
-                                                        Featured
+                                                        {t('Featured')}
                                                     </Badge>
                                                 )}
                                             </div>
@@ -134,18 +136,18 @@ export default function ServicesIndex({ services, categories, filters }: Service
                                     </TableCell>
                                     <TableCell className="text-center">{service.addons_count ?? 0}</TableCell>
                                     <TableCell>
-                                        <Badge variant={service.is_active ? 'default' : 'outline'}>{service.is_active ? 'Active' : 'Hidden'}</Badge>
+                                        <Badge variant={service.is_active ? 'default' : 'outline'}>{service.is_active ? t('Active') : t('Hidden')}</Badge>
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex justify-end gap-1">
-                                            <Button asChild variant="ghost" size="icon" aria-label="Edit service">
+                                            <Button asChild variant="ghost" size="icon" aria-label={t('Edit service')}>
                                                 <Link href={route('admin.services.edit', service.id)}>
                                                     <Pencil className="h-4 w-4" />
                                                 </Link>
                                             </Button>
                                             <ConfirmDelete
-                                                title="Delete service?"
-                                                description={`"${service.name}" will be removed from the catalog.`}
+                                                title={t('Delete service?')}
+                                                description={t('“:name” will be removed from the catalog.', { name: service.name })}
                                                 deleteUrl={route('admin.services.destroy', service.id)}
                                             />
                                         </div>

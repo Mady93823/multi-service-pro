@@ -4,11 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import InstallerLayout from '@/layouts/installer-layout';
+import { useTrans } from '@/lib/i18n';
 import { Head, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
 export default function Admin() {
+    const t = useTrans();
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         email: '',
@@ -23,28 +25,28 @@ export default function Admin() {
 
     return (
         <InstallerLayout step={3}>
-            <Head title="Install — Admin account" />
+            <Head title={t('Install — Admin account')} />
             <Card>
                 <CardHeader>
-                    <CardTitle>Create the administrator</CardTitle>
-                    <CardDescription>This account gets full access to the admin panel.</CardDescription>
+                    <CardTitle>{t('Create the administrator')}</CardTitle>
+                    <CardDescription>{t('This account gets full access to the admin panel.')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={submit} className="space-y-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="name">Name</Label>
+                            <Label htmlFor="name">{t('Name')}</Label>
                             <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} required autoFocus />
                             <InputError message={errors.name} />
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="email">Email</Label>
+                            <Label htmlFor="email">{t('Email')}</Label>
                             <Input id="email" type="email" value={data.email} onChange={(e) => setData('email', e.target.value)} required />
                             <InputError message={errors.email} />
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
+                            <Label htmlFor="password">{t('Password')}</Label>
                             <Input
                                 id="password"
                                 type="password"
@@ -56,7 +58,7 @@ export default function Admin() {
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="password_confirmation">Confirm password</Label>
+                            <Label htmlFor="password_confirmation">{t('Confirm password')}</Label>
                             <Input
                                 id="password_confirmation"
                                 type="password"
@@ -69,7 +71,7 @@ export default function Admin() {
 
                         <Button type="submit" className="w-full" disabled={processing}>
                             {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                            Create account & finish
+                            {t('Create account & finish')}
                         </Button>
                     </form>
                 </CardContent>

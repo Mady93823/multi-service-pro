@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Domain\Localization\TranslationLoader;
 use App\Domain\Settings\SettingsRegistry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -41,8 +42,8 @@ class HandleInertiaRequests extends Middleware
         $logoPath = $settings->string('branding.logo_path');
 
         return array_merge(parent::share($request), [
-            ...parent::share($request),
             'name' => $settings->string('branding.app_name', (string) config('app.name')),
+            'translations' => app(TranslationLoader::class)->forLocale(app()->getLocale()),
             'branding' => [
                 'logo_url' => $logoPath !== '' ? Storage::disk('public')->url($logoPath) : null,
                 'primary_color' => $settings->string('branding.primary_color') ?: null,

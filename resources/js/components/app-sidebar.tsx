@@ -2,6 +2,7 @@ import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { useTrans } from '@/lib/i18n';
 import { homeUrl } from '@/lib/roles';
 import { type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
@@ -16,10 +17,11 @@ interface AppSidebarProps {
 
 export function AppSidebar({ navItems, footerNavItems = [], homeHref }: AppSidebarProps) {
     const { auth } = usePage<SharedData>().props;
+    const t = useTrans();
     const home = homeHref ?? homeUrl(auth.roles);
     const items = navItems ?? [
         {
-            title: 'Dashboard',
+            title: t('Dashboard'),
             url: home,
             icon: LayoutGrid,
         },

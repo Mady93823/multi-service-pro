@@ -1,9 +1,8 @@
+import { useTrans } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
 import { Check } from 'lucide-react';
-
-const steps = ['Requirements', 'Database', 'Migrate', 'Admin', 'Done'] as const;
 
 interface InstallerLayoutProps {
     step: number; // 0-based index into steps
@@ -12,12 +11,15 @@ interface InstallerLayoutProps {
 
 export default function InstallerLayout({ step, children }: InstallerLayoutProps) {
     const { name } = usePage<SharedData>().props;
+    const t = useTrans();
+
+    const steps = [t('Requirements'), t('Database'), t('Migrate'), t('Admin'), t('Done')];
 
     return (
         <div className="bg-background flex min-h-svh flex-col items-center gap-8 p-6 md:justify-center md:p-10">
             <div className="text-center">
                 <h1 className="text-2xl font-semibold">{name}</h1>
-                <p className="text-muted-foreground mt-1 text-sm">Setup wizard</p>
+                <p className="text-muted-foreground mt-1 text-sm">{t('Setup wizard')}</p>
             </div>
 
             <ol className="flex items-center gap-2 text-sm">

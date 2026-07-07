@@ -1,14 +1,7 @@
 import AppSidebarLayout from '@/layouts/app/app-sidebar-layout';
+import { useTrans } from '@/lib/i18n';
 import { type BreadcrumbItem, type NavItem } from '@/types';
 import { LayoutGrid } from 'lucide-react';
-
-const navItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        url: '/provider/dashboard',
-        icon: LayoutGrid,
-    },
-];
 
 interface ProviderLayoutProps {
     children: React.ReactNode;
@@ -16,6 +9,16 @@ interface ProviderLayoutProps {
 }
 
 export default function ProviderLayout({ children, breadcrumbs }: ProviderLayoutProps) {
+    const t = useTrans();
+
+    const navItems: NavItem[] = [
+        {
+            title: t('Dashboard'),
+            url: '/provider/dashboard',
+            icon: LayoutGrid,
+        },
+    ];
+
     return (
         <AppSidebarLayout breadcrumbs={breadcrumbs} navItems={navItems} homeHref="/provider/dashboard">
             {children}

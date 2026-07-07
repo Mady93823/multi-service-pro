@@ -1,4 +1,5 @@
 import { useMoney } from '@/lib/format';
+import { useTrans } from '@/lib/i18n';
 import { type PricingType } from '@/types';
 
 interface PriceLabelProps {
@@ -13,13 +14,14 @@ interface PriceLabelProps {
  */
 export function PriceLabel({ price, pricingType, className }: PriceLabelProps) {
     const money = useMoney();
+    const t = useTrans();
     const amount = money(price);
 
     return (
         <span className={className}>
-            {pricingType === 'hourly' && `${amount} / hour`}
+            {pricingType === 'hourly' && t(':amount / hour', { amount })}
             {pricingType === 'fixed' && amount}
-            {pricingType === 'inspection' && `From ${amount} (after inspection)`}
+            {pricingType === 'inspection' && t('From :amount (after inspection)', { amount })}
         </span>
     );
 }

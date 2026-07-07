@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { useTrans } from '@/lib/i18n';
 import { type Category } from '@/types';
 import { Link, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
@@ -28,6 +29,7 @@ interface CategoryFormProps {
 
 export function CategoryForm({ parents, category }: CategoryFormProps) {
     const isEdit = category !== undefined;
+    const t = useTrans();
 
     const { data, setData, post, processing, errors, transform } = useForm<CategoryForm>({
         ...(isEdit ? { _method: 'put' } : {}),
@@ -57,19 +59,19 @@ export function CategoryForm({ parents, category }: CategoryFormProps) {
     return (
         <form onSubmit={submit} className="max-w-xl space-y-6">
             <div className="grid gap-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">{t('Name')}</Label>
                 <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} required autoFocus />
                 <InputError message={errors.name} />
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="parent_id">Parent category</Label>
+                <Label htmlFor="parent_id">{t('Parent category')}</Label>
                 <Select value={data.parent_id} onValueChange={(value) => setData('parent_id', value)}>
                     <SelectTrigger id="parent_id">
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value={NONE}>None (top level)</SelectItem>
+                        <SelectItem value={NONE}>{t('None (top level)')}</SelectItem>
                         {parents.map((parent) => (
                             <SelectItem key={parent.id} value={parent.id.toString()}>
                                 {parent.name}
@@ -81,7 +83,7 @@ export function CategoryForm({ parents, category }: CategoryFormProps) {
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="sort_order">Sort order</Label>
+                <Label htmlFor="sort_order">{t('Sort order')}</Label>
                 <Input
                     id="sort_order"
                     type="number"
@@ -94,18 +96,18 @@ export function CategoryForm({ parents, category }: CategoryFormProps) {
 
             <div className="flex items-center gap-3">
                 <Switch id="is_active" checked={data.is_active} onCheckedChange={(checked) => setData('is_active', checked)} />
-                <Label htmlFor="is_active">Active (visible to customers)</Label>
+                <Label htmlFor="is_active">{t('Active (visible to customers)')}</Label>
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="icon">Icon</Label>
+                <Label htmlFor="icon">{t('Icon')}</Label>
                 {category?.icon_url && <img src={category.icon_url} alt="" className="h-10 w-10 rounded object-cover" />}
                 <Input id="icon" type="file" accept="image/*" onChange={(e) => setData('icon', e.target.files?.[0] ?? null)} />
                 <InputError message={errors.icon} />
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="image">Banner image</Label>
+                <Label htmlFor="image">{t('Banner image')}</Label>
                 {category?.image_url && <img src={category.image_url} alt="" className="h-20 rounded object-cover" />}
                 <Input id="image" type="file" accept="image/*" onChange={(e) => setData('image', e.target.files?.[0] ?? null)} />
                 <InputError message={errors.image} />
@@ -114,10 +116,10 @@ export function CategoryForm({ parents, category }: CategoryFormProps) {
             <div className="flex gap-2">
                 <Button type="submit" disabled={processing}>
                     {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                    {isEdit ? 'Save changes' : 'Create category'}
+                    {isEdit ? t('Save changes') : t('Create category')}
                 </Button>
                 <Button asChild variant="outline">
-                    <Link href={route('admin.categories.index')}>Cancel</Link>
+                    <Link href={route('admin.categories.index')}>{t('Cancel')}</Link>
                 </Button>
             </div>
         </form>

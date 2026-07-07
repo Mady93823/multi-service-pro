@@ -49,6 +49,15 @@ resources/js/
 - Shared types for API payloads in `resources/js/types/` — keep in sync with Laravel Resources
 - Tracking channel/Echo logic lives in hooks, never inline in pages
 
+## i18n (D8/D9 — no hardcoded user-facing strings)
+
+- Catalog: `lang/en.json`, Laravel JSON convention — keys are the natural English source strings, other locales are `lang/{locale}.json` maps. Buyers can also reword English by editing `en.json` values.
+- Frontend: `const t = useTrans()` from `resources/js/lib/i18n.ts`; `t('Save settings')`, placeholders Laravel-style — `t(':minutes min', { minutes })`. Keys must be **literal strings** (no template literals/variables) — the guard test scans for them.
+- Backend: `__('Natural sentence')` for flash/validation messages; dot keys (`auth.failed`) stay in `lang/en/*.php`.
+- Active locale: `SetLocale` middleware reads the `localization.locale` setting; `TranslationLoader` shares the catalog via Inertia `translations` prop.
+- Guard: `tests/Feature/Localization/TranslationCatalogTest.php` fails the suite if a `t()`/`__()` key is missing from `en.json` **or** `en.json` has orphaned keys — regenerate entries when adding UI strings.
+- Module-level `NavItem[]`/breadcrumb arrays can't call hooks — build them inside the component.
+
 ## Quality bar (first project = reputation project)
 
 | Check | Tool | When |

@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { useTrans } from '@/lib/i18n';
 import { type Category, type PricingType, type Service } from '@/types';
 import { Link, useForm } from '@inertiajs/react';
 import { LoaderCircle, Plus, X } from 'lucide-react';
@@ -34,11 +35,7 @@ type ServiceForm = {
     image: File | null;
 };
 
-const pricingTypes: { value: PricingType; label: string }[] = [
-    { value: 'fixed', label: 'Fixed price' },
-    { value: 'hourly', label: 'Per hour' },
-    { value: 'inspection', label: 'Inspection first' },
-];
+const pricingTypeValues: PricingType[] = ['fixed', 'hourly', 'inspection'];
 
 interface ServiceFormProps {
     categories: Category[];
@@ -48,6 +45,7 @@ interface ServiceFormProps {
 
 export function ServiceForm({ categories, relatable, service }: ServiceFormProps) {
     const isEdit = service !== undefined;
+    const t = useTrans();
 
     const { data, setData, post, processing, errors } = useForm<ServiceForm>({
         ...(isEdit ? { _method: 'put' } : {}),
@@ -67,6 +65,12 @@ export function ServiceForm({ categories, relatable, service }: ServiceFormProps
     });
 
     const fieldErrors = errors as Record<string, string>;
+
+    const pricingTypeLabels: Record<PricingType, string> = {
+        fixed: t('Fixed price'),
+        hourly: t('Per hour'),
+        inspection: t('Inspection first'),
+    };
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -98,17 +102,17 @@ export function ServiceForm({ categories, relatable, service }: ServiceFormProps
     return (
         <form onSubmit={submit} className="max-w-2xl space-y-6">
             <div className="grid gap-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">{t('Name')}</Label>
                 <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} required autoFocus />
                 <InputError message={errors.name} />
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2">
                 <div className="grid gap-2">
-                    <Label htmlFor="category_id">Category</Label>
+                    <Label htmlFor="category_id">{t('Category')}</Label>
                     <Select value={data.category_id} onValueChange={(value) => setData('category_id', value)}>
                         <SelectTrigger id="category_id">
-                            <SelectValue placeholder="Choose a category" />
+                            <SelectValue placeholder={t('Choose a category')} />
                         </SelectTrigger>
                         <SelectContent>
                             {categories.map((category) => (
@@ -122,15 +126,15 @@ export function ServiceForm({ categories, relatable, service }: ServiceFormProps
                 </div>
 
                 <div className="grid gap-2">
-                    <Label htmlFor="pricing_type">Pricing type</Label>
+                    <Label htmlFor="pricing_type">{t('Pricing type')}</Label>
                     <Select value={data.pricing_type} onValueChange={(value) => setData('pricing_type', value as PricingType)}>
                         <SelectTrigger id="pricing_type">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            {pricingTypes.map((type) => (
-                                <SelectItem key={type.value} value={type.value}>
-                                    {type.label}
+                            {pricingTypeValues.map((value) => (
+                                <SelectItem key={value} value={value}>
+                                    {pricingTypeLabels[value]}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -139,7 +143,7 @@ export function ServiceForm({ categories, relatable, service }: ServiceFormProps
                 </div>
 
                 <div className="grid gap-2">
-                    <Label htmlFor="price">Price</Label>
+                    <Label htmlFor="price">{t('Price')}</Label>
                     <Input
                         id="price"
                         type="number"
@@ -153,7 +157,7 @@ export function ServiceForm({ categories, relatable, service }: ServiceFormProps
                 </div>
 
                 <div className="grid gap-2">
-                    <Label htmlFor="duration_minutes">Duration (minutes)</Label>
+                    <Label htmlFor="duration_minutes">{t('Duration (minutes)')}</Label>
                     <Input
                         id="duration_minutes"
                         type="number"
@@ -167,7 +171,7 @@ export function ServiceForm({ categories, relatable, service }: ServiceFormProps
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="short_description">Short description</Label>
+                <Label htmlFor="short_description">{t('Short description')}</Label>
                 <Input
                     id="short_description"
                     value={data.short_description}
@@ -178,13 +182,13 @@ export function ServiceForm({ categories, relatable, service }: ServiceFormProps
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">{t('Description')}</Label>
                 <Textarea id="description" rows={5} value={data.description} onChange={(e) => setData('description', e.target.value)} />
                 <InputError message={errors.description} />
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="image">Image</Label>
+                <Label htmlFor="image">{t('Image')}</Label>
                 {service?.image_card_url && <img src={service.image_card_url} alt="" className="h-24 rounded object-cover" />}
                 <Input id="image" type="file" accept="image/*" onChange={(e) => setData('image', e.target.files?.[0] ?? null)} />
                 <InputError message={errors.image} />
@@ -192,7 +196,7 @@ export function ServiceForm({ categories, relatable, service }: ServiceFormProps
 
             <div className="grid gap-6 sm:grid-cols-3">
                 <div className="grid gap-2">
-                    <Label htmlFor="sort_order">Sort order</Label>
+                    <Label htmlFor="sort_order">{t('Sort order')}</Label>
                     <Input
                         id="sort_order"
                         type="number"
@@ -205,27 +209,27 @@ export function ServiceForm({ categories, relatable, service }: ServiceFormProps
 
                 <div className="flex items-center gap-3 pt-6">
                     <Switch id="is_featured" checked={data.is_featured} onCheckedChange={(checked) => setData('is_featured', checked)} />
-                    <Label htmlFor="is_featured">Featured</Label>
+                    <Label htmlFor="is_featured">{t('Featured')}</Label>
                 </div>
 
                 <div className="flex items-center gap-3 pt-6">
                     <Switch id="is_active" checked={data.is_active} onCheckedChange={(checked) => setData('is_active', checked)} />
-                    <Label htmlFor="is_active">Active</Label>
+                    <Label htmlFor="is_active">{t('Active')}</Label>
                 </div>
             </div>
 
             <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                    <Label>Add-ons</Label>
+                    <Label>{t('Add-ons')}</Label>
                     <Button type="button" variant="outline" size="sm" onClick={addAddon}>
                         <Plus className="h-4 w-4" />
-                        Add add-on
+                        {t('Add add-on')}
                     </Button>
                 </div>
                 {data.addons.map((addon, index) => (
                     <div key={index} className="flex items-start gap-2">
                         <div className="grid flex-1 gap-1">
-                            <Input placeholder="Add-on name" value={addon.name} onChange={(e) => updateAddon(index, { name: e.target.value })} />
+                            <Input placeholder={t('Add-on name')} value={addon.name} onChange={(e) => updateAddon(index, { name: e.target.value })} />
                             <InputError message={fieldErrors[`addons.${index}.name`]} />
                         </div>
                         <div className="grid w-32 gap-1">
@@ -233,7 +237,7 @@ export function ServiceForm({ categories, relatable, service }: ServiceFormProps
                                 type="number"
                                 min={0}
                                 step="0.01"
-                                placeholder="Price"
+                                placeholder={t('Price')}
                                 value={addon.price}
                                 onChange={(e) => updateAddon(index, { price: e.target.value })}
                             />
@@ -241,7 +245,7 @@ export function ServiceForm({ categories, relatable, service }: ServiceFormProps
                         </div>
                         <div className="flex items-center gap-2 pt-2">
                             <Switch checked={addon.is_active} onCheckedChange={(checked) => updateAddon(index, { is_active: checked })} />
-                            <Button type="button" variant="ghost" size="icon" onClick={() => removeAddon(index)} aria-label="Remove add-on">
+                            <Button type="button" variant="ghost" size="icon" onClick={() => removeAddon(index)} aria-label={t('Remove add-on')}>
                                 <X className="h-4 w-4" />
                             </Button>
                         </div>
@@ -251,7 +255,7 @@ export function ServiceForm({ categories, relatable, service }: ServiceFormProps
 
             {relatable.length > 0 && (
                 <div className="space-y-3">
-                    <Label>Related services (cross-sell)</Label>
+                    <Label>{t('Related services (cross-sell)')}</Label>
                     <div className="grid max-h-48 gap-2 overflow-y-auto rounded-md border p-3 sm:grid-cols-2">
                         {relatable.map((candidate) => (
                             <label key={candidate.id} className="flex items-center gap-2 text-sm">
@@ -270,10 +274,10 @@ export function ServiceForm({ categories, relatable, service }: ServiceFormProps
             <div className="flex gap-2">
                 <Button type="submit" disabled={processing}>
                     {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                    {isEdit ? 'Save changes' : 'Create service'}
+                    {isEdit ? t('Save changes') : t('Create service')}
                 </Button>
                 <Button asChild variant="outline">
-                    <Link href={route('admin.services.index')}>Cancel</Link>
+                    <Link href={route('admin.services.index')}>{t('Cancel')}</Link>
                 </Button>
             </div>
         </form>

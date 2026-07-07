@@ -1,6 +1,7 @@
 import { PriceLabel } from '@/components/catalog/price-label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { useTrans } from '@/lib/i18n';
 import { type Service } from '@/types';
 import { Link } from '@inertiajs/react';
 import { Clock, ImageIcon } from 'lucide-react';
@@ -10,6 +11,8 @@ interface ServiceCardProps {
 }
 
 export function ServiceCard({ service }: ServiceCardProps) {
+    const t = useTrans();
+
     if (!service.category) {
         return null;
     }
@@ -31,7 +34,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
                 <CardContent className="space-y-2 p-4">
                     <div className="flex items-start justify-between gap-2">
                         <h3 className="leading-tight font-medium">{service.name}</h3>
-                        {service.is_featured && <Badge variant="secondary">Popular</Badge>}
+                        {service.is_featured && <Badge variant="secondary">{t('Popular')}</Badge>}
                     </div>
                     {service.short_description && <p className="text-muted-foreground line-clamp-2 text-sm">{service.short_description}</p>}
                     <div className="text-muted-foreground flex items-center gap-3 text-sm">
@@ -39,7 +42,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
                         {service.duration_minutes !== null && (
                             <span className="flex items-center gap-1">
                                 <Clock className="h-3.5 w-3.5" />
-                                {service.duration_minutes} min
+                                {t(':minutes min', { minutes: service.duration_minutes })}
                             </span>
                         )}
                     </div>

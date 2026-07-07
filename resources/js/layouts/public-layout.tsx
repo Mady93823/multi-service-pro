@@ -1,6 +1,7 @@
 import AppLogoIcon from '@/components/app-logo-icon';
 import { Button } from '@/components/ui/button';
 import { useFlashToast } from '@/hooks/use-flash-toast';
+import { useTrans } from '@/lib/i18n';
 import { homeUrl } from '@/lib/roles';
 import { type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
@@ -17,6 +18,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
     useFlashToast();
 
     const { auth, name } = usePage<SharedData>().props;
+    const t = useTrans();
 
     return (
         <div className="bg-background text-foreground flex min-h-screen flex-col">
@@ -29,22 +31,22 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
 
                     <nav className="flex items-center gap-4 text-sm">
                         <Link href={route('catalog.index')} className="text-muted-foreground hover:text-foreground">
-                            Services
+                            {t('Services')}
                         </Link>
                     </nav>
 
                     <div className="ml-auto flex items-center gap-2">
                         {auth.user ? (
                             <Button asChild variant="outline" size="sm">
-                                <Link href={homeUrl(auth.roles)}>Dashboard</Link>
+                                <Link href={homeUrl(auth.roles)}>{t('Dashboard')}</Link>
                             </Button>
                         ) : (
                             <>
                                 <Button asChild variant="ghost" size="sm">
-                                    <Link href={route('login')}>Log in</Link>
+                                    <Link href={route('login')}>{t('Log in')}</Link>
                                 </Button>
                                 <Button asChild size="sm">
-                                    <Link href={route('register')}>Sign up</Link>
+                                    <Link href={route('register')}>{t('Sign up')}</Link>
                                 </Button>
                             </>
                         )}

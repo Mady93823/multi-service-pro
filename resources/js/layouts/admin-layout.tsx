@@ -1,29 +1,7 @@
 import AppSidebarLayout from '@/layouts/app/app-sidebar-layout';
+import { useTrans } from '@/lib/i18n';
 import { type BreadcrumbItem, type NavItem } from '@/types';
 import { FolderTree, LayoutGrid, Settings, Wrench } from 'lucide-react';
-
-const navItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        url: '/admin/dashboard',
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Categories',
-        url: '/admin/categories',
-        icon: FolderTree,
-    },
-    {
-        title: 'Services',
-        url: '/admin/services',
-        icon: Wrench,
-    },
-    {
-        title: 'Settings',
-        url: '/admin/settings',
-        icon: Settings,
-    },
-];
 
 interface AdminLayoutProps {
     children: React.ReactNode;
@@ -31,6 +9,31 @@ interface AdminLayoutProps {
 }
 
 export default function AdminLayout({ children, breadcrumbs }: AdminLayoutProps) {
+    const t = useTrans();
+
+    const navItems: NavItem[] = [
+        {
+            title: t('Dashboard'),
+            url: '/admin/dashboard',
+            icon: LayoutGrid,
+        },
+        {
+            title: t('Categories'),
+            url: '/admin/categories',
+            icon: FolderTree,
+        },
+        {
+            title: t('Services'),
+            url: '/admin/services',
+            icon: Wrench,
+        },
+        {
+            title: t('Settings'),
+            url: '/admin/settings',
+            icon: Settings,
+        },
+    ];
+
     return (
         <AppSidebarLayout breadcrumbs={breadcrumbs} navItems={navItems} homeHref="/admin/dashboard">
             {children}

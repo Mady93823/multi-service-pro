@@ -40,6 +40,7 @@ export interface Localization {
 
 export interface SharedData {
     name: string;
+    translations: Record<string, string>;
     branding: Branding;
     localization: Localization;
     auth: Auth;

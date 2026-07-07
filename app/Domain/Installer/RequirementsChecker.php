@@ -31,25 +31,25 @@ class RequirementsChecker
         $checks = [];
 
         $checks[] = [
-            'label' => 'PHP >= '.self::MIN_PHP,
+            'label' => __('PHP >= :version', ['version' => self::MIN_PHP]),
             'passed' => version_compare(PHP_VERSION, self::MIN_PHP, '>='),
-            'detail' => 'Running '.PHP_VERSION,
+            'detail' => __('Running :version', ['version' => PHP_VERSION]),
         ];
 
         foreach (self::EXTENSIONS as $extension) {
             $checks[] = [
-                'label' => "PHP extension: {$extension}",
+                'label' => __('PHP extension: :name', ['name' => $extension]),
                 'passed' => extension_loaded($extension),
-                'detail' => extension_loaded($extension) ? 'Loaded' : 'Missing',
+                'detail' => extension_loaded($extension) ? __('Loaded') : __('Missing'),
             ];
         }
 
         foreach ($this->writablePaths() as $label => $path) {
             $writable = $this->isWritable($path);
             $checks[] = [
-                'label' => "Writable: {$label}",
+                'label' => __('Writable: :path', ['path' => $label]),
                 'passed' => $writable,
-                'detail' => $writable ? 'Writable' : 'Not writable',
+                'detail' => $writable ? __('Writable') : __('Not writable'),
             ];
         }
 

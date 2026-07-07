@@ -9,6 +9,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { useTrans } from '@/lib/i18n';
 import { router } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
 import { useState } from 'react';
@@ -21,6 +22,7 @@ interface ConfirmDeleteProps {
 
 export function ConfirmDelete({ title, description, deleteUrl }: ConfirmDeleteProps) {
     const [open, setOpen] = useState(false);
+    const t = useTrans();
 
     const destroy = () => {
         router.delete(deleteUrl, {
@@ -43,10 +45,10 @@ export function ConfirmDelete({ title, description, deleteUrl }: ConfirmDeletePr
                 </DialogHeader>
                 <DialogFooter>
                     <DialogClose asChild>
-                        <Button variant="outline">Cancel</Button>
+                        <Button variant="outline">{t('Cancel')}</Button>
                     </DialogClose>
                     <Button variant="destructive" onClick={destroy}>
-                        Delete
+                        {t('Delete')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

@@ -1,18 +1,13 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import CustomerLayout from '@/layouts/customer-layout';
+import { useTrans } from '@/lib/i18n';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { useEchoPublic } from '@laravel/echo-react';
 import { Radio } from 'lucide-react';
 import { toast } from 'sonner';
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Dashboard',
-        href: '/dashboard',
-    },
-];
 
 type DemoPingPayload = {
     message: string;
@@ -20,6 +15,15 @@ type DemoPingPayload = {
 };
 
 export default function CustomerDashboard() {
+    const t = useTrans();
+
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: t('Dashboard'),
+            href: '/dashboard',
+        },
+    ];
+
     // Phase 1 WebSocket smoke test; replaced by real tracking events in Phase 3.
     useEchoPublic<DemoPingPayload>('demo', 'DemoPing', (payload) => {
         toast.success(payload.message, {
@@ -33,20 +37,20 @@ export default function CustomerDashboard() {
 
     return (
         <CustomerLayout breadcrumbs={breadcrumbs}>
-            <Head title="Dashboard" />
+            <Head title={t('Dashboard')} />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
                 <Card className="max-w-xl">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Radio className="h-5 w-5" />
-                            Realtime connection check
+                            {t('Realtime connection check')}
                         </CardTitle>
                         <CardDescription>
-                            Sends a test event through the WebSocket server. Every open browser tab on this page shows a toast when it arrives.
+                            {t('Sends a test event through the WebSocket server. Every open browser tab on this page shows a toast when it arrives.')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Button onClick={sendPing}>Send test broadcast</Button>
+                        <Button onClick={sendPing}>{t('Send test broadcast')}</Button>
                     </CardContent>
                 </Card>
             </div>

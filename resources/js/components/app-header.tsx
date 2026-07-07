@@ -7,6 +7,7 @@ import { NavigationMenu, NavigationMenuItem, NavigationMenuList, navigationMenuT
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { useInitials } from '@/hooks/use-initials';
+import { useTrans } from '@/lib/i18n';
 import { homeUrl } from '@/lib/roles';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
@@ -27,10 +28,11 @@ export function AppHeader({ breadcrumbs = [], navItems, homeHref }: AppHeaderPro
     const page = usePage<SharedData>();
     const { auth } = page.props;
     const getInitials = useInitials();
+    const t = useTrans();
     const home = homeHref ?? homeUrl(auth.roles);
     const mainNavItems = navItems ?? [
         {
-            title: 'Dashboard',
+            title: t('Dashboard'),
             url: home,
             icon: LayoutGrid,
         },
@@ -49,7 +51,7 @@ export function AppHeader({ breadcrumbs = [], navItems, homeHref }: AppHeaderPro
                                 </Button>
                             </SheetTrigger>
                             <SheetContent side="left" className="bg-sidebar flex h-full w-64 flex-col items-stretch justify-between">
-                                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                                <SheetTitle className="sr-only">{t('Navigation Menu')}</SheetTitle>
                                 <SheetHeader className="flex justify-start text-left">
                                     <AppLogoIcon className="h-6 w-6 fill-current text-black dark:text-white" />
                                 </SheetHeader>

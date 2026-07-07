@@ -25,3 +25,7 @@ npm-debug.log
 yarn-error.log
 
 /graphify-out
+/.claude/settings.json
+/.claude/skills
+/.agents
+/skills-lock.json

@@ -36,6 +36,7 @@ class ServiceResource extends JsonResource
             'addons' => ServiceAddonResource::collection($this->whenLoaded('addons')),
             'related' => ServiceResource::collection($this->whenLoaded('related')),
             'addons_count' => $this->whenCounted('addons'),
+            'zone_ids' => $this->whenLoaded('zones', fn () => $this->zones->pluck('id')->all()),
         ];
     }
 

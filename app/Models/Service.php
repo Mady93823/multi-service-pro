@@ -89,12 +89,42 @@ class Service extends Model implements HasMedia
     }
 
     /**
+     * Zones this service is limited to; no rows = available everywhere.
+     *
+     * @return BelongsToMany<Zone, $this>
+     */
+    public function zones(): BelongsToMany
+    {
+        return $this->belongsToMany(Zone::class);
+    }
+
+    /**
      * @param  Builder<Service>  $query
      * @return Builder<Service>
      */
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
+    }
+
+    /**
+     * Zone gate (M03): services with no zone rows are offered everywhere;
+     * zone-restricted services only inside a matching zone. Null zone id
+     * (guest / no default address) shows the full catalog.
+     *
+     * @param  Builder<Service>  $query
+     * @return Builder<Service>
+     */
+    public function scopeInZone(Builder $query, ?int $zoneId): Builder
+    {
+        if ($zoneId === null) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $inner) use ($zoneId) {
+            $inner->whereDoesntHave('zones')
+                ->orWhereHas('zones', fn (Builder $zones) => $zones->whereKey($zoneId));
+        });
     }
 
     /**

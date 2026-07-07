@@ -67,13 +67,7 @@ export default function Database({ defaults }: DatabaseProps) {
                             </div>
                             <div className="grid gap-2">
                                 <Label htmlFor="port">{t('Port')}</Label>
-                                <Input
-                                    id="port"
-                                    type="number"
-                                    value={data.port}
-                                    onChange={(e) => setData('port', Number(e.target.value))}
-                                    required
-                                />
+                                <Input id="port" type="number" value={data.port} onChange={(e) => setData('port', Number(e.target.value))} required />
                                 <InputError message={errors.port} />
                             </div>
                         </div>

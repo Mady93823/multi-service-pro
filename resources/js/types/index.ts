@@ -91,6 +91,39 @@ export interface Service {
     addons?: ServiceAddon[];
     related?: Service[];
     addons_count?: number;
+    zone_ids?: number[];
+}
+
+// Type alias (not interface) so it satisfies Inertia's FormDataConvertible
+// index-signature check when used inside useForm payloads.
+export type GeoJsonPolygon = {
+    type: 'Polygon';
+    coordinates: number[][][];
+};
+
+export interface Zone {
+    id: number;
+    name: string;
+    city: string;
+    geojson: GeoJsonPolygon;
+    is_active: boolean;
+    services_count?: number;
+    addresses_count?: number;
+}
+
+export type AddressLabel = 'home' | 'work' | 'other';
+
+export interface Address {
+    id: number;
+    label: AddressLabel;
+    line1: string;
+    line2: string | null;
+    city: string;
+    postal_code: string;
+    lat: number;
+    lng: number;
+    is_default: boolean;
+    zone?: Zone | null;
 }
 
 export interface PaginationLinkItem {

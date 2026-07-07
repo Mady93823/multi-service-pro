@@ -79,6 +79,9 @@ Consequences:
 - Scale path: Reverb horizontal scaling via Redis pub/sub — same as before
 - Full spec rewritten in [[05-Live-Tracking]]
 
+### D12 — Point-in-polygon in PHP, not MySQL spatial (2026-07-07)
+Zone membership (`ST_Contains` in the original schema) is computed by a PHP ray-casting check (`App\Domain\Zones\PointInPolygon`) over the zone's GeoJSON instead of a MySQL 8 `GEOMETRY ... SRID 4326` column + spatial index. Why: dev runs MariaDB (XAMPP), tests run sqlite, and CodeCanyon buyers land on shared hosting where MySQL-8 SRID columns break installs (D8 portability beats micro-optimization). Zones are a handful of small polygons per city — the PHP check is microseconds and runs only on address save / zone edits, never per catalog request (addresses snapshot their `zone_id`). Revisit only if a deployment ever has thousands of zones; the `ZoneResolver` seam is where a spatial implementation would slot in.
+
 ## UI sourcing workflow (shoogle.dev)
 
 1. Need a block (e.g., booking form, dashboard, pricing card) → search **shoogle.dev**

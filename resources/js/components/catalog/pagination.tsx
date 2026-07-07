@@ -17,9 +17,7 @@ export function Pagination({ meta, links }: PaginationProps) {
 
     return (
         <div className="flex items-center justify-between gap-4">
-            <p className="text-muted-foreground text-sm">
-                {t(':from–:to of :total', { from: meta.from ?? 0, to: meta.to ?? 0, total: meta.total })}
-            </p>
+            <p className="text-muted-foreground text-sm">{t(':from–:to of :total', { from: meta.from ?? 0, to: meta.to ?? 0, total: meta.total })}</p>
             <div className="flex gap-2">
                 <Button asChild={links.prev !== null} variant="outline" size="sm" disabled={links.prev === null}>
                     {links.prev !== null ? (

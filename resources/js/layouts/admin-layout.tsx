@@ -1,7 +1,7 @@
 import AppSidebarLayout from '@/layouts/app/app-sidebar-layout';
 import { useTrans } from '@/lib/i18n';
 import { type BreadcrumbItem, type NavItem } from '@/types';
-import { FolderTree, LayoutGrid, Settings, Wrench } from 'lucide-react';
+import { FolderTree, LayoutGrid, Map, Settings, Wrench } from 'lucide-react';
 
 interface AdminLayoutProps {
     children: React.ReactNode;
@@ -26,6 +26,11 @@ export default function AdminLayout({ children, breadcrumbs }: AdminLayoutProps)
             title: t('Services'),
             url: '/admin/services',
             icon: Wrench,
+        },
+        {
+            title: t('Zones'),
+            url: '/admin/zones',
+            icon: Map,
         },
         {
             title: t('Settings'),

@@ -27,7 +27,7 @@ Internal counterpart of the client doc's module list — with build notes and ac
 - ✅ *Done when:* admin CRUDs full tree + services + addons; customer browses/searches; zone-filtered.
 
 ## M03 Locations, Zones & Addresses
-- `zones`: polygon drawn by admin on Leaflet map (leaflet-draw), stored as GeoJSON; point-in-polygon check with MySQL spatial (`ST_Contains`)
+- `zones`: polygon drawn by admin on Leaflet map (leaflet-draw), stored as GeoJSON; point-in-polygon check in PHP (`PointInPolygon` ray casting — D12, portable across MySQL/MariaDB/sqlite)
 - `addresses`: customer address book, map-pin picker (Leaflet), reverse geocoding via **Nominatim** (respect usage policy: 1 req/s, proper User-Agent; cache results)
 - Zone gate: customer's pin decides which services/providers are offered
 - ✅ *Done when:* admin draws zone; out-of-zone address politely blocked at checkout.

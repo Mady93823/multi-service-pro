@@ -36,6 +36,8 @@ class StoreServiceRequest extends FormRequest
             'addons.*.is_active' => ['boolean'],
             'related_ids' => ['array', 'max:10'],
             'related_ids.*' => ['integer', 'distinct', Rule::exists('services', 'id')->whereNull('deleted_at')],
+            'zone_ids' => ['array'],
+            'zone_ids.*' => ['integer', 'distinct', Rule::exists('zones', 'id')],
             'image' => ['nullable', 'image', 'max:4096'],
         ];
     }

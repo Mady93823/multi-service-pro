@@ -52,8 +52,9 @@ service_addons
   id, service_id FK, name, price, is_active
 
 zones
-  id, name, city, polygon GEOMETRY(POLYGON,4326) + GeoJSON copy in `geojson`,
-  is_active
+  id, name, city, geojson JSON (GeoJSON Polygon — source of truth; membership
+  via PHP point-in-polygon, D12: no GEOMETRY column, portable across
+  MySQL/MariaDB/sqlite), is_active
 
 service_zone
   service_id FK, zone_id FK  (pivot: availability per zone)
@@ -193,7 +194,7 @@ settings
 - `wallet_transactions` and `earnings` are append-only; corrections = compensating entries (`adjustment`)
 - Every status change goes through the state machine + writes `booking_status_history`
 - Foreign keys ON DELETE: RESTRICT for money-bearing rows; CASCADE only for pure child rows (items, points)
-- Indexes: every FK; `bookings(status, scheduled_at)`, `bookings(provider_id, status)`, `services FULLTEXT(name, short_description)`, `zones` SPATIAL INDEX, `tracking_points(tracking_session_id, recorded_at)`
+- Indexes: every FK; `bookings(status, scheduled_at)`, `bookings(provider_id, status)`, `services FULLTEXT(name, short_description)`, `zones(city, is_active)` (membership computed in PHP, D12), `tracking_points(tracking_session_id, recorded_at)`
 
 ## ERD (core)
 

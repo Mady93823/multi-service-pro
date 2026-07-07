@@ -8,7 +8,6 @@ import { useEchoPublic } from '@laravel/echo-react';
 import { Radio } from 'lucide-react';
 import { toast } from 'sonner';
 
-
 type DemoPingPayload = {
     message: string;
     sent_at: string;

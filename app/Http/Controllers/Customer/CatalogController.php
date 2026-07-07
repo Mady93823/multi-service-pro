@@ -20,12 +20,14 @@ class CatalogController extends Controller
     public function index(Request $request): Response
     {
         $search = (string) $request->string('search');
+        $zoneId = $this->customerZoneId($request);
 
         $results = null;
 
         if ($search !== '') {
             $results = Service::query()
                 ->active()
+                ->inZone($zoneId)
                 ->search($search)
                 ->whereHas('category', fn ($query) => $query->where('is_active', true))
                 ->with(['category', 'media'])
@@ -44,6 +46,7 @@ class CatalogController extends Controller
             'featured' => ServiceResource::collection(
                 Service::query()
                     ->active()
+                    ->inZone($zoneId)
                     ->where('is_featured', true)
                     ->whereHas('category', fn ($query) => $query->where('is_active', true))
                     ->with(['category', 'media'])
@@ -56,7 +59,7 @@ class CatalogController extends Controller
         ]);
     }
 
-    public function category(Category $category): Response
+    public function category(Request $request, Category $category): Response
     {
         abort_unless($category->is_active, 404);
 
@@ -66,6 +69,7 @@ class CatalogController extends Controller
 
         $services = Service::query()
             ->active()
+            ->inZone($this->customerZoneId($request))
             ->whereIn('category_id', $categoryIds)
             ->with(['category', 'media'])
             ->orderBy('sort_order')
@@ -79,7 +83,7 @@ class CatalogController extends Controller
         ]);
     }
 
-    public function show(Category $category, Service $service): Response
+    public function show(Request $request, Category $category, Service $service): Response
     {
         abort_unless($category->is_active && $service->is_active, 404);
 
@@ -90,8 +94,24 @@ class CatalogController extends Controller
             'media',
         ]);
 
+        $zoneId = $this->customerZoneId($request);
+
         return Inertia::render('catalog/show', [
             'service' => new ServiceResource($service),
+            'available_in_zone' => $zoneId === null
+                || ! $service->zones()->exists()
+                || $service->zones()->whereKey($zoneId)->exists(),
         ]);
+    }
+
+    /**
+     * Zone of the signed-in customer's default address; null for guests
+     * or when the default address is outside every zone (no filtering).
+     */
+    protected function customerZoneId(Request $request): ?int
+    {
+        $zoneId = $request->user()?->addresses()->where('is_default', true)->value('zone_id');
+
+        return $zoneId === null ? null : (int) $zoneId;
     }
 }

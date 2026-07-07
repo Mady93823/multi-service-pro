@@ -16,16 +16,18 @@ class UpdateService
      * @param  array{category_id: int, name: string, short_description?: string|null, description?: string|null, pricing_type: string, price: string|float, duration_minutes?: int|null, is_featured?: bool, is_active?: bool, sort_order?: int}  $data
      * @param  list<array{name: string, price: string|float, is_active?: bool}>  $addons
      * @param  list<int>  $relatedIds
+     * @param  list<int>  $zoneIds  empty = available in every zone
      */
-    public function handle(Service $service, array $data, array $addons = [], array $relatedIds = [], ?UploadedFile $image = null): Service
+    public function handle(Service $service, array $data, array $addons = [], array $relatedIds = [], array $zoneIds = [], ?UploadedFile $image = null): Service
     {
-        DB::transaction(function () use ($service, $data, $addons, $relatedIds) {
+        DB::transaction(function () use ($service, $data, $addons, $relatedIds, $zoneIds) {
             $service->update($data);
 
             $service->addons()->delete();
             $service->addons()->createMany($addons);
 
             $service->related()->sync($relatedIds);
+            $service->zones()->sync($zoneIds);
         });
 
         if ($image !== null) {

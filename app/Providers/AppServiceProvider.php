@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
+use App\Domain\Geocoding\NominatimGeocoder;
 use App\Domain\Installer\EnvWriter;
 use App\Domain\Installer\InstallLock;
 use App\Domain\Settings\SettingsRegistry;
+use App\Support\Geocoder;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\ServiceProvider;
 use RuntimeException;
@@ -17,6 +19,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(SettingsRegistry::class);
+        $this->app->bind(Geocoder::class, NominatimGeocoder::class);
     }
 
     /**

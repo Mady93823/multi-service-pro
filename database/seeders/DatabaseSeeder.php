@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             SettingsSeeder::class,
             DemoAccountSeeder::class,
             CatalogSeeder::class,
+            ZoneSeeder::class,
         ]);
     }
 }

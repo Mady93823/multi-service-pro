@@ -136,7 +136,9 @@ export default function ServicesIndex({ services, categories, filters }: Service
                                     </TableCell>
                                     <TableCell className="text-center">{service.addons_count ?? 0}</TableCell>
                                     <TableCell>
-                                        <Badge variant={service.is_active ? 'default' : 'outline'}>{service.is_active ? t('Active') : t('Hidden')}</Badge>
+                                        <Badge variant={service.is_active ? 'default' : 'outline'}>
+                                            {service.is_active ? t('Active') : t('Hidden')}
+                                        </Badge>
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex justify-end gap-1">

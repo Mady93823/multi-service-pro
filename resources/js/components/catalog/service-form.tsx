@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useTrans } from '@/lib/i18n';
-import { type Category, type PricingType, type Service } from '@/types';
+import { type Category, type PricingType, type Service, type Zone } from '@/types';
 import { Link, useForm } from '@inertiajs/react';
 import { LoaderCircle, Plus, X } from 'lucide-react';
 import { FormEventHandler } from 'react';
@@ -32,6 +32,7 @@ type ServiceForm = {
     is_active: boolean;
     addons: AddonInput[];
     related_ids: number[];
+    zone_ids: number[];
     image: File | null;
 };
 
@@ -40,10 +41,11 @@ const pricingTypeValues: PricingType[] = ['fixed', 'hourly', 'inspection'];
 interface ServiceFormProps {
     categories: Category[];
     relatable: Service[];
+    zones: Zone[];
     service?: Service;
 }
 
-export function ServiceForm({ categories, relatable, service }: ServiceFormProps) {
+export function ServiceForm({ categories, relatable, zones, service }: ServiceFormProps) {
     const isEdit = service !== undefined;
     const t = useTrans();
 
@@ -61,6 +63,7 @@ export function ServiceForm({ categories, relatable, service }: ServiceFormProps
         is_active: service?.is_active ?? true,
         addons: service?.addons?.map((addon) => ({ name: addon.name, price: addon.price, is_active: addon.is_active })) ?? [],
         related_ids: service?.related?.map((related) => related.id) ?? [],
+        zone_ids: service?.zone_ids ?? [],
         image: null,
     });
 
@@ -98,6 +101,9 @@ export function ServiceForm({ categories, relatable, service }: ServiceFormProps
 
     const toggleRelated = (id: number, checked: boolean) =>
         setData('related_ids', checked ? [...data.related_ids, id] : data.related_ids.filter((current) => current !== id));
+
+    const toggleZone = (id: number, checked: boolean) =>
+        setData('zone_ids', checked ? [...data.zone_ids, id] : data.zone_ids.filter((current) => current !== id));
 
     return (
         <form onSubmit={submit} className="max-w-2xl space-y-6">
@@ -252,6 +258,25 @@ export function ServiceForm({ categories, relatable, service }: ServiceFormProps
                     </div>
                 ))}
             </div>
+
+            {zones.length > 0 && (
+                <div className="space-y-3">
+                    <Label>{t('Available in zones')}</Label>
+                    <p className="text-muted-foreground text-sm">{t('Leave all unchecked to offer this service in every zone.')}</p>
+                    <div className="grid max-h-48 gap-2 overflow-y-auto rounded-md border p-3 sm:grid-cols-2">
+                        {zones.map((zone) => (
+                            <label key={zone.id} className="flex items-center gap-2 text-sm">
+                                <Checkbox
+                                    checked={data.zone_ids.includes(zone.id)}
+                                    onCheckedChange={(checked) => toggleZone(zone.id, checked === true)}
+                                />
+                                {zone.name} <span className="text-muted-foreground">({zone.city})</span>
+                            </label>
+                        ))}
+                    </div>
+                    <InputError message={errors.zone_ids} />
+                </div>
+            )}
 
             {relatable.length > 0 && (
                 <div className="space-y-3">

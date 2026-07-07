@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Customer;
 use App\Http\Controllers\DemoPingController;
+use App\Http\Controllers\GeocodeController;
 use App\Http\Controllers\Provider;
 use Illuminate\Support\Facades\Route;
 
@@ -16,6 +17,15 @@ Route::get('services/{category:slug}/{service:slug}', [Customer\CatalogControlle
 
 Route::middleware(['auth', 'role:customer'])->group(function () {
     Route::get('dashboard', Customer\DashboardController::class)->name('dashboard');
+    Route::resource('addresses', Customer\AddressController::class)->except(['show']);
+    Route::put('addresses/{address}/default', [Customer\AddressController::class, 'setDefault'])
+        ->name('addresses.default');
+});
+
+// Map-picker helpers (Nominatim proxy) — used by customer address book and admin zone editor.
+Route::middleware(['auth', 'throttle:30,1'])->group(function () {
+    Route::get('geocode/reverse', [GeocodeController::class, 'reverse'])->name('geocode.reverse');
+    Route::get('geocode/search', [GeocodeController::class, 'search'])->name('geocode.search');
 });
 
 Route::middleware(['auth', 'role:provider'])->prefix('provider')->name('provider.')->group(function () {
@@ -26,6 +36,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('dashboard', Admin\DashboardController::class)->name('dashboard');
     Route::resource('categories', Admin\CategoryController::class)->except(['show']);
     Route::resource('services', Admin\ServiceController::class)->except(['show']);
+    Route::resource('zones', Admin\ZoneController::class)->except(['show']);
     Route::get('settings', [Admin\SettingsController::class, 'edit'])->name('settings.edit');
     Route::put('settings', [Admin\SettingsController::class, 'update'])->name('settings.update');
 });

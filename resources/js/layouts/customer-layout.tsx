@@ -1,7 +1,7 @@
 import AppHeaderLayout from '@/layouts/app/app-header-layout';
 import { useTrans } from '@/lib/i18n';
 import { type BreadcrumbItem, type NavItem } from '@/types';
-import { LayoutGrid, Search } from 'lucide-react';
+import { LayoutGrid, MapPin, Search } from 'lucide-react';
 
 interface CustomerLayoutProps {
     children: React.ReactNode;
@@ -21,6 +21,11 @@ export default function CustomerLayout({ children, breadcrumbs }: CustomerLayout
             title: t('Services'),
             url: '/services',
             icon: Search,
+        },
+        {
+            title: t('My addresses'),
+            url: '/addresses',
+            icon: MapPin,
         },
     ];
 

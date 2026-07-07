@@ -1,7 +1,7 @@
 import InputError from '@/components/input-error';
 import AppLayout from '@/layouts/app-layout';
-import { useTrans } from '@/lib/i18n';
 import SettingsLayout from '@/layouts/settings/layout';
+import { useTrans } from '@/lib/i18n';
 import { type BreadcrumbItem } from '@/types';
 import { Transition } from '@headlessui/react';
 import { Head, useForm } from '@inertiajs/react';
@@ -57,7 +57,10 @@ export default function Password() {
 
             <SettingsLayout>
                 <div className="space-y-6">
-                    <HeadingSmall title={t('Update password')} description={t('Ensure your account is using a long, random password to stay secure')} />
+                    <HeadingSmall
+                        title={t('Update password')}
+                        description={t('Ensure your account is using a long, random password to stay secure')}
+                    />
 
                     <form onSubmit={updatePassword} className="space-y-6">
                         <div className="grid gap-2">

@@ -4,9 +4,9 @@ import AppearanceTabs from '@/components/appearance-tabs';
 import HeadingSmall from '@/components/heading-small';
 import { type BreadcrumbItem } from '@/types';
 
-import { useTrans } from '@/lib/i18n';
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import { useTrans } from '@/lib/i18n';
 
 export default function Appearance() {
     const t = useTrans();

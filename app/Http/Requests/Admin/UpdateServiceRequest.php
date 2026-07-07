@@ -45,6 +45,8 @@ class UpdateServiceRequest extends FormRequest
                 Rule::notIn([$service->id]),
                 Rule::exists('services', 'id')->whereNull('deleted_at'),
             ],
+            'zone_ids' => ['array'],
+            'zone_ids.*' => ['integer', 'distinct', Rule::exists('zones', 'id')],
             'image' => ['nullable', 'image', 'max:4096'],
         ];
     }

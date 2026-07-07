@@ -1,6 +1,6 @@
 import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
-import { useTrans } from '@/lib/i18n';
 import ProviderLayout from '@/layouts/provider-layout';
+import { useTrans } from '@/lib/i18n';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 

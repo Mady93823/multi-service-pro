@@ -1,15 +1,16 @@
 import { ServiceForm } from '@/components/catalog/service-form';
 import AdminLayout from '@/layouts/admin-layout';
 import { useTrans } from '@/lib/i18n';
-import { type BreadcrumbItem, type Category, type Service } from '@/types';
+import { type BreadcrumbItem, type Category, type Service, type Zone } from '@/types';
 import { Head } from '@inertiajs/react';
 
 interface CreateServiceProps {
     categories: Category[];
     relatable: Service[];
+    zones: Zone[];
 }
 
-export default function CreateService({ categories, relatable }: CreateServiceProps) {
+export default function CreateService({ categories, relatable, zones }: CreateServiceProps) {
     const t = useTrans();
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -23,7 +24,7 @@ export default function CreateService({ categories, relatable }: CreateServicePr
             <Head title={t('New service')} />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <h1 className="text-xl font-semibold">{t('New service')}</h1>
-                <ServiceForm categories={categories} relatable={relatable} />
+                <ServiceForm categories={categories} relatable={relatable} zones={zones} />
             </div>
         </AdminLayout>
     );

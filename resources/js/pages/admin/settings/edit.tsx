@@ -98,7 +98,10 @@ export default function SettingsEdit({ values }: SettingsEditProps) {
                                 <InputError message={errors.logo} />
                                 {values.logo_url && (
                                     <label className="flex items-center gap-2 text-sm">
-                                        <Checkbox checked={data.remove_logo} onCheckedChange={(checked) => setData('remove_logo', checked === true)} />
+                                        <Checkbox
+                                            checked={data.remove_logo}
+                                            onCheckedChange={(checked) => setData('remove_logo', checked === true)}
+                                        />
                                         {t('Remove current logo')}
                                     </label>
                                 )}

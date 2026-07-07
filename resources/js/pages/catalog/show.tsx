@@ -1,10 +1,10 @@
 import { PriceLabel } from '@/components/catalog/price-label';
 import { ServiceCard } from '@/components/catalog/service-card';
-import { useMoney } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import PublicLayout from '@/layouts/public-layout';
+import { useMoney } from '@/lib/format';
 import { useTrans } from '@/lib/i18n';
 import { type Service } from '@/types';
 import { Head, Link } from '@inertiajs/react';
@@ -12,9 +12,10 @@ import { ChevronRight, Clock, ImageIcon } from 'lucide-react';
 
 interface CatalogShowProps {
     service: Service;
+    available_in_zone: boolean;
 }
 
-export default function CatalogShow({ service }: CatalogShowProps) {
+export default function CatalogShow({ service, available_in_zone: availableInZone }: CatalogShowProps) {
     const money = useMoney();
     const t = useTrans();
 
@@ -75,6 +76,11 @@ export default function CatalogShow({ service }: CatalogShowProps) {
                                     </span>
                                 )}
                             </div>
+                            {!availableInZone && (
+                                <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200">
+                                    {t('This service is not yet available at your default address.')}
+                                </p>
+                            )}
                             <Button className="w-full" size="lg" disabled title={t('Booking opens in an upcoming release')}>
                                 {t('Book now — coming soon')}
                             </Button>

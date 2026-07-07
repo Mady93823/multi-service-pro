@@ -10,8 +10,10 @@ use App\Http\Requests\Admin\StoreServiceRequest;
 use App\Http\Requests\Admin\UpdateServiceRequest;
 use App\Http\Resources\CategoryResource;
 use App\Http\Resources\ServiceResource;
+use App\Http\Resources\ZoneResource;
 use App\Models\Category;
 use App\Models\Service;
+use App\Models\Zone;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -51,15 +53,17 @@ class ServiceController extends Controller
             'relatable' => ServiceResource::collection(
                 Service::query()->orderBy('name')->get(['id', 'category_id', 'name', 'slug', 'pricing_type', 'price'])
             ),
+            'zones' => ZoneResource::collection($this->zoneOptions()),
         ]);
     }
 
     public function store(StoreServiceRequest $request, CreateService $action): RedirectResponse
     {
         $action->handle(
-            $request->safe()->except(['addons', 'related_ids', 'image']),
+            $request->safe()->except(['addons', 'related_ids', 'zone_ids', 'image']),
             $request->validated('addons', []),
             $request->validated('related_ids', []),
+            $request->validated('zone_ids', []),
             $request->file('image'),
         );
 
@@ -68,7 +72,7 @@ class ServiceController extends Controller
 
     public function edit(Service $service): Response
     {
-        $service->load(['addons', 'related']);
+        $service->load(['addons', 'related', 'zones']);
 
         return Inertia::render('admin/services/edit', [
             'service' => new ServiceResource($service),
@@ -79,6 +83,7 @@ class ServiceController extends Controller
                     ->orderBy('name')
                     ->get(['id', 'category_id', 'name', 'slug', 'pricing_type', 'price'])
             ),
+            'zones' => ZoneResource::collection($this->zoneOptions()),
         ]);
     }
 
@@ -86,9 +91,10 @@ class ServiceController extends Controller
     {
         $action->handle(
             $service,
-            $request->safe()->except(['addons', 'related_ids', 'image']),
+            $request->safe()->except(['addons', 'related_ids', 'zone_ids', 'image']),
             $request->validated('addons', []),
             $request->validated('related_ids', []),
+            $request->validated('zone_ids', []),
             $request->file('image'),
         );
 
@@ -114,5 +120,13 @@ class ServiceController extends Controller
             ->orderBy('sort_order')
             ->get()
             ->flatMap(fn (Category $root) => collect([$root])->concat($root->children));
+    }
+
+    /**
+     * @return Collection<int, Zone>
+     */
+    protected function zoneOptions(): Collection
+    {
+        return Zone::query()->orderBy('city')->orderBy('name')->get(['id', 'name', 'city', 'geojson', 'is_active']);
     }
 }

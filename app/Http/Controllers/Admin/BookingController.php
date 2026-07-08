@@ -7,10 +7,12 @@ use App\Domain\Bookings\BookingStateMachine;
 use App\Domain\Bookings\Enums\BookingActor;
 use App\Domain\Bookings\Enums\BookingStatus;
 use App\Domain\Bookings\Exceptions\IllegalTransition;
+use App\Domain\Dispatch\Actions\DispatchBooking;
 use App\Domain\Users\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\TransitionBookingRequest;
 use App\Http\Resources\BookingResource;
+use App\Http\Resources\DispatchOfferResource;
 use App\Models\Booking;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -74,6 +76,7 @@ class BookingController extends Controller
             'zone',
             'items',
             'statusHistory' => fn ($query) => $query->orderBy('created_at'),
+            'dispatchOffers' => fn ($query) => $query->with('provider')->latest('offered_at'),
             'media',
         ]);
 
@@ -84,6 +87,8 @@ class BookingController extends Controller
 
         return Inertia::render('admin/bookings/show', [
             'booking' => new BookingResource($booking),
+            'offers' => DispatchOfferResource::collection($booking->dispatchOffers),
+            'can_dispatch' => in_array($booking->status, [BookingStatus::Placed, BookingStatus::Searching], true),
             'allowed_transitions' => array_map(fn (BookingStatus $status): string => $status->value, $allowed),
             'providers' => User::query()
                 ->role(Role::Provider->value)
@@ -117,5 +122,22 @@ class BookingController extends Controller
         }
 
         return back()->with('success', __('Booking updated.'));
+    }
+
+    /**
+     * Kick (or re-kick) auto-dispatch for a placed/searching booking — the
+     * manual counterpart to the on-placement listener (M06).
+     */
+    public function dispatch(Booking $booking, DispatchBooking $action): RedirectResponse
+    {
+        if (! in_array($booking->status, [BookingStatus::Placed, BookingStatus::Searching], true)) {
+            throw ValidationException::withMessages([
+                'dispatch' => __('This booking cannot be dispatched from its current status.'),
+            ]);
+        }
+
+        $action->handle($booking);
+
+        return back()->with('success', __('Dispatch started.'));
     }
 }

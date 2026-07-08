@@ -47,6 +47,10 @@ class SettingsRegistry
             'booking.cancellation_fee_type' => ['group' => 'booking', 'type' => SettingType::String, 'value' => 'percent'],
             'booking.cancellation_fee_value' => ['group' => 'booking', 'type' => SettingType::Decimal, 'value' => '10'],
             'booking.reschedule_min_hours' => ['group' => 'booking', 'type' => SettingType::Integer, 'value' => 2],
+            'dispatch.mode' => ['group' => 'dispatch', 'type' => SettingType::String, 'value' => 'nearest'],
+            'dispatch.offer_timeout_seconds' => ['group' => 'dispatch', 'type' => SettingType::Integer, 'value' => 60],
+            'dispatch.max_rounds' => ['group' => 'dispatch', 'type' => SettingType::Integer, 'value' => 5],
+            'dispatch.auto' => ['group' => 'dispatch', 'type' => SettingType::Boolean, 'value' => true],
             'payments.tax_label' => ['group' => 'payments', 'type' => SettingType::String, 'value' => 'GST'],
             'payments.tax_percent' => ['group' => 'payments', 'type' => SettingType::Decimal, 'value' => '18'],
         ];

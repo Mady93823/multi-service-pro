@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -22,10 +23,10 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property BookingStatus $status
  * @property PaymentStatus $payment_status
  * @property PaymentMethod $payment_method
- * @property \Illuminate\Support\Carbon $scheduled_at
- * @property \Illuminate\Support\Carbon $slot_end_at
- * @property \Illuminate\Support\Carbon|null $completed_at
- * @property \Illuminate\Support\Carbon|null $cancelled_at
+ * @property Carbon $scheduled_at
+ * @property Carbon $slot_end_at
+ * @property Carbon|null $completed_at
+ * @property Carbon|null $cancelled_at
  * @property string $subtotal
  * @property string $addon_total
  * @property string $discount
@@ -150,5 +151,13 @@ class Booking extends Model implements HasMedia
     public function statusHistory(): HasMany
     {
         return $this->hasMany(BookingStatusHistory::class);
+    }
+
+    /**
+     * @return HasMany<DispatchOffer, $this>
+     */
+    public function dispatchOffers(): HasMany
+    {
+        return $this->hasMany(DispatchOffer::class);
     }
 }

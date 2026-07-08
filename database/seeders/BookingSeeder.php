@@ -7,6 +7,8 @@ use App\Domain\Bookings\Enums\BookingActor;
 use App\Domain\Bookings\Enums\BookingStatus;
 use App\Domain\Bookings\Enums\PaymentMethod;
 use App\Domain\Bookings\Enums\PaymentStatus;
+use App\Domain\Dispatch\Enums\DispatchMode;
+use App\Domain\Dispatch\Enums\OfferStatus;
 use App\Domain\Settings\SettingsRegistry;
 use App\Models\Address;
 use App\Models\Booking;
@@ -73,6 +75,40 @@ class BookingSeeder extends Seeder
             CarbonImmutable::now()->addDays(3)->setTime(11, 0),
         );
         $machine->initialize($upcoming, BookingActor::Customer, $customer);
+
+        // M06 dispatch demo: a job searching for a pro with a live offer to the
+        // demo provider (shows on the provider's Jobs screen), and one they have
+        // already accepted (shows with action buttons).
+        $searching = $this->makeBooking(
+            $customer,
+            $address,
+            $services[0],
+            CarbonImmutable::now()->addDay()->setTime(9, 0),
+        );
+        $machine->initialize($searching, BookingActor::Customer, $customer);
+        $machine->transition($searching, BookingStatus::Searching, BookingActor::System, null, __('Seeded demo data.'));
+        $searching->dispatchOffers()->create([
+            'provider_id' => $provider->id,
+            'strategy' => DispatchMode::Nearest->value,
+            'status' => OfferStatus::Offered->value,
+            'round' => 1,
+            'distance_km' => '2.40',
+            'offered_at' => now(),
+            'expires_at' => now()->addMinutes(30),
+        ]);
+
+        $accepted = $this->makeBooking(
+            $customer,
+            $address,
+            $services->get(1) ?? $services[0],
+            CarbonImmutable::now()->addDay()->setTime(15, 0),
+        );
+        $machine->initialize($accepted, BookingActor::Customer, $customer);
+        $accepted->provider_id = $provider->id;
+
+        foreach ([BookingStatus::Searching, BookingStatus::Assigned, BookingStatus::Accepted] as $status) {
+            $machine->transition($accepted, $status, BookingActor::System, null, __('Seeded demo data.'));
+        }
     }
 
     private function makeBooking(User $customer, Address $address, Service $service, CarbonImmutable $scheduledAt): Booking

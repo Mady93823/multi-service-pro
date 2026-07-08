@@ -1,7 +1,7 @@
 import AppSidebarLayout from '@/layouts/app/app-sidebar-layout';
 import { useTrans } from '@/lib/i18n';
 import { type BreadcrumbItem, type NavItem } from '@/types';
-import { LayoutGrid, UserRound } from 'lucide-react';
+import { Briefcase, LayoutGrid, UserRound } from 'lucide-react';
 
 interface ProviderLayoutProps {
     children: React.ReactNode;
@@ -16,6 +16,11 @@ export default function ProviderLayout({ children, breadcrumbs }: ProviderLayout
             title: t('Dashboard'),
             url: '/provider/dashboard',
             icon: LayoutGrid,
+        },
+        {
+            title: t('Jobs'),
+            url: '/provider/jobs',
+            icon: Briefcase,
         },
         {
             title: t('Profile'),

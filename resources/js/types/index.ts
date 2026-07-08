@@ -330,6 +330,22 @@ export interface ProviderBlackout {
     reason: string | null;
 }
 
+export type OfferStatus = 'offered' | 'accepted' | 'declined' | 'expired';
+
+export type DispatchMode = 'nearest' | 'broadcast' | 'manual';
+
+export interface DispatchOffer {
+    id: number;
+    status: OfferStatus;
+    strategy: DispatchMode;
+    round: number;
+    distance_km: string | null;
+    offered_at: string | null;
+    expires_at: string | null;
+    provider?: { id: number; name: string } | null;
+    booking?: Booking;
+}
+
 export interface ProviderProfile {
     id: number;
     bio: string | null;

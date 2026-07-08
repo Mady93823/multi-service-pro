@@ -10,11 +10,13 @@ import ProviderLayout from '@/layouts/provider-layout';
 import { useTrans } from '@/lib/i18n';
 import { type BreadcrumbItem, type ProviderProfile } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { CalendarOff, Pencil, Star, Trash2, Wrench } from 'lucide-react';
+import { Briefcase, CalendarOff, Pencil, Star, Trash2, Wrench } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
 interface ProviderDashboardProps {
     profile: ProviderProfile;
+    pending_offers: number;
+    active_jobs: number;
 }
 
 function AddBlackoutDialog() {
@@ -78,7 +80,7 @@ function AddBlackoutDialog() {
     );
 }
 
-export default function ProviderDashboard({ profile }: ProviderDashboardProps) {
+export default function ProviderDashboard({ profile, pending_offers: pendingOffers, active_jobs: activeJobs }: ProviderDashboardProps) {
     const t = useTrans();
     const dayLabels = useDayLabels();
 
@@ -203,8 +205,19 @@ export default function ProviderDashboard({ profile }: ProviderDashboardProps) {
                 </div>
 
                 <Card>
-                    <CardContent className="text-muted-foreground py-8 text-center text-sm">
-                        {t('Job offers will appear here once dispatch goes live.')}
+                    <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
+                        <div className="flex items-center gap-3">
+                            <Briefcase className="text-muted-foreground h-8 w-8" />
+                            <div>
+                                <p className="font-medium">
+                                    {pendingOffers > 0 ? t(':count new job offers', { count: String(pendingOffers) }) : t('No new offers right now.')}
+                                </p>
+                                <p className="text-muted-foreground text-sm">{t(':count active jobs', { count: String(activeJobs) })}</p>
+                            </div>
+                        </div>
+                        <Button asChild variant={pendingOffers > 0 ? 'default' : 'outline'} size="sm">
+                            <Link href={route('provider.jobs.index')}>{t('Go to jobs')}</Link>
+                        </Button>
                     </CardContent>
                 </Card>
             </div>

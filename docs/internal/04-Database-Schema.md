@@ -96,8 +96,10 @@ booking_status_history
 
 dispatch_offers
   id, booking_id FK, provider_id FK, strategy [nearest|broadcast|manual],
-  status [offered|accepted|declined|expired], offered_at, responded_at,
-  expires_at
+  status [offered|accepted|declined|expired], round, distance_km,
+  offered_at, responded_at, expires_at
+  -- M06: unique(booking_id, provider_id); round groups a re-dispatch cycle so
+  --      a timeout expires just that batch; distance_km snapshots Haversine km
 ```
 
 ## Tracking

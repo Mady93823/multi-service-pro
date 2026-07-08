@@ -63,6 +63,12 @@ Route::middleware(['auth', 'role:provider'])->prefix('provider')->name('provider
         Route::post('availability/online', [Provider\AvailabilityController::class, 'toggleOnline'])->name('availability.online');
         Route::post('blackouts', [Provider\AvailabilityController::class, 'storeBlackout'])->name('blackouts.store');
         Route::delete('blackouts/{blackout}', [Provider\AvailabilityController::class, 'destroyBlackout'])->name('blackouts.destroy');
+
+        // Dispatch (M06): job offers + the provider's own job progression.
+        Route::get('jobs', [Provider\JobController::class, 'index'])->name('jobs.index');
+        Route::post('jobs/{booking}/advance', [Provider\JobController::class, 'advance'])->name('jobs.advance');
+        Route::post('offers/{offer}/accept', [Provider\JobController::class, 'acceptOffer'])->name('offers.accept');
+        Route::post('offers/{offer}/decline', [Provider\JobController::class, 'declineOffer'])->name('offers.decline');
     });
 });
 
@@ -79,6 +85,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('bookings', [Admin\BookingController::class, 'index'])->name('bookings.index');
     Route::get('bookings/{booking}', [Admin\BookingController::class, 'show'])->name('bookings.show');
     Route::post('bookings/{booking}/transition', [Admin\BookingController::class, 'transition'])->name('bookings.transition');
+    Route::post('bookings/{booking}/dispatch', [Admin\BookingController::class, 'dispatch'])->name('bookings.dispatch');
     Route::get('providers', [Admin\ProviderController::class, 'index'])->name('providers.index');
     Route::get('providers/{provider}', [Admin\ProviderController::class, 'show'])->name('providers.show');
     Route::post('providers/{provider}/review', [Admin\ProviderController::class, 'review'])->name('providers.review');

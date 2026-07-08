@@ -11,15 +11,35 @@ import { Textarea } from '@/components/ui/textarea';
 import AdminLayout from '@/layouts/admin-layout';
 import { useMoney } from '@/lib/format';
 import { useTrans } from '@/lib/i18n';
-import { type Booking, type BookingStatus, type BreadcrumbItem } from '@/types';
+import { type Booking, type BookingStatus, type BreadcrumbItem, type DispatchOffer } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
-import { ArrowRight, Ban, UserRound } from 'lucide-react';
+import { ArrowRight, Ban, Radar, UserRound } from 'lucide-react';
 import { useState } from 'react';
 
 interface AdminBookingShowProps {
     booking: Booking;
+    offers: DispatchOffer[];
+    can_dispatch: boolean;
     allowed_transitions: BookingStatus[];
     providers: { id: number; name: string }[];
+}
+
+const offerStatusStyles: Record<string, string> = {
+    offered: 'text-amber-700 dark:text-amber-300',
+    accepted: 'text-emerald-700 dark:text-emerald-400',
+    declined: 'text-red-700 dark:text-red-400',
+    expired: 'text-muted-foreground',
+};
+
+function useOfferStatusLabels(): Record<string, string> {
+    const t = useTrans();
+
+    return {
+        offered: t('Offered'),
+        accepted: t('Accepted'),
+        declined: t('Declined'),
+        expired: t('Expired'),
+    };
 }
 
 interface TransitionErrors {
@@ -27,10 +47,17 @@ interface TransitionErrors {
     [key: string]: unknown;
 }
 
-export default function AdminBookingShow({ booking, allowed_transitions: allowed, providers }: AdminBookingShowProps) {
+export default function AdminBookingShow({
+    booking,
+    offers,
+    can_dispatch: canDispatch,
+    allowed_transitions: allowed,
+    providers,
+}: AdminBookingShowProps) {
     const t = useTrans();
     const money = useMoney();
     const statusLabels = useBookingStatusLabels();
+    const offerStatusLabels = useOfferStatusLabels();
     const { errors } = usePage<TransitionErrors>().props;
 
     const [providerId, setProviderId] = useState<string>(booking.provider?.id.toString() ?? '');
@@ -171,6 +198,40 @@ export default function AdminBookingShow({ booking, allowed_transitions: allowed
                                 )}
                             </CardContent>
                         </Card>
+
+                        {(canDispatch || offers.length > 0) && (
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between">
+                                    <CardTitle className="text-base">{t('Dispatch')}</CardTitle>
+                                    {canDispatch && (
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            disabled={processing}
+                                            onClick={() => router.post(route('admin.bookings.dispatch', booking.id), {}, { preserveScroll: true })}
+                                        >
+                                            <Radar className="h-4 w-4" />
+                                            {t('Run dispatch')}
+                                        </Button>
+                                    )}
+                                </CardHeader>
+                                <CardContent className="space-y-2 text-sm">
+                                    <InputError message={errors.dispatch} />
+                                    {offers.length === 0 && <p className="text-muted-foreground">{t('No offers sent yet.')}</p>}
+                                    {offers.map((offer) => (
+                                        <div key={offer.id} className="flex items-center justify-between gap-2">
+                                            <span className="min-w-0 truncate">
+                                                {offer.provider?.name ?? '—'}
+                                                {offer.distance_km !== null && (
+                                                    <span className="text-muted-foreground"> · {Number(offer.distance_km).toFixed(1)} km</span>
+                                                )}
+                                            </span>
+                                            <span className={offerStatusStyles[offer.status]}>{offerStatusLabels[offer.status]}</span>
+                                        </div>
+                                    ))}
+                                </CardContent>
+                            </Card>
+                        )}
 
                         <Card>
                             <CardHeader>

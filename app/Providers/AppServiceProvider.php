@@ -2,12 +2,15 @@
 
 namespace App\Providers;
 
+use App\Domain\Bookings\Events\BookingPlaced;
 use App\Domain\Geocoding\NominatimGeocoder;
 use App\Domain\Installer\EnvWriter;
 use App\Domain\Installer\InstallLock;
 use App\Domain\Settings\SettingsRegistry;
+use App\Listeners\DispatchPlacedBooking;
 use App\Support\Geocoder;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use RuntimeException;
 
@@ -30,6 +33,9 @@ class AppServiceProvider extends ServiceProvider
         // Inertia props: single resources and plain collections arrive
         // unwrapped; paginators keep their data/links/meta envelope.
         JsonResource::withoutWrapping();
+
+        // M06: a placed booking kicks off dispatch (auto-assign) automatically.
+        Event::listen(BookingPlaced::class, DispatchPlacedBooking::class);
 
         $this->bootstrapInstallerEnvironment();
     }

@@ -98,4 +98,14 @@ class User extends Authenticatable
     {
         return $this->favoriteProviders()->whereKey($provider->id)->exists();
     }
+
+    /**
+     * Onboarding/KYC profile for provider-role users (M05).
+     *
+     * @return HasOne<ProviderProfile, $this>
+     */
+    public function providerProfile(): HasOne
+    {
+        return $this->hasOne(ProviderProfile::class);
+    }
 }

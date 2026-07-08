@@ -1,9 +1,15 @@
 <?php
 
+use App\Models\ProviderProfile;
 use App\Models\User;
 
 test('each role can reach its own dashboard', function (string $factoryState, string $routeName) {
     $user = User::factory()->{$factoryState}()->create();
+
+    // Providers only unlock their panel once approved (M05).
+    if ($factoryState === 'provider') {
+        ProviderProfile::factory()->approved()->for($user)->create();
+    }
 
     $this->actingAs($user)
         ->get(route($routeName))

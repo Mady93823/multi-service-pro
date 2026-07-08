@@ -6,6 +6,7 @@ use App\Http\Controllers\Customer;
 use App\Http\Controllers\DemoPingController;
 use App\Http\Controllers\GeocodeController;
 use App\Http\Controllers\Provider;
+use App\Http\Controllers\ProviderDocumentController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [Customer\CatalogController::class, 'index'])->name('home');
@@ -51,8 +52,24 @@ Route::middleware(['auth', 'throttle:30,1'])->group(function () {
 });
 
 Route::middleware(['auth', 'role:provider'])->prefix('provider')->name('provider.')->group(function () {
-    Route::get('dashboard', Provider\DashboardController::class)->name('dashboard');
+    // Onboarding is reachable in every approval state; the dashboard
+    // (and later panel screens) sit behind provider.approved.
+    Route::get('onboarding', [Provider\OnboardingController::class, 'show'])->name('onboarding');
+    Route::put('profile', [Provider\ProfileController::class, 'update'])->name('profile.update');
+    Route::post('documents', [Provider\DocumentController::class, 'store'])->name('documents.store');
+
+    Route::middleware('provider.approved')->group(function () {
+        Route::get('dashboard', Provider\DashboardController::class)->name('dashboard');
+        Route::post('availability/online', [Provider\AvailabilityController::class, 'toggleOnline'])->name('availability.online');
+        Route::post('blackouts', [Provider\AvailabilityController::class, 'storeBlackout'])->name('blackouts.store');
+        Route::delete('blackouts/{blackout}', [Provider\AvailabilityController::class, 'destroyBlackout'])->name('blackouts.destroy');
+    });
 });
+
+// Private-disk KYC files — owning provider or admin only.
+Route::get('provider-documents/{document}', [ProviderDocumentController::class, 'show'])
+    ->middleware('auth')
+    ->name('provider-documents.show');
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('dashboard', Admin\DashboardController::class)->name('dashboard');
@@ -62,6 +79,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('bookings', [Admin\BookingController::class, 'index'])->name('bookings.index');
     Route::get('bookings/{booking}', [Admin\BookingController::class, 'show'])->name('bookings.show');
     Route::post('bookings/{booking}/transition', [Admin\BookingController::class, 'transition'])->name('bookings.transition');
+    Route::get('providers', [Admin\ProviderController::class, 'index'])->name('providers.index');
+    Route::get('providers/{provider}', [Admin\ProviderController::class, 'show'])->name('providers.show');
+    Route::post('providers/{provider}/review', [Admin\ProviderController::class, 'review'])->name('providers.review');
+    Route::post('provider-documents/{document}/review', [Admin\ProviderController::class, 'reviewDocument'])->name('provider-documents.review');
     Route::get('settings', [Admin\SettingsController::class, 'edit'])->name('settings.edit');
     Route::put('settings', [Admin\SettingsController::class, 'update'])->name('settings.update');
 });

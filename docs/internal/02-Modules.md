@@ -51,8 +51,9 @@ Internal counterpart of the client doc's module list — with build notes and ac
 - Provider profile: bio, photo, experience, service categories, working hours (JSON), service radius km, base location (lat/lng)
 - KYC docs: private disk, admin review queue, statuses `pending → approved / rejected (reason)`
 - Online/offline toggle (instant, affects dispatch)
-- Vacation/blackout dates (`provider_blackouts`) — dispatch and slot picker respect them
+- Vacation/blackout dates (`provider_blackouts`) — CRUD here; dispatch and slot picker enforce them in M06 (`ProviderBlackout::covers()` helper ready)
 - ✅ *Done when:* unapproved provider can log in but sees only "complete onboarding" state; approval unlocks panel.
+- **Shipped (2026-07-08):** `EnsureProviderApproved` middleware (`provider.approved`) gates the panel, redirect (not 403) to `provider.onboarding`; resubmission loop (rejected profile edit / doc re-upload auto-bumps to Pending, note cleared); doc replace-per-type (unique `provider_profile_id`+`type`); admin cannot approve an incomplete profile (base location + working hours + ≥1 category — `ValidationException` on `status`); non-approved decisions force `is_online = false`; `ProviderApprovalChanged` event fired for M11. Private-disk KYC serving via `provider-documents.show` (owner-or-admin guard).
 
 ## M06 Dispatch & Job Assignment
 - Two strategies behind one interface (`DispatchStrategy`): `nearest` (Haversine on providers' base/last location, filtered by zone + category + online + not busy) and `broadcast` (offer to all eligible; first accept wins)

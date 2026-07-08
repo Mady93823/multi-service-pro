@@ -293,3 +293,60 @@ export interface User {
     updated_at: string;
     [key: string]: unknown; // This allows for additional properties...
 }
+
+export type ProviderApprovalStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
+
+export type ProviderDocumentType = 'id_proof' | 'address_proof' | 'certificate' | 'photo';
+
+export type ProviderDocumentStatus = 'pending' | 'approved' | 'rejected';
+
+// Type alias (not interface) so it satisfies Inertia's FormDataConvertible.
+export type WorkingDay = {
+    off: boolean;
+    start?: string;
+    end?: string;
+};
+
+export type WeekDayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+
+export type WorkingHours = Record<WeekDayKey, WorkingDay>;
+
+export interface ProviderDocument {
+    id: number;
+    type: ProviderDocumentType;
+    status: ProviderDocumentStatus;
+    reject_reason: string | null;
+    is_pdf: boolean;
+    url: string;
+    uploaded_at: string | null;
+}
+
+export interface ProviderBlackout {
+    id: number;
+    starts_on: string;
+    ends_on: string;
+    starts_label: string;
+    ends_label: string;
+    reason: string | null;
+}
+
+export interface ProviderProfile {
+    id: number;
+    bio: string | null;
+    experience_years: number | null;
+    base_lat: number | null;
+    base_lng: number | null;
+    service_radius_km: number;
+    working_hours: WorkingHours | null;
+    is_online: boolean;
+    approval_status: ProviderApprovalStatus;
+    approval_note: string | null;
+    is_complete: boolean;
+    rating_avg: number;
+    rating_count: number;
+    jobs_completed: number;
+    categories?: { id: number; name: string }[];
+    documents?: ProviderDocument[];
+    blackouts?: ProviderBlackout[];
+    user?: { id: number; name: string; email: string; phone: string | null };
+}

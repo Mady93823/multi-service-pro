@@ -18,6 +18,19 @@ function validSettingsPayload(array $overrides = []): array
         'currency' => 'INR',
         'timezone' => 'Asia/Kolkata',
         'locale' => 'en',
+        'booking_code_prefix' => 'BK',
+        'slot_minutes' => 60,
+        'day_starts' => '08:00',
+        'day_ends' => '20:00',
+        'lead_time_hours' => 2,
+        'max_days_ahead' => 7,
+        'job_otp_required' => true,
+        'free_cancel_hours' => 2,
+        'cancellation_fee_type' => 'percent',
+        'cancellation_fee_value' => 10,
+        'reschedule_min_hours' => 2,
+        'tax_label' => 'GST',
+        'tax_percent' => 18,
     ], $overrides);
 }
 
@@ -80,6 +93,35 @@ test('invalid color, currency and timezone are rejected', function () {
             'timezone' => 'Mars/Olympus',
         ]))
         ->assertSessionHasErrors(['primary_color', 'currency', 'timezone']);
+});
+
+test('booking settings are validated and saved', function () {
+    $admin = User::factory()->admin()->create();
+
+    $this->actingAs($admin)
+        ->put('/admin/settings', validSettingsPayload([
+            'day_ends' => '07:00', // before day_starts
+            'cancellation_fee_type' => 'percent',
+            'cancellation_fee_value' => 150, // >100% not allowed for percent
+        ]))
+        ->assertSessionHasErrors(['day_ends', 'cancellation_fee_value']);
+
+    $this->actingAs($admin)
+        ->put('/admin/settings', validSettingsPayload([
+            'slot_minutes' => 120,
+            'job_otp_required' => false,
+            'tax_label' => 'VAT',
+            'tax_percent' => 5,
+        ]))
+        ->assertSessionHasNoErrors();
+
+    $settings = app()->make(SettingsRegistry::class);
+    $settings->flush();
+
+    expect($settings->integer('booking.slot_minutes'))->toBe(120)
+        ->and($settings->boolean('booking.job_otp_required'))->toBeFalse()
+        ->and($settings->string('payments.tax_label'))->toBe('VAT')
+        ->and($settings->decimal('payments.tax_percent'))->toBe(5.0);
 });
 
 test('logo can be uploaded and removed', function () {

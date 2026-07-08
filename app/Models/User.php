@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -70,5 +71,31 @@ class User extends Authenticatable
     public function defaultAddress(): HasOne
     {
         return $this->hasOne(Address::class)->where('is_default', true);
+    }
+
+    /**
+     * Bookings placed by this user as a customer.
+     *
+     * @return HasMany<Booking, $this>
+     */
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(Booking::class, 'customer_id');
+    }
+
+    /**
+     * Providers this user has favorited (M04; dispatch prefers them in M06).
+     *
+     * @return BelongsToMany<User, $this>
+     */
+    public function favoriteProviders(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'favorite_providers', 'customer_id', 'provider_id')
+            ->withTimestamps();
+    }
+
+    public function hasFavorited(User $provider): bool
+    {
+        return $this->favoriteProviders()->whereKey($provider->id)->exists();
     }
 }

@@ -71,8 +71,11 @@ addresses
 
 ```
 bookings (SD)
-  id, code (uniq human ref e.g. UC-2026-000123), customer_id FK users,
-  provider_id FK users nullable, address_id FK, zone_id FK,
+  id, code (uniq human ref, prefix from settings booking.code_prefix e.g.
+  BK-2026-000123), customer_id FK users, provider_id FK users nullable,
+  address_id FK nullable (nulled if the customer deletes the address),
+  address_snapshot JSON (label/lines/city/postal/lat/lng — survives address
+  deletion; snapshot rule), zone_id FK nullable,
   scheduled_at, slot_end_at, status (see [[02-Modules]] M04 enum),
   subtotal, addon_total, discount, coupon_id FK nullable, tax,
   tax_breakup JSON (CGST/SGST/IGST snapshot), total,

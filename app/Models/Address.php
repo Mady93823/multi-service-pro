@@ -8,6 +8,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Larastan types columns from migrations and misses casts() — restore
+ * the cast type (same fix as Booking / Zone::$geojson).
+ *
+ * @property AddressLabel $label
+ */
 class Address extends Model
 {
     /** @use HasFactory<AddressFactory> */

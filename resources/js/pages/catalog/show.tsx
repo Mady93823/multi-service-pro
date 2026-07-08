@@ -3,21 +3,49 @@ import { ServiceCard } from '@/components/catalog/service-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import PublicLayout from '@/layouts/public-layout';
 import { useMoney } from '@/lib/format';
 import { useTrans } from '@/lib/i18n';
 import { type Service } from '@/types';
-import { Head, Link } from '@inertiajs/react';
-import { ChevronRight, Clock, ImageIcon } from 'lucide-react';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { ChevronRight, Clock, ImageIcon, LoaderCircle, Minus, Plus, ShoppingCart } from 'lucide-react';
+import { FormEventHandler } from 'react';
 
 interface CatalogShowProps {
     service: Service;
     available_in_zone: boolean;
 }
 
+type AddToCartForm = {
+    service_id: number;
+    qty: number;
+    addon_ids: number[];
+};
+
 export default function CatalogShow({ service, available_in_zone: availableInZone }: CatalogShowProps) {
     const money = useMoney();
     const t = useTrans();
+
+    const { data, setData, post, processing } = useForm<AddToCartForm>({
+        service_id: service.id,
+        qty: 1,
+        addon_ids: [],
+    });
+
+    const addonTotal = (service.addons ?? [])
+        .filter((addon) => data.addon_ids.includes(addon.id))
+        .reduce((sum, addon) => sum + Number(addon.price), 0);
+    const total = (Number(service.price) + addonTotal) * data.qty;
+
+    const toggleAddon = (addonId: number, checked: boolean) => {
+        setData('addon_ids', checked ? [...data.addon_ids, addonId] : data.addon_ids.filter((id) => id !== addonId));
+    };
+
+    const submit: FormEventHandler = (e) => {
+        e.preventDefault();
+        post(route('cart.add'), { preserveScroll: true });
+    };
 
     return (
         <PublicLayout>
@@ -76,34 +104,66 @@ export default function CatalogShow({ service, available_in_zone: availableInZon
                                     </span>
                                 )}
                             </div>
+
                             {!availableInZone && (
                                 <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200">
                                     {t('This service is not yet available at your default address.')}
                                 </p>
                             )}
-                            <Button className="w-full" size="lg" disabled title={t('Booking opens in an upcoming release')}>
-                                {t('Book now — coming soon')}
-                            </Button>
+
+                            <form onSubmit={submit} className="space-y-4">
+                                {service.addons && service.addons.length > 0 && (
+                                    <div className="space-y-2">
+                                        <p className="text-sm font-medium">{t('Available add-ons')}</p>
+                                        {service.addons.map((addon) => (
+                                            <label key={addon.id} className="flex items-center gap-2 text-sm">
+                                                <Checkbox
+                                                    checked={data.addon_ids.includes(addon.id)}
+                                                    onCheckedChange={(checked) => toggleAddon(addon.id, checked === true)}
+                                                />
+                                                <span className="flex-1">{addon.name}</span>
+                                                <span className="font-medium">{money(addon.price)}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <div className="flex items-center gap-3">
+                                    <span className="text-sm font-medium">{t('Quantity')}</span>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-8 w-8"
+                                            aria-label={t('Decrease quantity')}
+                                            disabled={data.qty <= 1}
+                                            onClick={() => setData('qty', Math.max(1, data.qty - 1))}
+                                        >
+                                            <Minus className="h-3 w-3" />
+                                        </Button>
+                                        <span className="w-6 text-center text-sm font-medium">{data.qty}</span>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-8 w-8"
+                                            aria-label={t('Increase quantity')}
+                                            disabled={data.qty >= 10}
+                                            onClick={() => setData('qty', Math.min(10, data.qty + 1))}
+                                        >
+                                            <Plus className="h-3 w-3" />
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <Button type="submit" className="w-full" size="lg" disabled={processing}>
+                                    {processing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
+                                    {t('Add to cart — :total', { total: money(total) })}
+                                </Button>
+                            </form>
                         </CardContent>
                     </Card>
-
-                    {service.addons && service.addons.length > 0 && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-base">{t('Available add-ons')}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <ul className="space-y-2">
-                                    {service.addons.map((addon) => (
-                                        <li key={addon.id} className="flex items-center justify-between text-sm">
-                                            <span>{addon.name}</span>
-                                            <span className="font-medium">{money(addon.price)}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </CardContent>
-                        </Card>
-                    )}
                 </div>
             </div>
 

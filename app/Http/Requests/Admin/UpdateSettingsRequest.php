@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateSettingsRequest extends FormRequest
 {
@@ -24,6 +25,24 @@ class UpdateSettingsRequest extends FormRequest
             'locale' => ['required', 'string', 'min:2', 'max:10', 'regex:/^[a-z]{2}([_-][A-Za-z]{2,4})?$/'],
             'logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp,svg', 'max:2048'],
             'remove_logo' => ['boolean'],
+            'booking_code_prefix' => ['required', 'string', 'max:8', 'alpha_num:ascii'],
+            'slot_minutes' => ['required', 'integer', 'min:15', 'max:480'],
+            'day_starts' => ['required', 'date_format:H:i'],
+            'day_ends' => ['required', 'date_format:H:i', 'after:day_starts'],
+            'lead_time_hours' => ['required', 'integer', 'min:0', 'max:72'],
+            'max_days_ahead' => ['required', 'integer', 'min:1', 'max:60'],
+            'job_otp_required' => ['boolean'],
+            'free_cancel_hours' => ['required', 'integer', 'min:0', 'max:168'],
+            'cancellation_fee_type' => ['required', 'in:flat,percent'],
+            'cancellation_fee_value' => [
+                'required',
+                'numeric',
+                'min:0',
+                Rule::when($this->input('cancellation_fee_type') === 'percent', ['max:100']),
+            ],
+            'reschedule_min_hours' => ['required', 'integer', 'min:0', 'max:168'],
+            'tax_label' => ['required', 'string', 'max:20'],
+            'tax_percent' => ['required', 'numeric', 'min:0', 'max:100'],
         ];
     }
 

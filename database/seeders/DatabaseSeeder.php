@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             DemoAccountSeeder::class,
             CatalogSeeder::class,
             ZoneSeeder::class,
+            BookingSeeder::class,
         ]);
     }
 }

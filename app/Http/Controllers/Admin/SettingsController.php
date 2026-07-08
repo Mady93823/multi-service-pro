@@ -25,13 +25,26 @@ class SettingsController extends Controller
                 'timezone' => $settings->string('localization.timezone', 'Asia/Kolkata'),
                 'locale' => $settings->string('localization.locale', 'en'),
                 'logo_url' => $logoPath !== '' ? Storage::disk('public')->url($logoPath) : null,
+                'booking_code_prefix' => $settings->string('booking.code_prefix', 'BK'),
+                'slot_minutes' => $settings->integer('booking.slot_minutes', 60),
+                'day_starts' => $settings->string('booking.day_starts', '08:00'),
+                'day_ends' => $settings->string('booking.day_ends', '20:00'),
+                'lead_time_hours' => $settings->integer('booking.lead_time_hours', 2),
+                'max_days_ahead' => $settings->integer('booking.max_days_ahead', 7),
+                'job_otp_required' => $settings->boolean('booking.job_otp_required', true),
+                'free_cancel_hours' => $settings->integer('booking.free_cancel_hours', 2),
+                'cancellation_fee_type' => $settings->string('booking.cancellation_fee_type', 'percent'),
+                'cancellation_fee_value' => $settings->decimal('booking.cancellation_fee_value', 10.0),
+                'reschedule_min_hours' => $settings->integer('booking.reschedule_min_hours', 2),
+                'tax_label' => $settings->string('payments.tax_label', 'GST'),
+                'tax_percent' => $settings->decimal('payments.tax_percent', 18.0),
             ],
         ]);
     }
 
     public function update(UpdateSettingsRequest $request, UpdateSettings $action): RedirectResponse
     {
-        /** @var array{app_name: string, primary_color?: string|null, currency: string, timezone: string, locale: string, remove_logo?: bool} $data */
+        /** @var array<string, mixed> $data */
         $data = $request->safe()->except(['logo']);
 
         $logo = $request->file('logo');

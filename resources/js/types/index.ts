@@ -45,6 +45,7 @@ export interface SharedData {
     localization: Localization;
     auth: Auth;
     flash: Flash;
+    cart: { count: number };
     [key: string]: unknown;
 }
 
@@ -124,6 +125,137 @@ export interface Address {
     lng: number;
     is_default: boolean;
     zone?: Zone | null;
+}
+
+export type BookingStatus =
+    | 'pending_payment'
+    | 'placed'
+    | 'searching'
+    | 'assigned'
+    | 'accepted'
+    | 'en_route'
+    | 'arrived'
+    | 'in_progress'
+    | 'completed'
+    | 'cancelled_customer'
+    | 'cancelled_provider'
+    | 'cancelled_admin'
+    | 'expired'
+    | 'failed_payment';
+
+export interface AddressSnapshot {
+    label: AddressLabel;
+    line1: string;
+    line2: string | null;
+    city: string;
+    postal_code: string;
+    lat: number;
+    lng: number;
+}
+
+export interface BookingItemAddon {
+    id: number;
+    name: string;
+    price: string;
+}
+
+export interface BookingItem {
+    id: number;
+    service_id: number;
+    name: string;
+    price: string;
+    qty: number;
+    addons: BookingItemAddon[];
+    line_total: string;
+}
+
+export interface BookingHistoryEntry {
+    id: number;
+    from_status: BookingStatus | null;
+    to_status: BookingStatus;
+    actor_type: 'customer' | 'provider' | 'admin' | 'system';
+    note: string | null;
+    created_at: string;
+    created_label: string;
+}
+
+export interface TaxBreakup {
+    label: string;
+    percent: number;
+    cgst: number;
+    sgst: number;
+    igst: number;
+}
+
+export interface Booking {
+    id: number;
+    code: string;
+    status: BookingStatus;
+    scheduled_at: string;
+    scheduled_label: string;
+    slot_label: string;
+    address: AddressSnapshot;
+    zone?: string | null;
+    customer?: { id: number; name: string } | null;
+    provider?: { id: number; name: string } | null;
+    items?: BookingItem[];
+    items_count?: number;
+    subtotal: string;
+    addon_total: string;
+    discount: string;
+    tax: string;
+    tax_breakup: TaxBreakup | null;
+    total: string;
+    payment_status: 'unpaid' | 'paid' | 'refunded' | 'partial_refund';
+    payment_method: 'cash' | 'gateway' | 'wallet';
+    cancellation_fee: string | null;
+    notes: string | null;
+    cancel_reason: string | null;
+    completed_at: string | null;
+    cancelled_at: string | null;
+    created_at: string | null;
+    job_otp_code?: string;
+    history?: BookingHistoryEntry[];
+    photo_urls?: string[];
+}
+
+export interface SlotOption {
+    value: string;
+    label: string;
+}
+
+export interface SlotDay {
+    date: string;
+    label: string;
+    slots: SlotOption[];
+}
+
+export interface CartLineService {
+    id: number;
+    name: string;
+    slug: string;
+    category_slug: string | null;
+    image_thumb_url: string | null;
+    price: string;
+    duration_minutes: number | null;
+}
+
+export interface CartLine {
+    key: string;
+    qty: number;
+    service: CartLineService;
+    addons: BookingItemAddon[];
+    unit_total: string;
+    line_total: string;
+}
+
+export interface CartSummary {
+    subtotal: string;
+    discount?: string;
+    tax: string;
+    tax_label: string;
+    tax_percent: number;
+    total: string;
 }
 
 export interface PaginationLinkItem {

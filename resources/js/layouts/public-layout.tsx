@@ -5,6 +5,7 @@ import { useTrans } from '@/lib/i18n';
 import { homeUrl } from '@/lib/roles';
 import { type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
+import { ShoppingCart } from 'lucide-react';
 
 interface PublicLayoutProps {
     children: React.ReactNode;
@@ -17,7 +18,7 @@ interface PublicLayoutProps {
 export default function PublicLayout({ children }: PublicLayoutProps) {
     useFlashToast();
 
-    const { auth, name } = usePage<SharedData>().props;
+    const { auth, name, cart } = usePage<SharedData>().props;
     const t = useTrans();
 
     return (
@@ -36,6 +37,16 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
                     </nav>
 
                     <div className="ml-auto flex items-center gap-2">
+                        <Button asChild variant="ghost" size="sm" className="relative">
+                            <Link href={route('cart.show')} aria-label={t('Your cart')}>
+                                <ShoppingCart className="h-4 w-4" />
+                                {cart.count > 0 && (
+                                    <span className="bg-primary text-primary-foreground absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold">
+                                        {cart.count}
+                                    </span>
+                                )}
+                            </Link>
+                        </Button>
                         {auth.user ? (
                             <Button asChild variant="outline" size="sm">
                                 <Link href={homeUrl(auth.roles)}>{t('Dashboard')}</Link>

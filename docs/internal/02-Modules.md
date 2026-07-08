@@ -39,7 +39,8 @@ Internal counterpart of the client doc's module list — with build notes and ac
   `pending_payment → placed → searching → assigned → accepted → en_route → arrived → in_progress → completed`
   terminal alternates: `cancelled_customer | cancelled_provider | cancelled_admin | expired | failed_payment`
 - State machine enforced in one place: `App\Domain\Bookings\BookingStateMachine` — throw on illegal transition
-- Reschedule + cancellation windows from settings; invoice PDF (`barryvdh/laravel-dompdf`) in **GST format** (GSTIN, CGST/SGST/IGST breakup from settings)
+- Reschedule + cancellation windows from settings; invoice PDF (`barryvdh/laravel-dompdf`) in **GST format** (GSTIN, CGST/SGST/IGST breakup from settings) — *PDF ships with Phase 4 money work; the `tax_breakup` snapshot is written at checkout from day one*
+- Cart is **session-only** (guest cart survives login because the session does); bookings snapshot the address into `address_snapshot` so address-book deletes never orphan a booking
 - Booking photos: customer attaches problem photos at checkout; provider uploads before/after proof (spatie medialibrary collections on Booking)
 - **Job-start OTP** (UC parity, settings flag `job_otp_required`): 4-digit code generated on booking, shown to customer; provider must enter it for `arrived → in_progress` — proves provider is on-site with the right customer
 - **Cancellation fee** (settings: free-cancel window, then flat/percent fee): computed at cancel time, snapshotted to `bookings.cancellation_fee`, deducted from refund

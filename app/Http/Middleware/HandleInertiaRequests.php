@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Domain\Bookings\CartManager;
 use App\Domain\Localization\TranslationLoader;
 use App\Domain\Settings\SettingsRegistry;
 use Illuminate\Http\Request;
@@ -60,6 +61,9 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),
+            ],
+            'cart' => [
+                'count' => $request->hasSession() ? app(CartManager::class)->count() : 0,
             ],
         ]);
     }

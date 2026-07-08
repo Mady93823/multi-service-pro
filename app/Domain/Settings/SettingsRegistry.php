@@ -36,6 +36,19 @@ class SettingsRegistry
             'localization.timezone' => ['group' => 'localization', 'type' => SettingType::String, 'value' => 'Asia/Kolkata'],
             'localization.locale' => ['group' => 'localization', 'type' => SettingType::String, 'value' => 'en'],
             'features.otp_required' => ['group' => 'features', 'type' => SettingType::Boolean, 'value' => false],
+            'booking.code_prefix' => ['group' => 'booking', 'type' => SettingType::String, 'value' => 'BK'],
+            'booking.slot_minutes' => ['group' => 'booking', 'type' => SettingType::Integer, 'value' => 60],
+            'booking.day_starts' => ['group' => 'booking', 'type' => SettingType::String, 'value' => '08:00'],
+            'booking.day_ends' => ['group' => 'booking', 'type' => SettingType::String, 'value' => '20:00'],
+            'booking.lead_time_hours' => ['group' => 'booking', 'type' => SettingType::Integer, 'value' => 2],
+            'booking.max_days_ahead' => ['group' => 'booking', 'type' => SettingType::Integer, 'value' => 7],
+            'booking.job_otp_required' => ['group' => 'booking', 'type' => SettingType::Boolean, 'value' => true],
+            'booking.free_cancel_hours' => ['group' => 'booking', 'type' => SettingType::Integer, 'value' => 2],
+            'booking.cancellation_fee_type' => ['group' => 'booking', 'type' => SettingType::String, 'value' => 'percent'],
+            'booking.cancellation_fee_value' => ['group' => 'booking', 'type' => SettingType::Decimal, 'value' => '10'],
+            'booking.reschedule_min_hours' => ['group' => 'booking', 'type' => SettingType::Integer, 'value' => 2],
+            'payments.tax_label' => ['group' => 'payments', 'type' => SettingType::String, 'value' => 'GST'],
+            'payments.tax_percent' => ['group' => 'payments', 'type' => SettingType::Decimal, 'value' => '18'],
         ];
     }
 
@@ -63,6 +76,13 @@ class SettingsRegistry
         $value = $this->get($key);
 
         return is_numeric($value) ? (int) $value : $default;
+    }
+
+    public function decimal(string $key, float $default = 0.0): float
+    {
+        $value = $this->get($key);
+
+        return is_numeric($value) ? (float) $value : $default;
     }
 
     /**

@@ -47,6 +47,7 @@ class SettingsRegistry
             'booking.cancellation_fee_type' => ['group' => 'booking', 'type' => SettingType::String, 'value' => 'percent'],
             'booking.cancellation_fee_value' => ['group' => 'booking', 'type' => SettingType::Decimal, 'value' => '10'],
             'booking.reschedule_min_hours' => ['group' => 'booking', 'type' => SettingType::Integer, 'value' => 2],
+            'booking.payment_timeout_minutes' => ['group' => 'booking', 'type' => SettingType::Integer, 'value' => 30],
             'dispatch.mode' => ['group' => 'dispatch', 'type' => SettingType::String, 'value' => 'nearest'],
             'dispatch.offer_timeout_seconds' => ['group' => 'dispatch', 'type' => SettingType::Integer, 'value' => 60],
             'dispatch.max_rounds' => ['group' => 'dispatch', 'type' => SettingType::Integer, 'value' => 5],
@@ -58,6 +59,14 @@ class SettingsRegistry
             'tracking.points_retention_days' => ['group' => 'tracking', 'type' => SettingType::Integer, 'value' => 30],
             'payments.tax_label' => ['group' => 'payments', 'type' => SettingType::String, 'value' => 'GST'],
             'payments.tax_percent' => ['group' => 'payments', 'type' => SettingType::Decimal, 'value' => '18'],
+            'payments.pay_after_service' => ['group' => 'payments', 'type' => SettingType::Boolean, 'value' => true],
+            'payments.wallet_enabled' => ['group' => 'payments', 'type' => SettingType::Boolean, 'value' => true],
+            'payments.razorpay_key_id' => ['group' => 'payments', 'type' => SettingType::String, 'value' => null],
+            'payments.razorpay_key_secret' => ['group' => 'payments', 'type' => SettingType::String, 'value' => null],
+            'payments.razorpay_webhook_secret' => ['group' => 'payments', 'type' => SettingType::String, 'value' => null],
+            'payments.stripe_publishable_key' => ['group' => 'payments', 'type' => SettingType::String, 'value' => null],
+            'payments.stripe_secret_key' => ['group' => 'payments', 'type' => SettingType::String, 'value' => null],
+            'payments.stripe_webhook_secret' => ['group' => 'payments', 'type' => SettingType::String, 'value' => null],
         ];
     }
 

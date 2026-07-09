@@ -11,15 +11,17 @@ import { Textarea } from '@/components/ui/textarea';
 import AdminLayout from '@/layouts/admin-layout';
 import { useMoney } from '@/lib/format';
 import { useTrans } from '@/lib/i18n';
-import { type Booking, type BookingStatus, type BreadcrumbItem, type DispatchOffer } from '@/types';
+import { type Booking, type BookingStatus, type BreadcrumbItem, type DispatchOffer, type Payment } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
-import { ArrowRight, Ban, Radar, UserRound } from 'lucide-react';
+import { ArrowRight, Ban, Radar, Undo2, UserRound } from 'lucide-react';
 import { useState } from 'react';
 
 interface AdminBookingShowProps {
     booking: Booking;
     offers: DispatchOffer[];
     can_dispatch: boolean;
+    payments: Payment[];
+    can_refund: boolean;
     allowed_transitions: BookingStatus[];
     providers: { id: number; name: string }[];
 }
@@ -47,10 +49,30 @@ interface TransitionErrors {
     [key: string]: unknown;
 }
 
+const paymentStatusStyles: Record<string, string> = {
+    initiated: 'text-amber-700 dark:text-amber-300',
+    captured: 'text-emerald-700 dark:text-emerald-400',
+    failed: 'text-red-700 dark:text-red-400',
+    refunded: 'text-muted-foreground',
+};
+
+function usePaymentStatusLabels(): Record<string, string> {
+    const t = useTrans();
+
+    return {
+        initiated: t('Initiated'),
+        captured: t('Captured'),
+        failed: t('Failed'),
+        refunded: t('Refunded'),
+    };
+}
+
 export default function AdminBookingShow({
     booking,
     offers,
     can_dispatch: canDispatch,
+    payments,
+    can_refund: canRefund,
     allowed_transitions: allowed,
     providers,
 }: AdminBookingShowProps) {
@@ -58,12 +80,31 @@ export default function AdminBookingShow({
     const money = useMoney();
     const statusLabels = useBookingStatusLabels();
     const offerStatusLabels = useOfferStatusLabels();
+    const paymentStatusLabels = usePaymentStatusLabels();
     const { errors } = usePage<TransitionErrors>().props;
 
     const [providerId, setProviderId] = useState<string>(booking.provider?.id.toString() ?? '');
     const [cancelOpen, setCancelOpen] = useState(false);
     const [cancelNote, setCancelNote] = useState('');
+    const [refundOpen, setRefundOpen] = useState(false);
     const [processing, setProcessing] = useState(false);
+
+    const refund = () => {
+        router.post(
+            route('admin.bookings.refund', booking.id),
+            {},
+            {
+                preserveScroll: true,
+                onStart: () => setProcessing(true),
+                onFinish: () => {
+                    setProcessing(false);
+                    setRefundOpen(false);
+                },
+            },
+        );
+    };
+
+    const capturedTotal = payments.filter((payment) => payment.status === 'captured').reduce((sum, payment) => sum + Number(payment.amount), 0);
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: t('Dashboard'), href: '/admin/dashboard' },
@@ -227,6 +268,61 @@ export default function AdminBookingShow({
                                                 )}
                                             </span>
                                             <span className={offerStatusStyles[offer.status]}>{offerStatusLabels[offer.status]}</span>
+                                        </div>
+                                    ))}
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {(payments.length > 0 || canRefund) && (
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between">
+                                    <CardTitle className="text-base">{t('Payments')}</CardTitle>
+                                    {canRefund && (
+                                        <Dialog open={refundOpen} onOpenChange={setRefundOpen}>
+                                            <DialogTrigger asChild>
+                                                <Button size="sm" variant="outline" className="text-destructive">
+                                                    <Undo2 className="h-4 w-4" />
+                                                    {t('Refund')}
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent>
+                                                <DialogHeader>
+                                                    <DialogTitle>{t('Refund this booking?')}</DialogTitle>
+                                                    <DialogDescription>
+                                                        {t(
+                                                            'This credits :amount to the customer wallet and marks every captured payment refunded. It cannot be undone.',
+                                                            { amount: money(capturedTotal) },
+                                                        )}
+                                                    </DialogDescription>
+                                                </DialogHeader>
+                                                <InputError message={errors.refund} />
+                                                <DialogFooter>
+                                                    <Button variant="outline" onClick={() => setRefundOpen(false)}>
+                                                        {t('Keep payment')}
+                                                    </Button>
+                                                    <Button variant="destructive" disabled={processing} onClick={refund}>
+                                                        {t('Refund to wallet')}
+                                                    </Button>
+                                                </DialogFooter>
+                                            </DialogContent>
+                                        </Dialog>
+                                    )}
+                                </CardHeader>
+                                <CardContent className="space-y-2 text-sm">
+                                    {payments.length === 0 && <p className="text-muted-foreground">{t('No payment recorded yet.')}</p>}
+                                    {payments.map((payment) => (
+                                        <div key={payment.id} className="flex items-center justify-between gap-2">
+                                            <span className="min-w-0">
+                                                <span className="font-medium capitalize">{payment.gateway}</span>
+                                                {payment.gateway_ref !== null && (
+                                                    <span className="text-muted-foreground block truncate text-xs">{payment.gateway_ref}</span>
+                                                )}
+                                            </span>
+                                            <span className="flex shrink-0 items-center gap-3">
+                                                <span>{money(payment.amount)}</span>
+                                                <span className={paymentStatusStyles[payment.status]}>{paymentStatusLabels[payment.status]}</span>
+                                            </span>
                                         </div>
                                     ))}
                                 </CardContent>

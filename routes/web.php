@@ -10,6 +10,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Provider;
 use App\Http\Controllers\ProviderDocumentController;
 use App\Http\Controllers\TrackingController;
+use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [Customer\CatalogController::class, 'index'])->name('home');
@@ -36,6 +37,16 @@ Route::middleware(['auth', 'role:customer'])->group(function () {
     Route::post('checkout', [Customer\CheckoutController::class, 'store'])->name('checkout.store');
 
     Route::get('bookings', [Customer\BookingController::class, 'index'])->name('bookings.index');
+    Route::get('wallet', [Customer\WalletController::class, 'show'])->name('wallet.show');
+
+    // Online payment leg (M08): pay page + gateway session + confirmations.
+    Route::get('bookings/{booking}/pay', [Customer\PaymentController::class, 'show'])->name('bookings.pay');
+    Route::post('bookings/{booking}/pay/wallet', [Customer\PaymentController::class, 'payWithWallet'])->name('payments.wallet');
+    Route::post('bookings/{booking}/pay/razorpay/callback', [Customer\PaymentController::class, 'razorpayCallback'])->name('payments.razorpay.callback');
+    Route::get('bookings/{booking}/pay/stripe/return', [Customer\PaymentController::class, 'stripeReturn'])->name('payments.stripe.return');
+    Route::post('bookings/{booking}/pay/{provider}', [Customer\PaymentController::class, 'initiate'])
+        ->whereIn('provider', ['razorpay', 'stripe'])->name('payments.initiate');
+
     Route::get('bookings/{booking}', [Customer\BookingController::class, 'show'])->name('bookings.show');
     Route::post('bookings/{booking}/cancel', [Customer\BookingController::class, 'cancel'])->name('bookings.cancel');
     Route::post('bookings/{booking}/reschedule', [Customer\BookingController::class, 'reschedule'])->name('bookings.reschedule');
@@ -108,6 +119,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('bookings/{booking}', [Admin\BookingController::class, 'show'])->name('bookings.show');
     Route::post('bookings/{booking}/transition', [Admin\BookingController::class, 'transition'])->name('bookings.transition');
     Route::post('bookings/{booking}/dispatch', [Admin\BookingController::class, 'dispatch'])->name('bookings.dispatch');
+    Route::post('bookings/{booking}/refund', [Admin\BookingController::class, 'refund'])->name('bookings.refund');
     Route::get('providers', [Admin\ProviderController::class, 'index'])->name('providers.index');
     Route::get('providers/{provider}', [Admin\ProviderController::class, 'show'])->name('providers.show');
     Route::post('providers/{provider}/review', [Admin\ProviderController::class, 'review'])->name('providers.review');
@@ -115,6 +127,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('settings', [Admin\SettingsController::class, 'edit'])->name('settings.edit');
     Route::put('settings', [Admin\SettingsController::class, 'update'])->name('settings.update');
 });
+
+// Gateway webhooks (M08): unauthenticated, signature-verified, CSRF-exempt
+// (bootstrap/app.php), throttled against floods.
+Route::post('webhooks/razorpay', [WebhookController::class, 'razorpay'])
+    ->middleware('throttle:60,1')->name('webhooks.razorpay');
+Route::post('webhooks/stripe', [WebhookController::class, 'stripe'])
+    ->middleware('throttle:60,1')->name('webhooks.stripe');
 
 // Phase 1 WebSocket smoke test; removed when Phase 3 realtime features land.
 Route::post('demo/ping', DemoPingController::class)

@@ -4,9 +4,10 @@ namespace App\Http\Controllers\Customer;
 
 use App\Domain\Bookings\Actions\PlaceBooking;
 use App\Domain\Bookings\CartManager;
-use App\Domain\Bookings\Enums\PaymentMethod;
 use App\Domain\Bookings\PriceQuote;
 use App\Domain\Bookings\SlotGenerator;
+use App\Domain\Payments\Actions\PayWithWallet;
+use App\Domain\Payments\WalletService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\PlaceBookingRequest;
 use App\Http\Resources\AddressResource;
@@ -15,6 +16,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -24,6 +26,7 @@ class CheckoutController extends Controller
         private readonly CartManager $cart,
         private readonly PriceQuote $quote,
         private readonly SlotGenerator $slots,
+        private readonly WalletService $wallet,
     ) {}
 
     public function show(Request $request): Response|RedirectResponse
@@ -63,11 +66,12 @@ class CheckoutController extends Controller
                 'tax_percent' => $quote['tax_percent'],
                 'total' => number_format($quote['total'], 2, '.', ''),
             ],
-            'payment_methods' => [PaymentMethod::Cash->value],
+            'payment_methods' => PlaceBookingRequest::availableMethods(),
+            'wallet_balance' => number_format($this->wallet->balance($user), 2, '.', ''),
         ]);
     }
 
-    public function store(PlaceBookingRequest $request, PlaceBooking $action): RedirectResponse
+    public function store(PlaceBookingRequest $request, PlaceBooking $action, PayWithWallet $wallet): RedirectResponse
     {
         $user = $request->user();
         abort_if($user === null, 403);
@@ -87,10 +91,24 @@ class CheckoutController extends Controller
             $user,
             $address,
             CarbonImmutable::parse((string) $request->validated('scheduled_at'))->utc(),
-            PaymentMethod::from((string) $request->validated('payment_method')),
+            $request->paymentMethod(),
             $request->validated('notes'),
             $photos,
         );
+
+        // Wallet settles instantly; a short balance drops to the pay page
+        // where every other method is still on offer (M08).
+        if ($request->chosenMethod() === 'wallet') {
+            try {
+                $wallet->handle($booking, $user);
+            } catch (ValidationException) {
+                return redirect()
+                    ->route('bookings.pay', $booking)
+                    ->with('error', __('Your wallet balance is not enough for this payment.'));
+            }
+        } elseif ($request->gatewayProvider() !== null) {
+            return redirect()->route('bookings.pay', $booking);
+        }
 
         return redirect()
             ->route('bookings.show', $booking)

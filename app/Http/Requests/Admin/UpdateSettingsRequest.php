@@ -43,6 +43,20 @@ class UpdateSettingsRequest extends FormRequest
             'reschedule_min_hours' => ['required', 'integer', 'min:0', 'max:168'],
             'tax_label' => ['required', 'string', 'max:20'],
             'tax_percent' => ['required', 'numeric', 'min:0', 'max:100'],
+            'pay_after_service' => ['boolean'],
+            'wallet_enabled' => ['boolean'],
+            'payment_timeout_minutes' => ['required', 'integer', 'min:5', 'max:1440'],
+            'razorpay_key_id' => ['nullable', 'string', 'max:191'],
+            'stripe_publishable_key' => ['nullable', 'string', 'max:191'],
+            // Write-only. Blank keeps the stored secret; remove_* erases it.
+            'razorpay_key_secret' => ['nullable', 'string', 'max:191'],
+            'razorpay_webhook_secret' => ['nullable', 'string', 'max:191'],
+            'stripe_secret_key' => ['nullable', 'string', 'max:191'],
+            'stripe_webhook_secret' => ['nullable', 'string', 'max:191'],
+            'remove_razorpay_key_secret' => ['boolean'],
+            'remove_razorpay_webhook_secret' => ['boolean'],
+            'remove_stripe_secret_key' => ['boolean'],
+            'remove_stripe_webhook_secret' => ['boolean'],
         ];
     }
 

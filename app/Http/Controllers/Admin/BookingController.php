@@ -6,14 +6,17 @@ use App\Domain\Bookings\Actions\CancelBooking;
 use App\Domain\Bookings\BookingStateMachine;
 use App\Domain\Bookings\Enums\BookingActor;
 use App\Domain\Bookings\Enums\BookingStatus;
+use App\Domain\Bookings\Enums\PaymentStatus;
 use App\Domain\Bookings\Exceptions\IllegalTransition;
 use App\Domain\Dispatch\Actions\DispatchBooking;
+use App\Domain\Payments\Actions\RefundBookingToWallet;
 use App\Domain\Users\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\TransitionBookingRequest;
 use App\Http\Resources\BookingResource;
 use App\Http\Resources\DispatchOfferResource;
 use App\Models\Booking;
+use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -77,6 +80,7 @@ class BookingController extends Controller
             'items',
             'statusHistory' => fn ($query) => $query->orderBy('created_at'),
             'dispatchOffers' => fn ($query) => $query->with('provider')->latest('offered_at'),
+            'payments' => fn ($query) => $query->latest('id'),
             'media',
         ]);
 
@@ -89,6 +93,17 @@ class BookingController extends Controller
             'booking' => new BookingResource($booking),
             'offers' => DispatchOfferResource::collection($booking->dispatchOffers),
             'can_dispatch' => in_array($booking->status, [BookingStatus::Placed, BookingStatus::Searching], true),
+            'payments' => $booking->payments->map(fn (Payment $payment): array => [
+                'id' => $payment->id,
+                'gateway' => $payment->gateway->value,
+                'gateway_ref' => $payment->gateway_ref,
+                'amount' => $payment->amount,
+                'currency' => $payment->currency,
+                'status' => $payment->status->value,
+                'captured_at' => $payment->captured_at?->toIso8601String(),
+                'created_at' => $payment->created_at?->toIso8601String(),
+            ])->all(),
+            'can_refund' => $booking->payment_status === PaymentStatus::Paid,
             'allowed_transitions' => array_map(fn (BookingStatus $status): string => $status->value, $allowed),
             'providers' => User::query()
                 ->role(Role::Provider->value)
@@ -139,5 +154,16 @@ class BookingController extends Controller
         $action->handle($booking);
 
         return back()->with('success', __('Dispatch started.'));
+    }
+
+    /**
+     * Support refund (M08): full remaining amount back to the customer's
+     * wallet. Also the cleanup for payments captured after a booking expired.
+     */
+    public function refund(Booking $booking, RefundBookingToWallet $action): RedirectResponse
+    {
+        $action->handle($booking);
+
+        return back()->with('success', __('Refunded to the customer wallet.'));
     }
 }

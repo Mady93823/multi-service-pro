@@ -8,6 +8,18 @@ use Illuminate\Support\Facades\Storage;
 
 class UpdateSettings
 {
+    /**
+     * Write-only gateway secrets: form field => settings key. These are never
+     * rendered back to the admin, so a blank submission means "keep what is
+     * stored" and the paired remove_* flag is the only way to erase one.
+     */
+    private const SECRETS = [
+        'razorpay_key_secret' => 'payments.razorpay_key_secret',
+        'razorpay_webhook_secret' => 'payments.razorpay_webhook_secret',
+        'stripe_secret_key' => 'payments.stripe_secret_key',
+        'stripe_webhook_secret' => 'payments.stripe_webhook_secret',
+    ];
+
     public function __construct(private readonly SettingsRegistry $settings) {}
 
     /**
@@ -33,6 +45,21 @@ class UpdateSettings
         $this->settings->set('booking.reschedule_min_hours', $data['reschedule_min_hours']);
         $this->settings->set('payments.tax_label', $data['tax_label']);
         $this->settings->set('payments.tax_percent', $data['tax_percent']);
+        $this->settings->set('payments.pay_after_service', (bool) ($data['pay_after_service'] ?? false));
+        $this->settings->set('payments.wallet_enabled', (bool) ($data['wallet_enabled'] ?? false));
+        $this->settings->set('booking.payment_timeout_minutes', $data['payment_timeout_minutes']);
+        $this->settings->set('payments.razorpay_key_id', $data['razorpay_key_id'] ?? null);
+        $this->settings->set('payments.stripe_publishable_key', $data['stripe_publishable_key'] ?? null);
+
+        foreach (self::SECRETS as $field => $key) {
+            $submitted = $data[$field] ?? null;
+
+            if ($data['remove_'.$field] ?? false) {
+                $this->settings->set($key, null);
+            } elseif (is_string($submitted) && $submitted !== '') {
+                $this->settings->set($key, $submitted);
+            }
+        }
 
         $currentLogo = $this->settings->string('branding.logo_path');
 

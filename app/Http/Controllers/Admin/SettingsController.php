@@ -38,6 +38,19 @@ class SettingsController extends Controller
                 'reschedule_min_hours' => $settings->integer('booking.reschedule_min_hours', 2),
                 'tax_label' => $settings->string('payments.tax_label', 'GST'),
                 'tax_percent' => $settings->decimal('payments.tax_percent', 18.0),
+                'pay_after_service' => $settings->boolean('payments.pay_after_service', true),
+                'wallet_enabled' => $settings->boolean('payments.wallet_enabled', true),
+                'payment_timeout_minutes' => $settings->integer('booking.payment_timeout_minutes', 30),
+                // Publishable halves of each key pair are safe to render.
+                'razorpay_key_id' => $settings->string('payments.razorpay_key_id'),
+                'stripe_publishable_key' => $settings->string('payments.stripe_publishable_key'),
+                // Gateway secrets never leave the server: Inertia serializes
+                // every prop into the page HTML. Send only whether one is
+                // stored; UpdateSettings treats a blank submission as "keep".
+                'razorpay_key_secret_set' => $settings->string('payments.razorpay_key_secret') !== '',
+                'razorpay_webhook_secret_set' => $settings->string('payments.razorpay_webhook_secret') !== '',
+                'stripe_secret_key_set' => $settings->string('payments.stripe_secret_key') !== '',
+                'stripe_webhook_secret_set' => $settings->string('payments.stripe_webhook_secret') !== '',
             ],
         ]);
     }

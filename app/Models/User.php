@@ -118,4 +118,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(FcmToken::class);
     }
+
+    /**
+     * Refund/credit wallet (M08). Created lazily by WalletService::for().
+     *
+     * @return HasOne<Wallet, $this>
+     */
+    public function wallet(): HasOne
+    {
+        return $this->hasOne(Wallet::class);
+    }
 }

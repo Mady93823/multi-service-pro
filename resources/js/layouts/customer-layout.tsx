@@ -1,7 +1,7 @@
 import AppHeaderLayout from '@/layouts/app/app-header-layout';
 import { useTrans } from '@/lib/i18n';
 import { type BreadcrumbItem, type NavItem } from '@/types';
-import { CalendarClock, LayoutGrid, MapPin, Search } from 'lucide-react';
+import { CalendarClock, LayoutGrid, MapPin, Search, Wallet } from 'lucide-react';
 
 interface CustomerLayoutProps {
     children: React.ReactNode;
@@ -31,6 +31,13 @@ export default function CustomerLayout({ children, breadcrumbs }: CustomerLayout
             title: t('My addresses'),
             url: '/addresses',
             icon: MapPin,
+        },
+        // Always shown: refunds land in the wallet even when paying *with* the
+        // wallet is switched off, so the customer must always be able to see it.
+        {
+            title: t('Wallet'),
+            url: '/wallet',
+            icon: Wallet,
         },
     ];
 

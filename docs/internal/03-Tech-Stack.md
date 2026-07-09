@@ -88,6 +88,19 @@ The tracking loop was specced as `POST /api/v1/bookings/{id}/tracking/ping` behi
 ### D14 — Push (FCM) ships as an inert channel until Firebase exists (2026-07-09)
 `M11` delivers `database` + `broadcast` (Reverb) notification channels now. The FCM channel is a real class (`App\Notifications\FcmChannel`) but `via()` only lists it when `services.fcm.credentials` is set, so an unconfigured install never touches it — the platform must run with Firebase absent (client constraint), and the client has not supplied a Firebase project (client doc §10). `fcm_tokens` + the registration endpoint ship now so tokens accumulate from day one and push lights up the moment credentials land. No Firebase SDK dependency is added to `composer.json` before it is needed.
 
+### D15 — Payments: no vendor SDKs, credentials in settings, money settles before dispatch (2026-07-09)
+`M08` talks to Razorpay and Stripe through the raw Laravel HTTP client behind a `PaymentGateway` contract — no `razorpay/razorpay` or `stripe/stripe-php` dependency. Why: the single-deployable, easy-install promise (a buyer uploads a zip; every added SDK is another version to keep current) and the surface we use is three endpoints per gateway.
+
+Gateway credentials live in **admin-editable settings, not `.env`**, so the installer wizard can configure a live site without shell access. Consequences, all shipped:
+- Secrets are **write-only in the admin UI**. `SettingsController::edit` sends the publishable halves (`razorpay_key_id`, `stripe_publishable_key`) plus a `*_set` boolean per secret — never the secret itself, because Inertia serializes every prop into the page HTML. A blank field on save means "keep the stored value"; a paired `remove_*` flag is the only way to erase one.
+- A gateway is offered at checkout only when `isConfigured()` — no keys, no button.
+
+**Cash bookings start `placed`; gateway and wallet bookings start `pending_payment`.** `ConfirmPayment` / `PayWithWallet` move them to `placed` and fire `BookingPlaced` only once money settles, so **an unpaid online booking is never dispatched to a provider**. `bookings:expire-unpaid` (every 5 min) closes the window using `booking.payment_timeout_minutes`.
+
+Trust rules: **never trust a redirect.** Razorpay's checkout.js callback is HMAC-verified (`hash_hmac('sha256', "$orderId|$paymentId", $keySecret)` compared with `hash_equals`); Stripe's return leg is re-verified against the API (`isSessionPaid`). Webhooks are the backstop and are signature-verified against the **raw body** (Razorpay: body vs `X-Razorpay-Signature`; Stripe: `"{$t}.{$body}"` vs the `v1=` part of `Stripe-Signature`), CSRF-exempt (`webhooks/*`) and throttled `60,1`. `ConfirmPayment` locks the payment and booking rows and no-ops a replay, so a retried webhook cannot double-place a booking. Money captured against an already-terminal booking stays `Paid`, logs a warning, and is refunded from the admin booking screen.
+
+Wallet is an **append-only ledger** (`wallet_transactions` with `balance_after`) plus a cached `wallets.balance` written in the same locked transaction, so `balance == credits − debits` always holds. **Refunds v1 always go to the wallet** — instant, no gateway round-trip, and the same seam takes gateway-side refunds later. Cancelling a paid booking refunds total minus the cancellation fee; admin cancellation refunds in full. Cash settles on completion via the auto-discovered `SettleCashOnCompletion` listener (registered once — see the M06 double-fire lesson).
+
 ## UI sourcing workflow (shoogle.dev)
 
 1. Need a block (e.g., booking form, dashboard, pricing card) → search **shoogle.dev**

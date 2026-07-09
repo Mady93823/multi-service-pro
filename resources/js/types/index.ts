@@ -279,6 +279,16 @@ export interface PaginationLinkItem {
     active: boolean;
 }
 
+/** Laravel's raw paginator JSON — what you get when a controller passes a
+ *  paginator straight to Inertia instead of wrapping it in a Resource. */
+export interface NativePaginated<T> {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    prev_page_url: string | null;
+    next_page_url: string | null;
+}
+
 export interface Paginated<T> {
     data: T[];
     links: {
@@ -407,4 +417,59 @@ export interface ProviderProfile {
     documents?: ProviderDocument[];
     blackouts?: ProviderBlackout[];
     user?: { id: number; name: string; email: string; phone: string | null };
+}
+
+// M08 payments + wallet.
+
+/** Who settled the money — mirrors App\Domain\Payments\Enums\PaymentProvider. */
+export type PaymentProvider = 'razorpay' | 'stripe' | 'cash' | 'wallet';
+
+/** Mirrors App\Domain\Payments\Enums\PaymentState. */
+export type PaymentState = 'initiated' | 'captured' | 'failed' | 'refunded';
+
+export interface Payment {
+    id: number;
+    gateway: PaymentProvider;
+    gateway_ref: string | null;
+    amount: string;
+    currency: string;
+    status: PaymentState;
+    captured_at: string | null;
+    created_at: string | null;
+}
+
+export type WalletDirection = 'credit' | 'debit';
+
+export interface WalletTransaction {
+    id: number;
+    type: string;
+    direction: WalletDirection;
+    amount: string;
+    balance_after: string;
+    note: string | null;
+    created_at: string;
+}
+
+/** What the pay page may offer right now: configured gateways + the wallet. */
+export interface PayMethods {
+    gateways: PaymentProvider[];
+    wallet: {
+        enabled: boolean;
+        balance: string;
+        sufficient: boolean;
+    };
+}
+
+/** Razorpay `orders` session — key_id is the publishable half of the pair. */
+export interface RazorpaySession {
+    key_id: string;
+    order_id: string;
+    amount: number;
+    currency: string;
+}
+
+/** Stripe Checkout session: a hosted URL we redirect to. */
+export interface StripeSession {
+    url: string;
+    publishable_key: string;
 }

@@ -4,18 +4,10 @@ import AdminLayout from '@/layouts/admin-layout';
 import CustomerLayout from '@/layouts/customer-layout';
 import ProviderLayout from '@/layouts/provider-layout';
 import { useTrans } from '@/lib/i18n';
-import { type AppNotification, type BreadcrumbItem, type SharedData } from '@/types';
+import { type AppNotification, type BreadcrumbItem, type NativePaginated, type SharedData } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { CheckCheck } from 'lucide-react';
 import { type ComponentType } from 'react';
-
-interface NativePaginated<T> {
-    data: T[];
-    current_page: number;
-    last_page: number;
-    prev_page_url: string | null;
-    next_page_url: string | null;
-}
 
 interface NotificationsIndexProps {
     entries: NativePaginated<AppNotification>;

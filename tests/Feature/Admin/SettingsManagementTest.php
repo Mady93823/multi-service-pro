@@ -31,6 +31,9 @@ function validSettingsPayload(array $overrides = []): array
         'reschedule_min_hours' => 2,
         'tax_label' => 'GST',
         'tax_percent' => 18,
+        'payment_timeout_minutes' => 30,
+        'pay_after_service' => true,
+        'wallet_enabled' => true,
     ], $overrides);
 }
 
@@ -144,4 +147,81 @@ test('logo can be uploaded and removed', function () {
     $settings->flush();
     expect($settings->string('branding.logo_path'))->toBe('');
     Storage::disk('public')->assertMissing($path);
+});
+
+test('gateway secrets are never sent to the browser', function () {
+    $settings = app(SettingsRegistry::class);
+    $settings->set('payments.razorpay_key_id', 'rzp_test_key');
+    $settings->set('payments.razorpay_key_secret', 'super-secret');
+    $settings->set('payments.stripe_secret_key', 'sk_live_secret');
+
+    $response = $this->actingAs(User::factory()->admin()->create())->get('/admin/settings');
+
+    $response->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            // The publishable half is fine to render; the secret half is not.
+            ->where('values.razorpay_key_id', 'rzp_test_key')
+            ->where('values.razorpay_key_secret_set', true)
+            ->where('values.stripe_secret_key_set', true)
+            ->where('values.stripe_webhook_secret_set', false)
+            ->missing('values.razorpay_key_secret')
+            ->missing('values.stripe_secret_key'));
+
+    // Belt and braces: the serialized page must not carry the value anywhere.
+    $response->assertDontSee('super-secret')->assertDontSee('sk_live_secret');
+});
+
+test('a blank secret keeps the stored one and remove_* erases it', function () {
+    $admin = User::factory()->admin()->create();
+    $settings = app(SettingsRegistry::class);
+    $settings->set('payments.razorpay_key_secret', 'keep-me');
+    $settings->set('payments.stripe_secret_key', 'delete-me');
+
+    $this->actingAs($admin)->put('/admin/settings', validSettingsPayload([
+        'razorpay_key_secret' => '',
+        'stripe_secret_key' => '',
+        'remove_stripe_secret_key' => true,
+    ]))->assertSessionHasNoErrors();
+
+    $settings->flush();
+
+    expect($settings->string('payments.razorpay_key_secret'))->toBe('keep-me')
+        ->and($settings->string('payments.stripe_secret_key'))->toBe('');
+});
+
+test('a submitted secret replaces the stored one', function () {
+    $admin = User::factory()->admin()->create();
+    $settings = app(SettingsRegistry::class);
+    $settings->set('payments.razorpay_key_secret', 'old-secret');
+
+    $this->actingAs($admin)->put('/admin/settings', validSettingsPayload([
+        'razorpay_key_secret' => 'new-secret',
+    ]))->assertSessionHasNoErrors();
+
+    $settings->flush();
+
+    expect($settings->string('payments.razorpay_key_secret'))->toBe('new-secret');
+});
+
+test('payment settings are validated and saved', function () {
+    $this->actingAs(User::factory()->admin()->create())
+        ->put('/admin/settings', validSettingsPayload([
+            'payment_timeout_minutes' => 1, // below the 5-minute floor
+        ]))
+        ->assertSessionHasErrors('payment_timeout_minutes');
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->put('/admin/settings', validSettingsPayload([
+            'payment_timeout_minutes' => 45,
+            'pay_after_service' => false,
+            'wallet_enabled' => false,
+        ]))
+        ->assertSessionHasNoErrors();
+
+    $settings = app()->make(SettingsRegistry::class);
+    $settings->flush();
+
+    expect($settings->integer('booking.payment_timeout_minutes'))->toBe(45)
+        ->and($settings->boolean('payments.pay_after_service'))->toBeFalse()
+        ->and($settings->boolean('payments.wallet_enabled'))->toBeFalse();
 });

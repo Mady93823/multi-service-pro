@@ -6,6 +6,8 @@ use App\Domain\Bookings\BookingStateMachine;
 use App\Domain\Bookings\CancellationFeeCalculator;
 use App\Domain\Bookings\Enums\BookingActor;
 use App\Domain\Bookings\Enums\BookingStatus;
+use App\Domain\Bookings\Enums\PaymentStatus;
+use App\Domain\Payments\Actions\RefundBookingToWallet;
 use App\Models\Booking;
 use App\Models\User;
 use Illuminate\Validation\ValidationException;
@@ -15,12 +17,13 @@ class CancelBooking
     public function __construct(
         private readonly BookingStateMachine $machine,
         private readonly CancellationFeeCalculator $fees,
+        private readonly RefundBookingToWallet $refund,
     ) {}
 
     /**
      * Customer cancellation: snapshots the (possibly zero) cancellation fee,
-     * then transitions to cancelled_customer. Fee deduction from refunds is
-     * a Phase 4 (M08) concern — cash bookings are unpaid anyway.
+     * transitions to cancelled_customer, and — when the booking was paid
+     * online — refunds total minus fee to the customer's wallet (M08).
      */
     public function byCustomer(Booking $booking, User $customer, ?string $reason = null): Booking
     {
@@ -32,29 +35,48 @@ class CancelBooking
 
         $booking->cancellation_fee = $this->fees->feeFor($booking);
 
-        return $this->machine->transition(
+        $booking = $this->machine->transition(
             $booking,
             BookingStatus::CancelledCustomer,
             BookingActor::Customer,
             $customer,
             $reason,
         );
+
+        return $this->refundIfPaid($booking, (float) $booking->cancellation_fee);
     }
 
     /**
-     * Admin cancellation (support tool): no fee, reason required for the
-     * audit trail.
+     * Admin cancellation (support tool): no fee — a paid booking is refunded
+     * in full; reason required for the audit trail.
      */
     public function byAdmin(Booking $booking, User $admin, string $reason): Booking
     {
         $booking->cancellation_fee = '0.00';
 
-        return $this->machine->transition(
+        $booking = $this->machine->transition(
             $booking,
             BookingStatus::CancelledAdmin,
             BookingActor::Admin,
             $admin,
             $reason,
         );
+
+        return $this->refundIfPaid($booking, 0.0);
+    }
+
+    private function refundIfPaid(Booking $booking, float $fee): Booking
+    {
+        if ($booking->payment_status !== PaymentStatus::Paid) {
+            return $booking;
+        }
+
+        $amount = round((float) $booking->total - $fee, 2);
+
+        if ($amount <= 0) {
+            return $booking;
+        }
+
+        return $this->refund->handle($booking, $amount, __('Refund for cancelled booking :code', ['code' => $booking->code]));
     }
 }

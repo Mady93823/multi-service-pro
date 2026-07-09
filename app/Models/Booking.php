@@ -172,6 +172,14 @@ class Booking extends Model implements HasMedia
     }
 
     /**
+     * @return HasMany<Payment, $this>
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    /**
      * @return HasOne<TrackingSession, $this>
      */
     public function activeTrackingSession(): HasOne

@@ -33,11 +33,15 @@ class PlaceBooking
     ) {}
 
     /**
-     * Turn the session cart into a placed booking: zone-gate every service
-     * against the chosen address, validate the slot, snapshot names/prices/
-     * address/tax, generate the human code + job OTP, and open the status
-     * history. Cash (pay after service) keeps the booking unpaid until
-     * completion; gateway payments arrive with M08.
+     * Turn the session cart into a booking: zone-gate every service against
+     * the chosen address, validate the slot, snapshot names/prices/address/
+     * tax, generate the human code + job OTP, and open the status history.
+     *
+     * Cash starts `placed` (pay after service) and fires BookingPlaced so
+     * dispatch runs immediately. Online methods (gateway/wallet, M08) start
+     * `pending_payment` — ConfirmPayment/PayWithWallet move them to `placed`
+     * and fire BookingPlaced once money is actually settled, so a provider
+     * is never dispatched to an unpaid online booking.
      *
      * @param  list<UploadedFile>  $photos
      */
@@ -72,8 +76,11 @@ class PlaceBooking
         }
 
         $quote = $this->quote->fromLines($lines);
+        $initialStatus = $paymentMethod === PaymentMethod::Cash
+            ? BookingStatus::Placed
+            : BookingStatus::PendingPayment;
 
-        $booking = DB::transaction(function () use ($customer, $address, $scheduledAt, $paymentMethod, $notes, $lines, $quote) {
+        $booking = DB::transaction(function () use ($customer, $address, $scheduledAt, $paymentMethod, $notes, $lines, $quote, $initialStatus) {
             $booking = Booking::query()->create([
                 'code' => Str::uuid()->toString(), // placeholder until the id exists
                 'customer_id' => $customer->id,
@@ -90,7 +97,7 @@ class PlaceBooking
                 'zone_id' => $address->zone_id,
                 'scheduled_at' => $scheduledAt,
                 'slot_end_at' => $scheduledAt->addMinutes($this->slots->slotMinutes()),
-                'status' => BookingStatus::Placed,
+                'status' => $initialStatus,
                 'subtotal' => number_format($quote['subtotal'], 2, '.', ''),
                 'addon_total' => number_format($quote['addon_total'], 2, '.', ''),
                 'discount' => number_format($quote['discount'], 2, '.', ''),
@@ -136,7 +143,9 @@ class PlaceBooking
 
         $this->cart->clear();
 
-        BookingPlaced::dispatch($booking);
+        if ($initialStatus === BookingStatus::Placed) {
+            BookingPlaced::dispatch($booking);
+        }
 
         return $booking;
     }

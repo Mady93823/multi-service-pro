@@ -10,8 +10,8 @@ import CustomerLayout from '@/layouts/customer-layout';
 import { useMoney } from '@/lib/format';
 import { useTrans } from '@/lib/i18n';
 import { type Booking, type BreadcrumbItem, type SlotDay } from '@/types';
-import { Head, router } from '@inertiajs/react';
-import { Heart, KeyRound, MapPin, RotateCcw, UserRound } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import { CreditCard, Heart, KeyRound, MapPin, RotateCcw, UserRound } from 'lucide-react';
 
 interface BookingShowProps {
     booking: Booking;
@@ -19,6 +19,7 @@ interface BookingShowProps {
         can_cancel: boolean;
         can_reschedule: boolean;
         can_rebook: boolean;
+        can_pay: boolean;
         cancellation_fee_preview: string | null;
     };
     slot_days: SlotDay[];
@@ -35,6 +36,15 @@ export default function BookingShow({ booking, abilities, slot_days: slotDays, i
         { title: booking.code, href: `/bookings/${booking.id}` },
     ];
 
+    // Refunds always land in the wallet (M08 v1), so say so rather than the
+    // vaguer "refunded".
+    const paymentNote = {
+        paid: booking.payment_method === 'wallet' ? t('Paid from wallet') : t('Paid online'),
+        refunded: t('Refunded to your wallet'),
+        partial_refund: t('Partially refunded to your wallet'),
+        unpaid: booking.payment_method === 'cash' ? t('Pay after service') : t('Payment pending'),
+    }[booking.payment_status];
+
     return (
         <CustomerLayout breadcrumbs={breadcrumbs}>
             <Head title={booking.code} />
@@ -48,6 +58,23 @@ export default function BookingShow({ booking, abilities, slot_days: slotDays, i
                     </div>
                     <BookingStatusBadge status={booking.status} />
                 </div>
+
+                {abilities.can_pay && (
+                    <Card className="border-primary/50">
+                        <CardContent className="flex flex-wrap items-center gap-3 p-4">
+                            <CreditCard className="text-primary h-5 w-5 shrink-0" />
+                            <div className="flex-1 text-sm">
+                                <p className="font-medium">{t('Payment pending')}</p>
+                                <p className="text-muted-foreground">
+                                    {t('This booking is held until you pay. No professional is assigned until then.')}
+                                </p>
+                            </div>
+                            <Button asChild>
+                                <Link href={route('bookings.pay', booking.id)}>{t('Complete payment')}</Link>
+                            </Button>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {booking.job_otp_code !== undefined && (
                     <Card className="border-primary/50">
@@ -114,9 +141,7 @@ export default function BookingShow({ booking, abilities, slot_days: slotDays, i
                                         <span>{money(booking.cancellation_fee)}</span>
                                     </div>
                                 )}
-                                <p className="text-muted-foreground text-xs">
-                                    {booking.payment_method === 'cash' ? t('Pay after service') : t('Paid online')}
-                                </p>
+                                <p className="text-muted-foreground text-xs">{paymentNote}</p>
                             </CardContent>
                         </Card>
 

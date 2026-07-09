@@ -6,6 +6,7 @@ use App\Domain\Bookings\Actions\CancelBooking;
 use App\Domain\Bookings\Actions\RebookBooking;
 use App\Domain\Bookings\Actions\RescheduleBooking;
 use App\Domain\Bookings\CancellationFeeCalculator;
+use App\Domain\Bookings\Enums\BookingStatus;
 use App\Domain\Bookings\SlotGenerator;
 use App\Domain\Settings\SettingsRegistry;
 use App\Http\Controllers\Controller;
@@ -59,6 +60,8 @@ class BookingController extends Controller
                 'can_cancel' => $booking->status->customerCancellable(),
                 'can_reschedule' => $canReschedule,
                 'can_rebook' => $booking->status->isTerminal(),
+                // The pay page is only reachable while money is still owed (M08).
+                'can_pay' => $booking->status === BookingStatus::PendingPayment,
                 'cancellation_fee_preview' => $booking->status->customerCancellable()
                     ? $fees->feeFor($booking)
                     : null,

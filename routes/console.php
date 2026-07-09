@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // M07: keep tracking_points from growing without bound.
 Schedule::command('tracking:prune')->dailyAt('03:30');
+
+// M08: free slots held by bookings whose payment window has closed.
+Schedule::command('bookings:expire-unpaid')->everyFiveMinutes();

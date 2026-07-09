@@ -11,8 +11,8 @@ import { useTrans } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { type Address, type CartSummary, type SlotDay } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Banknote, ImagePlus, LoaderCircle, MapPin } from 'lucide-react';
-import { FormEventHandler } from 'react';
+import { Banknote, CreditCard, ImagePlus, LoaderCircle, MapPin, Wallet } from 'lucide-react';
+import { FormEventHandler, type ComponentType } from 'react';
 
 interface CheckoutLine {
     key: string;
@@ -33,6 +33,7 @@ interface CheckoutPageProps {
     slot_days: SlotDay[];
     summary: CartSummary;
     payment_methods: string[];
+    wallet_balance: string;
 }
 
 type CheckoutForm = {
@@ -43,24 +44,75 @@ type CheckoutForm = {
     photos: File[];
 };
 
-export default function CheckoutPage({ lines, addresses, slot_days: slotDays, summary }: CheckoutPageProps) {
+export default function CheckoutPage({
+    lines,
+    addresses,
+    slot_days: slotDays,
+    summary,
+    payment_methods: paymentMethods,
+    wallet_balance: walletBalance,
+}: CheckoutPageProps) {
     const t = useTrans();
     const money = useMoney();
 
     const defaultAddress = addresses.find((entry) => entry.address.is_default && entry.blocked_services.length === 0);
 
+    // The server decides what is on offer (pay-after-service flag, which
+    // gateways hold credentials, wallet flag) — never hardcode the list.
+    const walletShort = Number(walletBalance) < Number(summary.total);
+    const selectable = (method: string) => method !== 'wallet' || !walletShort;
+
     const { data, setData, post, processing, errors } = useForm<CheckoutForm>({
         address_id: defaultAddress?.address.id ?? null,
         scheduled_at: null,
-        payment_method: 'cash',
+        payment_method: paymentMethods.find(selectable) ?? paymentMethods[0] ?? 'cash',
         notes: '',
         photos: [],
     });
+
+    const methodMeta: Record<string, { icon: ComponentType<{ className?: string }>; title: string; hint: string }> = {
+        cash: {
+            icon: Banknote,
+            title: t('Pay after service'),
+            hint: t('Pay in cash or UPI once the job is done.'),
+        },
+        razorpay: {
+            icon: CreditCard,
+            title: t('Pay online'),
+            hint: t('UPI, cards, net banking — secured by Razorpay.'),
+        },
+        stripe: {
+            icon: CreditCard,
+            title: t('Pay by card'),
+            hint: t('Secure card checkout by Stripe.'),
+        },
+        wallet: {
+            icon: Wallet,
+            title: t('Wallet'),
+            hint: walletShort
+                ? t('Balance :balance — not enough for this booking.', { balance: money(walletBalance) })
+                : t('Balance :balance', { balance: money(walletBalance) }),
+        },
+    };
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
         post(route('checkout.store'), { forceFormData: true, preserveScroll: true });
     };
+
+    // Gateways are the default branch: every method that is not cash or
+    // wallet hands off to a hosted checkout.
+    const labels: Record<string, string> = {
+        cash: t('Place booking'),
+        wallet: t('Pay from wallet'),
+    };
+    const hints: Record<string, string> = {
+        cash: t('No charge until the service is completed.'),
+        wallet: t('Paid instantly from your wallet balance.'),
+    };
+
+    const submitLabel = labels[data.payment_method] ?? t('Continue to payment');
+    const submitHint = hints[data.payment_method] ?? t('You will be taken to a secure payment page.');
 
     const addressLabels: Record<Address['label'], string> = {
         home: t('Home'),
@@ -190,15 +242,41 @@ export default function CheckoutPage({ lines, addresses, slot_days: slotDays, su
                         <CardHeader>
                             <CardTitle className="text-base">{t('Payment')}</CardTitle>
                         </CardHeader>
-                        <CardContent>
-                            <div className="border-primary ring-primary flex items-center gap-3 rounded-lg border p-3 ring-1">
-                                <Banknote className="h-5 w-5" />
-                                <div className="text-sm">
-                                    <p className="font-medium">{t('Pay after service')}</p>
-                                    <p className="text-muted-foreground">{t('Pay in cash or UPI once the job is done.')}</p>
-                                </div>
-                            </div>
-                            <p className="text-muted-foreground mt-2 text-xs">{t('Online payment is coming soon.')}</p>
+                        <CardContent className="space-y-3">
+                            {paymentMethods.length === 0 && (
+                                <p className="text-muted-foreground text-sm">{t('No payment method is available right now.')}</p>
+                            )}
+                            {paymentMethods.map((method) => {
+                                const meta = methodMeta[method];
+
+                                if (meta === undefined) {
+                                    return null;
+                                }
+
+                                const Icon = meta.icon;
+                                const disabled = !selectable(method);
+                                const selected = data.payment_method === method;
+
+                                return (
+                                    <button
+                                        key={method}
+                                        type="button"
+                                        disabled={disabled}
+                                        onClick={() => setData('payment_method', method)}
+                                        className={cn(
+                                            'flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors',
+                                            selected && 'border-primary ring-primary ring-1',
+                                            disabled && 'cursor-not-allowed opacity-60',
+                                        )}
+                                    >
+                                        <Icon className="h-5 w-5 shrink-0" />
+                                        <div className="text-sm">
+                                            <p className="font-medium">{meta.title}</p>
+                                            <p className="text-muted-foreground">{meta.hint}</p>
+                                        </div>
+                                    </button>
+                                );
+                            })}
                             <InputError message={errors.payment_method} />
                         </CardContent>
                     </Card>
@@ -239,12 +317,12 @@ export default function CheckoutPage({ lines, addresses, slot_days: slotDays, su
                                 type="submit"
                                 className="mt-4 w-full"
                                 size="lg"
-                                disabled={processing || data.address_id === null || data.scheduled_at === null}
+                                disabled={processing || data.address_id === null || data.scheduled_at === null || paymentMethods.length === 0}
                             >
                                 {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                                {t('Place booking')}
+                                {submitLabel}
                             </Button>
-                            <p className="text-muted-foreground text-center text-xs">{t('No charge until the service is completed.')}</p>
+                            <p className="text-muted-foreground text-center text-xs">{submitHint}</p>
                         </CardContent>
                     </Card>
                 </div>

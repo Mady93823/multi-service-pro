@@ -35,7 +35,23 @@ type SettingsForm = {
     reschedule_min_hours: number;
     tax_label: string;
     tax_percent: number;
+    pay_after_service: boolean;
+    wallet_enabled: boolean;
+    payment_timeout_minutes: number;
+    razorpay_key_id: string;
+    stripe_publishable_key: string;
+    razorpay_key_secret: string;
+    razorpay_webhook_secret: string;
+    stripe_secret_key: string;
+    stripe_webhook_secret: string;
+    remove_razorpay_key_secret: boolean;
+    remove_razorpay_webhook_secret: boolean;
+    remove_stripe_secret_key: boolean;
+    remove_stripe_webhook_secret: boolean;
 };
+
+/** The four write-only secrets: the server sends `*_set`, never the value. */
+type SecretField = 'razorpay_key_secret' | 'razorpay_webhook_secret' | 'stripe_secret_key' | 'stripe_webhook_secret';
 
 interface SettingsEditProps {
     values: {
@@ -58,6 +74,15 @@ interface SettingsEditProps {
         reschedule_min_hours: number;
         tax_label: string;
         tax_percent: number;
+        pay_after_service: boolean;
+        wallet_enabled: boolean;
+        payment_timeout_minutes: number;
+        razorpay_key_id: string;
+        stripe_publishable_key: string;
+        razorpay_key_secret_set: boolean;
+        razorpay_webhook_secret_set: boolean;
+        stripe_secret_key_set: boolean;
+        stripe_webhook_secret_set: boolean;
     };
 }
 
@@ -94,12 +119,53 @@ export default function SettingsEdit({ values }: SettingsEditProps) {
         reschedule_min_hours: values.reschedule_min_hours,
         tax_label: values.tax_label,
         tax_percent: values.tax_percent,
+        pay_after_service: values.pay_after_service,
+        wallet_enabled: values.wallet_enabled,
+        payment_timeout_minutes: values.payment_timeout_minutes,
+        razorpay_key_id: values.razorpay_key_id,
+        stripe_publishable_key: values.stripe_publishable_key,
+        // Secrets start blank on every load — blank means "keep what is stored".
+        razorpay_key_secret: '',
+        razorpay_webhook_secret: '',
+        stripe_secret_key: '',
+        stripe_webhook_secret: '',
+        remove_razorpay_key_secret: false,
+        remove_razorpay_webhook_secret: false,
+        remove_stripe_secret_key: false,
+        remove_stripe_webhook_secret: false,
     });
 
     transform((current) => ({
         ...current,
         primary_color: current.primary_color === '' ? null : current.primary_color,
     }));
+
+    const secretField = (field: SecretField, label: string, isSet: boolean) => {
+        const removeField = `remove_${field}` as const;
+        const removing = data[removeField];
+
+        return (
+            <div className="grid gap-2">
+                <Label htmlFor={field}>{label}</Label>
+                <Input
+                    id={field}
+                    type="password"
+                    autoComplete="off"
+                    value={data[field]}
+                    disabled={removing}
+                    onChange={(e) => setData(field, e.target.value)}
+                    placeholder={isSet ? t('Saved — leave blank to keep it') : t('Not set')}
+                />
+                <InputError message={errors[field]} />
+                {isSet && (
+                    <label className="text-muted-foreground flex items-center gap-2 text-sm">
+                        <Checkbox checked={removing} onCheckedChange={(checked) => setData(removeField, checked === true)} />
+                        {t('Remove this secret')}
+                    </label>
+                )}
+            </div>
+        );
+    };
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -418,6 +484,85 @@ export default function SettingsEdit({ values }: SettingsEditProps) {
                                     required
                                 />
                                 <InputError message={errors.tax_percent} />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('Payments')}</CardTitle>
+                            <CardDescription>
+                                {t(
+                                    'Which methods customers may use, and the gateway credentials. A gateway appears at checkout only once its keys are saved.',
+                                )}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <label className="flex items-center justify-between gap-4 text-sm">
+                                <span>
+                                    <span className="font-medium">{t('Pay after service')}</span>
+                                    <span className="text-muted-foreground block">
+                                        {t('Let customers book now and pay the professional afterwards.')}
+                                    </span>
+                                </span>
+                                <Switch checked={data.pay_after_service} onCheckedChange={(checked) => setData('pay_after_service', checked)} />
+                            </label>
+
+                            <label className="flex items-center justify-between gap-4 text-sm">
+                                <span>
+                                    <span className="font-medium">{t('Wallet payments')}</span>
+                                    <span className="text-muted-foreground block">
+                                        {t('Let customers pay from their wallet balance. Refunds land in the wallet either way.')}
+                                    </span>
+                                </span>
+                                <Switch checked={data.wallet_enabled} onCheckedChange={(checked) => setData('wallet_enabled', checked)} />
+                            </label>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="payment_timeout_minutes">{t('Unpaid booking expires after (minutes)')}</Label>
+                                <Input
+                                    id="payment_timeout_minutes"
+                                    type="number"
+                                    min={5}
+                                    max={1440}
+                                    value={data.payment_timeout_minutes}
+                                    onChange={(e) => setData('payment_timeout_minutes', Number(e.target.value))}
+                                    className="w-40"
+                                    required
+                                />
+                                <InputError message={errors.payment_timeout_minutes} />
+                            </div>
+
+                            <div className="space-y-4 rounded-lg border p-4">
+                                <h3 className="text-sm font-medium">{t('Razorpay')}</h3>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="razorpay_key_id">{t('Key ID')}</Label>
+                                    <Input
+                                        id="razorpay_key_id"
+                                        value={data.razorpay_key_id}
+                                        onChange={(e) => setData('razorpay_key_id', e.target.value)}
+                                        autoComplete="off"
+                                    />
+                                    <InputError message={errors.razorpay_key_id} />
+                                </div>
+                                {secretField('razorpay_key_secret', t('Key secret'), values.razorpay_key_secret_set)}
+                                {secretField('razorpay_webhook_secret', t('Webhook secret'), values.razorpay_webhook_secret_set)}
+                            </div>
+
+                            <div className="space-y-4 rounded-lg border p-4">
+                                <h3 className="text-sm font-medium">{t('Stripe')}</h3>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="stripe_publishable_key">{t('Publishable key')}</Label>
+                                    <Input
+                                        id="stripe_publishable_key"
+                                        value={data.stripe_publishable_key}
+                                        onChange={(e) => setData('stripe_publishable_key', e.target.value)}
+                                        autoComplete="off"
+                                    />
+                                    <InputError message={errors.stripe_publishable_key} />
+                                </div>
+                                {secretField('stripe_secret_key', t('Secret key'), values.stripe_secret_key_set)}
+                                {secretField('stripe_webhook_secret', t('Webhook secret'), values.stripe_webhook_secret_set)}
                             </div>
                         </CardContent>
                     </Card>

@@ -5,7 +5,9 @@ namespace App\Http\Middleware;
 use App\Domain\Bookings\CartManager;
 use App\Domain\Localization\TranslationLoader;
 use App\Domain\Settings\SettingsRegistry;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Middleware;
 
@@ -65,6 +67,34 @@ class HandleInertiaRequests extends Middleware
             'cart' => [
                 'count' => $request->hasSession() ? app(CartManager::class)->count() : 0,
             ],
+            'notifications' => $this->notifications($request->user()),
         ]);
+    }
+
+    /**
+     * Unread badge + a short recent list for the bell menu (M11). Lazily
+     * shaped so guests and unauthenticated requests pay nothing.
+     *
+     * @return array{unread_count: int, recent: list<array<string, mixed>>}
+     */
+    private function notifications(?User $user): array
+    {
+        if ($user === null) {
+            return ['unread_count' => 0, 'recent' => []];
+        }
+
+        return [
+            'unread_count' => $user->unreadNotifications()->count(),
+            'recent' => $user->notifications()->limit(8)->get()
+                ->map(fn (DatabaseNotification $n): array => [
+                    'id' => $n->id,
+                    'title' => $n->data['title'] ?? '',
+                    'body' => $n->data['body'] ?? '',
+                    'url' => $n->data['url'] ?? null,
+                    'read_at' => $n->read_at?->toIso8601String(),
+                    'created_at' => $n->created_at?->toIso8601String(),
+                ])
+                ->all(),
+        ];
     }
 }

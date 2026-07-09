@@ -2,6 +2,7 @@ import { BookingTimeline } from '@/components/booking/booking-timeline';
 import { CancelBookingDialog } from '@/components/booking/cancel-booking-dialog';
 import { RescheduleDialog } from '@/components/booking/reschedule-dialog';
 import { BookingStatusBadge } from '@/components/booking/status-badge';
+import { TrackingMap } from '@/components/tracking/tracking-map';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -67,6 +68,8 @@ export default function BookingShow({ booking, abilities, slot_days: slotDays, i
                         {t('Cancellation reason: :reason', { reason: booking.cancel_reason })}
                     </p>
                 )}
+
+                <TrackingMap booking={booking} />
 
                 <div className="grid gap-4 lg:grid-cols-3">
                     <div className="space-y-4 lg:col-span-2">

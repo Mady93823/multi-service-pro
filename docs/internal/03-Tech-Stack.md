@@ -72,7 +72,7 @@ Client's hosting cannot run Node.js; client chose to continue with Laravel. **La
 Consequences:
 - One deployable, one language — installer no longer generates a second `.env`, no PM2/Node docs
 - Custom tracking JWTs + HMAC checkpoint sync **deleted** — standard Laravel channel authorization (`routes/channels.php` policies) and direct DB writes replace them; `firebase/php-jwt`, `jsonwebtoken`, `TRACKING_JWT_SECRET`, `CHECKPOINT_HMAC_SECRET` all die
-- Provider GPS pings go `POST /api/v1/bookings/{id}/tracking/ping` (Sanctum) → Laravel validates, stores, broadcasts `LocationUpdated` on `private-tracking.booking.{id}`
+- Provider GPS pings go to a Laravel endpoint → validate, store, broadcast `LocationUpdated` on `private-tracking.booking.{id}` (the route landed on session-auth `web` rather than Sanctum `/api/v1` — see D13)
 - Presence channels give "provider connected / customer watching" for free
 - In-app realtime (old `/app` namespace) becomes Echo private channel `user.{id}` via Laravel broadcast notifications
 - Hosting: VPS still required (long-running process + queue worker) but PHP-only stack
@@ -81,6 +81,12 @@ Consequences:
 
 ### D12 — Point-in-polygon in PHP, not MySQL spatial (2026-07-07)
 Zone membership (`ST_Contains` in the original schema) is computed by a PHP ray-casting check (`App\Domain\Zones\PointInPolygon`) over the zone's GeoJSON instead of a MySQL 8 `GEOMETRY ... SRID 4326` column + spatial index. Why: dev runs MariaDB (XAMPP), tests run sqlite, and CodeCanyon buyers land on shared hosting where MySQL-8 SRID columns break installs (D8 portability beats micro-optimization). Zones are a handful of small polygons per city — the PHP check is microseconds and runs only on address save / zone edits, never per catalog request (addresses snapshot their `zone_id`). Revisit only if a deployment ever has thousands of zones; the `ZoneResolver` seam is where a spatial implementation would slot in.
+
+### D13 — Tracking endpoints ride session auth on `web` routes (2026-07-09)
+The tracking loop was specced as `POST /api/v1/bookings/{id}/tracking/ping` behind Sanctum (D11 bullet). Shipped instead as `web` routes returning JSON (`provider/jobs/{booking}/tracking/{start,ping,stop}` and `bookings/{booking}/tracking/last`), authenticated by the same session cookie as the rest of the panel. Why: the only client is the Inertia SPA already inside that session — adding Sanctum bought a second auth path, a token store, and an extra failure mode for zero benefit. CSRF comes from Laravel's `XSRF-TOKEN` cookie, forwarded by a small `resources/js/lib/http.ts` fetch helper (no axios dependency). The public API (`/api/v1`, mobile apps) is still a clean add later — controllers are thin and the actions carry the logic.
+
+### D14 — Push (FCM) ships as an inert channel until Firebase exists (2026-07-09)
+`M11` delivers `database` + `broadcast` (Reverb) notification channels now. The FCM channel is a real class (`App\Notifications\FcmChannel`) but `via()` only lists it when `services.fcm.credentials` is set, so an unconfigured install never touches it — the platform must run with Firebase absent (client constraint), and the client has not supplied a Firebase project (client doc §10). `fcm_tokens` + the registration endpoint ship now so tokens accumulate from day one and push lights up the moment credentials land. No Firebase SDK dependency is added to `composer.json` before it is needed.
 
 ## UI sourcing workflow (shoogle.dev)
 

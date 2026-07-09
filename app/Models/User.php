@@ -108,4 +108,14 @@ class User extends Authenticatable
     {
         return $this->hasOne(ProviderProfile::class);
     }
+
+    /**
+     * Registered web/mobile push tokens (M11 FCM channel).
+     *
+     * @return HasMany<FcmToken, $this>
+     */
+    public function fcmTokens(): HasMany
+    {
+        return $this->hasMany(FcmToken::class);
+    }
 }

@@ -51,6 +51,11 @@ class SettingsRegistry
             'dispatch.offer_timeout_seconds' => ['group' => 'dispatch', 'type' => SettingType::Integer, 'value' => 60],
             'dispatch.max_rounds' => ['group' => 'dispatch', 'type' => SettingType::Integer, 'value' => 5],
             'dispatch.auto' => ['group' => 'dispatch', 'type' => SettingType::Boolean, 'value' => true],
+            'tracking.ping_interval_seconds' => ['group' => 'tracking', 'type' => SettingType::Integer, 'value' => 3],
+            'tracking.min_move_meters' => ['group' => 'tracking', 'type' => SettingType::Integer, 'value' => 5],
+            'tracking.max_accuracy_meters' => ['group' => 'tracking', 'type' => SettingType::Integer, 'value' => 100],
+            'tracking.stale_after_seconds' => ['group' => 'tracking', 'type' => SettingType::Integer, 'value' => 30],
+            'tracking.points_retention_days' => ['group' => 'tracking', 'type' => SettingType::Integer, 'value' => 30],
             'payments.tax_label' => ['group' => 'payments', 'type' => SettingType::String, 'value' => 'GST'],
             'payments.tax_percent' => ['group' => 'payments', 'type' => SettingType::Decimal, 'value' => '18'],
         ];

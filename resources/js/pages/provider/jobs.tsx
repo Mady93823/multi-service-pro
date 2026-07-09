@@ -11,7 +11,7 @@ import { useMoney } from '@/lib/format';
 import { useTrans } from '@/lib/i18n';
 import { type Booking, type BookingStatus, type BreadcrumbItem, type DispatchOffer } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
-import { ArrowRight, CheckCircle2, Clock, MapPin, XCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Clock, MapPin, Navigation, XCircle } from 'lucide-react';
 import { useState } from 'react';
 
 interface ProviderJobsProps {
@@ -231,16 +231,16 @@ function JobCard({ booking }: { booking: Booking }) {
                 );
             case 'accepted':
                 return (
-                    <Button size="sm" disabled={processing} onClick={() => advance('en_route')}>
-                        <ArrowRight className="h-4 w-4" />
+                    <Button size="sm" onClick={() => router.visit(route('provider.jobs.journey', booking.id))}>
+                        <Navigation className="h-4 w-4" />
                         {t('Start travelling')}
                     </Button>
                 );
             case 'en_route':
                 return (
-                    <Button size="sm" disabled={processing} onClick={() => advance('arrived')}>
-                        <MapPin className="h-4 w-4" />
-                        {t('I have arrived')}
+                    <Button size="sm" onClick={() => router.visit(route('provider.jobs.journey', booking.id))}>
+                        <Navigation className="h-4 w-4" />
+                        {t('Live journey')}
                     </Button>
                 );
             case 'arrived':

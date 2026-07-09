@@ -32,7 +32,7 @@ provider_documents
 provider_categories
   provider_profile_id FK, category_id FK  (pivot: what they can do)
 
-fcm_tokens
+fcm_tokens               ← M11; collected even while Firebase is unconfigured (D14)
   id, user_id FK, token (uniq), device_type [web|android|ios], last_used_at
 ```
 
@@ -106,14 +106,23 @@ dispatch_offers
 
 ```
 tracking_sessions
-  id, booking_id FK (uniq active per booking), provider_id FK,
-  status [active|ended], started_at, ended_at,
-  last_lat, last_lng, last_ping_at
+  id, booking_id FK, provider_id FK, status [active|ended],
+  started_at, ended_at,
+  last_lat, last_lng, last_accuracy_m, last_heading, last_speed_kmh,
+  last_ping_at
+  -- M07: index(booking_id, status). "One active session per booking" is
+  --      enforced in StartTrackingSession (idempotent), not by a DB
+  --      constraint — ended sessions legitimately repeat per booking.
+  --      last_* is the checkpoint the polling fallback serves.
 
 tracking_points          ← provider pings via Laravel (1/3s while en_route), pruned after 30 days
   id, tracking_session_id FK, lat, lng, accuracy_m, speed_kmh, heading,
   recorded_at (indexed)
+  -- M07: index(tracking_session_id, recorded_at); `tracking:prune` (daily)
+  --      deletes past tracking.points_retention_days
 ```
+
+> [!note] MariaDB strict mode rejects a non-nullable `timestamp` with no default — `started_at` and `recorded_at` use `->useCurrent()` (the dev box is XAMPP/MariaDB).
 
 ## Money
 
@@ -177,7 +186,8 @@ support_ticket_messages
 languages
   id, code (uniq e.g. en, hi), name, is_active, is_default
 
-notifications            ← Laravel standard database channel table
+notifications            ← Laravel standard database channel table (M11)
+  uuid id, type, notifiable_type, notifiable_id, data TEXT, read_at
 
 banners
   id, title, image_path, link_url, placement [home_hero|home_strip],

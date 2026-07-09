@@ -4,9 +4,12 @@ use App\Http\Controllers\Admin;
 use App\Http\Controllers\BookingPhotoController;
 use App\Http\Controllers\Customer;
 use App\Http\Controllers\DemoPingController;
+use App\Http\Controllers\FcmTokenController;
 use App\Http\Controllers\GeocodeController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Provider;
 use App\Http\Controllers\ProviderDocumentController;
+use App\Http\Controllers\TrackingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [Customer\CatalogController::class, 'index'])->name('home');
@@ -51,6 +54,18 @@ Route::middleware(['auth', 'throttle:30,1'])->group(function () {
     Route::get('geocode/search', [GeocodeController::class, 'search'])->name('geocode.search');
 });
 
+// Cross-role authenticated endpoints (M07 tracking fallback, M11 notifications).
+Route::middleware('auth')->group(function () {
+    Route::get('bookings/{booking}/tracking/last', [TrackingController::class, 'last'])->name('tracking.last');
+
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+    Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+
+    Route::post('fcm-tokens', [FcmTokenController::class, 'store'])->name('fcm-tokens.store');
+    Route::delete('fcm-tokens', [FcmTokenController::class, 'destroy'])->name('fcm-tokens.destroy');
+});
+
 Route::middleware(['auth', 'role:provider'])->prefix('provider')->name('provider.')->group(function () {
     // Onboarding is reachable in every approval state; the dashboard
     // (and later panel screens) sit behind provider.approved.
@@ -69,6 +84,13 @@ Route::middleware(['auth', 'role:provider'])->prefix('provider')->name('provider
         Route::post('jobs/{booking}/advance', [Provider\JobController::class, 'advance'])->name('jobs.advance');
         Route::post('offers/{offer}/accept', [Provider\JobController::class, 'acceptOffer'])->name('offers.accept');
         Route::post('offers/{offer}/decline', [Provider\JobController::class, 'declineOffer'])->name('offers.decline');
+
+        // Live tracking (M07): journey screen + the JSON GPS loop.
+        Route::get('jobs/{booking}/journey', [Provider\TrackingController::class, 'journey'])->name('jobs.journey');
+        Route::post('jobs/{booking}/tracking/start', [Provider\TrackingController::class, 'start'])->name('tracking.start');
+        Route::post('jobs/{booking}/tracking/ping', [Provider\TrackingController::class, 'ping'])
+            ->middleware('throttle:60,1')->name('tracking.ping');
+        Route::post('jobs/{booking}/tracking/stop', [Provider\TrackingController::class, 'stop'])->name('tracking.stop');
     });
 });
 

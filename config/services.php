@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    // Firebase Cloud Messaging (M11 push). Optional — the app runs fully with
+    // this unset; the FCM notification channel stays inert until it is present.
+    'fcm' => [
+        'credentials' => env('FIREBASE_CREDENTIALS'),
+        'project_id' => env('FIREBASE_PROJECT_ID'),
+    ],
+
 ];

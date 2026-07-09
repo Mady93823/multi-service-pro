@@ -5,11 +5,13 @@ namespace App\Models;
 use App\Domain\Bookings\Enums\BookingStatus;
 use App\Domain\Bookings\Enums\PaymentMethod;
 use App\Domain\Bookings\Enums\PaymentStatus;
+use App\Domain\Tracking\Enums\TrackingSessionStatus;
 use Database\Factories\BookingFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Spatie\MediaLibrary\HasMedia;
@@ -159,5 +161,23 @@ class Booking extends Model implements HasMedia
     public function dispatchOffers(): HasMany
     {
         return $this->hasMany(DispatchOffer::class);
+    }
+
+    /**
+     * @return HasMany<TrackingSession, $this>
+     */
+    public function trackingSessions(): HasMany
+    {
+        return $this->hasMany(TrackingSession::class);
+    }
+
+    /**
+     * @return HasOne<TrackingSession, $this>
+     */
+    public function activeTrackingSession(): HasOne
+    {
+        return $this->hasOne(TrackingSession::class)
+            ->where('status', TrackingSessionStatus::Active->value)
+            ->latestOfMany();
     }
 }

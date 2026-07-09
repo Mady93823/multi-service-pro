@@ -38,6 +38,20 @@ export interface Localization {
     timezone: string;
 }
 
+export interface AppNotification {
+    id: string;
+    title: string;
+    body: string;
+    url: string | null;
+    read_at: string | null;
+    created_at: string | null;
+}
+
+export interface NotificationFeed {
+    unread_count: number;
+    recent: AppNotification[];
+}
+
 export interface SharedData {
     name: string;
     translations: Record<string, string>;
@@ -46,6 +60,7 @@ export interface SharedData {
     auth: Auth;
     flash: Flash;
     cart: { count: number };
+    notifications: NotificationFeed;
     [key: string]: unknown;
 }
 
@@ -344,6 +359,33 @@ export interface DispatchOffer {
     expires_at: string | null;
     provider?: { id: number; name: string } | null;
     booking?: Booking;
+}
+
+// M07 live tracking — the LocationUpdated broadcast payload + polling fallback.
+export interface TrackingPayload {
+    lat: number;
+    lng: number;
+    heading: number | null;
+    speed: number | null;
+    accuracy: number | null;
+    ts: string | null;
+}
+
+export interface TrackingLast {
+    booking_status: BookingStatus;
+    session_status: 'active' | 'ended' | null;
+    lat: number | null;
+    lng: number | null;
+    heading: number | null;
+    speed: number | null;
+    ts: string | null;
+}
+
+export interface TrackingConfig {
+    ping_interval_seconds: number;
+    min_move_meters: number;
+    max_accuracy_meters: number;
+    stale_after_seconds: number;
 }
 
 export interface ProviderProfile {

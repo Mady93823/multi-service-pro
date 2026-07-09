@@ -66,6 +66,9 @@ Internal counterpart of the client doc's module list — with build notes and ac
 ## M07 Live Location Tracking ⭐
 Full spec: [[05-Live-Tracking]]. Locked stack (Laravel Reverb + Geolocation + Leaflet + OSM, D11) — do not substitute components.
 - ✅ *Done when:* acceptance checklist in [[05-Live-Tracking]] passes end-to-end on two devices.
+- **Shipped (2026-07-09):** `tracking_sessions` + `tracking_points` tables. `app/Domain/Tracking`: `TrackingSessionStatus` enum, `GeoPing` DTO, actions `StartTrackingSession` (idempotent: `accepted → en_route` + open session; a refresh re-uses the live one) / `RecordTrackingPing` (drops fixes above `tracking.max_accuracy_meters`, persists point + checkpoint, broadcasts) / `EndTrackingSession` (`en_route → arrived`, session ended), events `LocationUpdated` + `BookingStatusBroadcast` (both `ShouldBroadcastNow` on `private-tracking.booking.{id}`). Channel authorization in `routes/channels.php` returns member info, so **one callback guards both the private and the presence channel** (customer / assigned provider / admin only). Provider journey screen (`provider/journey.tsx`): `watchPosition` throttled to `tracking.ping_interval_seconds` + `tracking.min_move_meters` (Haversine), Start-journey / I-have-arrived, Wake Lock, permission-denied help, presence "customer is watching". Customer live map (`components/tracking/tracking-map.tsx`): react-leaflet + OSM, lerp-animated marker (no teleport), trail polyline, auto-fit that yields to a user pan + Recenter, ETA (15 km/h floor), and a **polling fallback** on `bookings/{booking}/tracking/last` whenever Echo is disconnected or pings go stale. **A dead Reverb never fails a ping** — the checkpoint is persisted first and the broadcast failure is logged (spec failure-mode table). `tracking:prune` command + daily schedule honours `tracking.points_retention_days`. Endpoints ride session auth on `web` routes (ADR D13). Two-device acceptance checklist stays a manual gate.
+
+
 
 ## M08 Payments & Wallet
 - Gateway abstraction `PaymentGateway` interface → `RazorpayGateway` (**default — client confirmed**; UPI-first payment method ordering), `StripeGateway` (product requirement for non-India buyers, D8), `CashGateway` (pay-after-service, enabled at launch)
@@ -90,6 +93,19 @@ Full spec: [[05-Live-Tracking]]. Locked stack (Laravel Reverb + Geolocation + Le
 - Realtime in-app (badge/toast) — Laravel broadcast notifications over Reverb, Echo private channel `user.{id}` (D11)
 - Notification matrix (event × role × channel) maintained in this doc as it grows
 - ✅ *Done when:* booking status change reaches customer as push + in-app within 2s.
+- **Shipped (2026-07-09):** `notifications` (Laravel database channel) + `fcm_tokens` tables. `BookingStatusNotification` (customer) and `NewJobOfferNotification` (provider) — both `ShouldQueue` + `afterCommit()` so the state-machine transaction never waits on delivery. Channels: `database` + `broadcast` (Reverb, private `App.Models.User.{id}`); `FcmChannel` exists but stays out of `via()` until Firebase is configured (ADR D14) — `fcm-tokens` register/forget endpoints ship regardless. Listeners `SendBookingStatusNotification` (skips noisy interim states like `searching`), `BroadcastBookingStatus` (queued, mirrors the change onto the tracking channel), `NotifyProvidersOfOffer`. Frontend: `useEchoNotification` toast + bell dropdown with unread badge in both header shells, `notifications/index` page (mark one / mark all read). The bell feed is the shared Inertia prop `notifications`; the index page's own list is `entries` **so it does not shadow it**.
+
+> [!warning] Listeners in `app/Listeners` are auto-discovered
+> Laravel registers any `app/Listeners` class whose `handle()` type-hints an event. Adding an explicit `Event::listen()` for the same pair fires the listener **twice** (this bit `DispatchPlacedBooking` in M06 — every placed booking dispatched twice). Register in one place only; verify with `php artisan event:list`.
+
+### Notification matrix
+
+| Event | Recipient | Channels |
+|---|---|---|
+| booking `assigned`/`accepted`/`en_route`/`arrived`/`in_progress`/`completed`, provider or admin cancellation | customer | database, broadcast, (fcm) |
+| dispatch offer sent | offered provider(s) | database, broadcast, (fcm) |
+
+`(fcm)` = only once `services.fcm.credentials` is set.
 
 ## M12 Coupons & Promotions
 - `coupons`: code, type flat/percent, min order, max discount, usage limit global/per-user, validity window, first-order-only flag

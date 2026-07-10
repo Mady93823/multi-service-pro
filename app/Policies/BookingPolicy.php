@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Domain\Bookings\Enums\BookingStatus;
 use App\Domain\Users\Enums\Role;
 use App\Models\Booking;
 use App\Models\User;
@@ -44,5 +45,15 @@ class BookingPolicy
     public function invoice(User $user, Booking $booking): bool
     {
         return $booking->customer_id === $user->id;
+    }
+
+    /**
+     * Only the customer who actually received the completed service may rate
+     * it (M10). Duplicate and feature-flag guards live in the FormRequest.
+     */
+    public function review(User $user, Booking $booking): bool
+    {
+        return $booking->customer_id === $user->id
+            && $booking->status === BookingStatus::Completed;
     }
 }

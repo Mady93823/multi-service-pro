@@ -61,6 +61,9 @@ class SettingsController extends Controller
                 'invoice_gstin' => $settings->string('invoice.gstin') ?: null,
                 'invoice_address' => $settings->string('invoice.address') ?: null,
                 'invoice_state' => $settings->string('invoice.state') ?: null,
+                // Reviews (M10).
+                'reviews_enabled' => $settings->boolean('reviews.enabled', true),
+                'reviews_max_photos' => $settings->integer('reviews.max_photos', 4),
             ],
         ]);
     }

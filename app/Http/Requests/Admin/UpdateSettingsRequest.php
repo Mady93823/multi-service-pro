@@ -67,6 +67,8 @@ class UpdateSettingsRequest extends FormRequest
             'invoice_gstin' => ['nullable', 'string', 'size:15', 'alpha_num:ascii'],
             'invoice_address' => ['nullable', 'string', 'max:255'],
             'invoice_state' => ['nullable', 'string', 'max:100'],
+            'reviews_enabled' => ['boolean'],
+            'reviews_max_photos' => ['required', 'integer', 'min:0', 'max:10'],
         ];
     }
 

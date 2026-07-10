@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Customer;
 
+use App\Domain\Settings\SettingsRegistry;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CategoryResource;
+use App\Http\Resources\ReviewResource;
 use App\Http\Resources\ServiceResource;
 use App\Models\Category;
+use App\Models\Review;
 use App\Models\Service;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -101,7 +104,57 @@ class CatalogController extends Controller
             'available_in_zone' => $zoneId === null
                 || ! $service->zones()->exists()
                 || $service->zones()->whereKey($zoneId)->exists(),
+            ...$this->reviewProps($service),
         ]);
+    }
+
+    /**
+     * Storefront reviews for a service (M10): visible reviews whose booking
+     * contained it, plus the aggregate the rating header needs. Reviews hang
+     * off the provider, not the service — this join through booking_items is
+     * how a multi-service booking's review reaches every service page it
+     * bought from.
+     *
+     * @return array<string, mixed>
+     */
+    protected function reviewProps(Service $service): array
+    {
+        if (! app(SettingsRegistry::class)->boolean('reviews.enabled', true)) {
+            return ['reviews' => null, 'review_summary' => null];
+        }
+
+        $base = Review::query()
+            ->visible()
+            ->whereHas('booking.items', fn ($query) => $query->where('service_id', $service->id));
+
+        /** @var object{total: int, avg: float|string|null} $aggregate */
+        $aggregate = (clone $base)
+            ->selectRaw('count(*) as total, coalesce(avg(rating), 0) as avg')
+            ->first();
+
+        /** @var array<int, int> $counts */
+        $counts = (clone $base)
+            ->selectRaw('rating, count(*) as total')
+            ->groupBy('rating')
+            ->pluck('total', 'rating')
+            ->all();
+
+        $reviews = (clone $base)
+            ->with(['customer:id,name', 'media'])
+            ->latest('id')
+            ->paginate(6, pageName: 'reviews_page')
+            ->withQueryString();
+
+        return [
+            'reviews' => ReviewResource::collection($reviews),
+            'review_summary' => [
+                'average' => round((float) $aggregate->avg, 1),
+                'count' => (int) $aggregate->total,
+                'distribution' => collect([5, 4, 3, 2, 1])
+                    ->mapWithKeys(fn (int $stars): array => [$stars => $counts[$stars] ?? 0])
+                    ->all(),
+            ],
+        ];
     }
 
     /**

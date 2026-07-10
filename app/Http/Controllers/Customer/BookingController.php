@@ -14,6 +14,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\CancelBookingRequest;
 use App\Http\Requests\Customer\RescheduleBookingRequest;
 use App\Http\Resources\BookingResource;
+use App\Http\Resources\ReviewResource;
 use App\Models\Booking;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -51,6 +52,8 @@ class BookingController extends Controller
 
         $booking->load(['items', 'provider', 'zone', 'statusHistory' => fn ($query) => $query->orderBy('created_at'), 'media']);
 
+        $review = $booking->review()->with(['customer:id,name', 'media'])->first();
+
         $canReschedule = $booking->status->customerReschedulable()
             && CarbonImmutable::now()->lessThanOrEqualTo(
                 $booking->scheduled_at->toImmutable()->subHours($settings->integer('booking.reschedule_min_hours', 2)),
@@ -69,7 +72,14 @@ class BookingController extends Controller
                 'cancellation_fee_preview' => $booking->status->customerCancellable()
                     ? $fees->feeFor($booking)
                     : null,
+                // One review per completed booking (M10) — the form only
+                // shows while none exists and the feature flag is on.
+                'can_review' => $review === null
+                    && $settings->boolean('reviews.enabled', true)
+                    && ($request->user()?->can('review', $booking) ?? false),
             ],
+            'review' => $review !== null ? new ReviewResource($review) : null,
+            'review_max_photos' => $settings->integer('reviews.max_photos', 4),
             'slot_days' => $canReschedule ? $slots->days() : [],
             'is_favorite_provider' => $booking->provider !== null && $request->user() !== null
                 ? $request->user()->hasFavorited($booking->provider)

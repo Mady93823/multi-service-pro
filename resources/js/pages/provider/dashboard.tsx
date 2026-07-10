@@ -1,4 +1,5 @@
 import { useDayLabels, WEEK_DAYS } from '@/components/provider/working-hours-editor';
+import { ReviewCard } from '@/components/reviews/review-card';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -8,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import ProviderLayout from '@/layouts/provider-layout';
 import { useTrans } from '@/lib/i18n';
-import { type BreadcrumbItem, type ProviderProfile } from '@/types';
+import { type BreadcrumbItem, type ProviderProfile, type Review } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Briefcase, CalendarOff, Pencil, Star, Trash2, Wrench } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
@@ -17,6 +18,7 @@ interface ProviderDashboardProps {
     profile: ProviderProfile;
     pending_offers: number;
     active_jobs: number;
+    recent_reviews: Review[];
 }
 
 function AddBlackoutDialog() {
@@ -80,7 +82,12 @@ function AddBlackoutDialog() {
     );
 }
 
-export default function ProviderDashboard({ profile, pending_offers: pendingOffers, active_jobs: activeJobs }: ProviderDashboardProps) {
+export default function ProviderDashboard({
+    profile,
+    pending_offers: pendingOffers,
+    active_jobs: activeJobs,
+    recent_reviews: recentReviews,
+}: ProviderDashboardProps) {
     const t = useTrans();
     const dayLabels = useDayLabels();
 
@@ -203,6 +210,19 @@ export default function ProviderDashboard({ profile, pending_offers: pendingOffe
                         </CardContent>
                     </Card>
                 </div>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{t('Recent reviews')}</CardTitle>
+                        <CardDescription>{t('What customers said about your latest jobs.')}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                        {recentReviews.length === 0 && <p className="text-muted-foreground text-sm">{t('No reviews yet.')}</p>}
+                        {recentReviews.map((review) => (
+                            <ReviewCard key={review.id} review={review} />
+                        ))}
+                    </CardContent>
+                </Card>
 
                 <Card>
                     <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">

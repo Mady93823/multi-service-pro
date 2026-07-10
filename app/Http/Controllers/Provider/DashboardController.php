@@ -6,8 +6,10 @@ use App\Domain\Bookings\Enums\BookingStatus;
 use App\Domain\Dispatch\Enums\OfferStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProviderProfileResource;
+use App\Http\Resources\ReviewResource;
 use App\Models\Booking;
 use App\Models\DispatchOffer;
+use App\Models\Review;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -42,10 +44,21 @@ class DashboardController extends Controller
             ])
             ->count();
 
+        // Visible only — a moderated review disappears from the provider's
+        // feed the same way it does from the storefront (M10).
+        $recentReviews = Review::query()
+            ->visible()
+            ->where('provider_id', $user->id)
+            ->with(['customer:id,name', 'booking:id,code'])
+            ->latest('id')
+            ->limit(5)
+            ->get();
+
         return Inertia::render('provider/dashboard', [
             'profile' => new ProviderProfileResource($profile),
             'pending_offers' => $pendingOffers,
             'active_jobs' => $activeJobs,
+            'recent_reviews' => ReviewResource::collection($recentReviews),
         ]);
     }
 }

@@ -121,6 +121,14 @@ Invoices are **GST-format PDFs via `barryvdh/laravel-dompdf`** (the first Blade 
 
 **Blade now counts for i18n.** `tests/Feature/Localization/TranslationCatalogTest.php` and `scratchpad/reconcile_catalog.php` both scan `resources/views/**/*.blade.php` for `__()`, because the invoice is the one user-facing surface React never renders.
 
+### D17 — Ratings are denormalized-by-recompute; review photos are private-disk but guest-served (2026-07-10)
+
+`M10` keeps `provider_profiles.rating_avg` / `rating_count` (and `jobs_completed`) as denormalized columns, but they are **never incremented** — every change triggers a full recompute over the surviving rows (`SyncProviderRatingOnReviewChange` over `reviews.visible()`, `SyncProviderJobStatsOnCompletion` over completed bookings). Recompute costs one aggregate query at review-write frequency (rare) and buys three properties an increment cannot: hiding a review automatically pulls its star out of the average, a re-fired listener is idempotent (the M06 double-fire lesson made this a design rule, not an optimization), and the columns can always be rebuilt from source of truth. The recompute lives in listeners on `ReviewChanged` / `BookingStatusChanged`, not in the actions — moderation and submission both flow through the same sync without knowing it exists.
+
+Review photos follow the M04 private-disk rule (nothing user-uploaded is web-servable directly), but unlike booking problem photos the storefront must show them to **guests**. The photo route therefore carries no `auth` middleware; `ReviewPolicy@view` takes a *nullable* user — visible review → anyone, hidden review → only the author or an admin, checked via `Gate::allows` so a denial becomes **404, not 403**: after moderation there is nothing left to probe for. The admin check sits inside the policy method rather than a `before()` hook because `before()` never runs for guests.
+
+Moderation **hides, never deletes**: the customer keeps their review (shown to them with the reason), the provider and the public lose it, and the row survives for audit. One review per completed booking is enforced in three layers — policy (owner + completed), FormRequest (duplicate check + `reviews.enabled` kill-switch + `reviews.max_photos`), and a `lockForUpdate` re-check in `SubmitReview` with the `unique(booking_id)` index as the race backstop — the same defense-in-depth shape as M08's payment confirmation.
+
 ## UI sourcing workflow (shoogle.dev)
 
 1. Need a block (e.g., booking form, dashboard, pricing card) → search **shoogle.dev**

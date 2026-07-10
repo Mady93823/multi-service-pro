@@ -57,6 +57,8 @@ type SettingsForm = {
     invoice_gstin: string;
     invoice_address: string;
     invoice_state: string;
+    reviews_enabled: boolean;
+    reviews_max_photos: number;
 };
 
 /** The four write-only secrets: the server sends `*_set`, never the value. */
@@ -101,6 +103,8 @@ interface SettingsEditProps {
         invoice_gstin: string | null;
         invoice_address: string | null;
         invoice_state: string | null;
+        reviews_enabled: boolean;
+        reviews_max_photos: number;
     };
 }
 
@@ -160,6 +164,8 @@ export default function SettingsEdit({ values }: SettingsEditProps) {
         invoice_gstin: values.invoice_gstin ?? '',
         invoice_address: values.invoice_address ?? '',
         invoice_state: values.invoice_state ?? '',
+        reviews_enabled: values.reviews_enabled,
+        reviews_max_photos: values.reviews_max_photos,
     });
 
     transform((current) => ({
@@ -712,6 +718,38 @@ export default function SettingsEdit({ values }: SettingsEditProps) {
                                     onChange={(e) => setData('invoice_address', e.target.value)}
                                 />
                                 <InputError message={errors.invoice_address} />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('Reviews')}</CardTitle>
+                            <CardDescription>{t('Customer ratings on completed bookings, shown on service pages.')}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <label className="flex items-center justify-between gap-4 text-sm">
+                                <span>
+                                    <span className="font-medium">{t('Enable reviews')}</span>
+                                    <span className="text-muted-foreground block">{t('Turning this off hides all reviews and stops new ones.')}</span>
+                                </span>
+                                <Switch checked={data.reviews_enabled} onCheckedChange={(checked) => setData('reviews_enabled', checked)} />
+                            </label>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="reviews_max_photos">{t('Photos per review')}</Label>
+                                <Input
+                                    id="reviews_max_photos"
+                                    type="number"
+                                    min={0}
+                                    max={10}
+                                    value={data.reviews_max_photos}
+                                    onChange={(e) => setData('reviews_max_photos', Number(e.target.value))}
+                                    className="w-40"
+                                    required
+                                />
+                                <p className="text-muted-foreground text-xs">{t('Set to 0 to disable review photos.')}</p>
+                                <InputError message={errors.reviews_max_photos} />
                             </div>
                         </CardContent>
                     </Card>

@@ -59,6 +59,8 @@ class UpdateSettings
         $this->settings->set('invoice.gstin', $data['invoice_gstin'] ?? null);
         $this->settings->set('invoice.address', $data['invoice_address'] ?? null);
         $this->settings->set('invoice.state', $data['invoice_state'] ?? null);
+        $this->settings->set('reviews.enabled', (bool) ($data['reviews_enabled'] ?? false));
+        $this->settings->set('reviews.max_photos', $data['reviews_max_photos']);
 
         foreach (self::SECRETS as $field => $key) {
             $submitted = $data[$field] ?? null;

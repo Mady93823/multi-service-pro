@@ -199,4 +199,12 @@ class Booking extends Model implements HasMedia
             ->where('status', TrackingSessionStatus::Active->value)
             ->latestOfMany();
     }
+
+    /**
+     * @return HasOne<Review, $this>
+     */
+    public function review(): HasOne
+    {
+        return $this->hasOne(Review::class);
+    }
 }

@@ -169,7 +169,7 @@ payout_requests
 ## Engagement & platform
 
 ```
-reviews
+reviews                  ← M10; photos via medialibrary collection review_photos (private disk)
   id, booking_id (uniq FK), customer_id FK, provider_id FK, rating TINYINT,
   comment, is_hidden, hidden_reason
 
@@ -219,6 +219,8 @@ faqs
 settings
   id, group, key (uniq), value TEXT, type [string|int|bool|json|decimal]
 ```
+
+> [!note] **Shipped M10 (2026-07-10).** `reviews`: `booking_id` unique FK **cascade** (pure child content), `customer_id`/`provider_id` FK restrict, `index(provider_id, is_hidden)` — the rating recompute and every public listing filter on visibility. `rating_avg`/`rating_count`/`jobs_completed` on `provider_profiles` are **recomputed, never incremented**, by listeners (`SyncProviderRatingOnReviewChange` over visible reviews, `SyncProviderJobStatsOnCompletion` over completed bookings) — hiding a review recomputes too, so a hidden 1-star stops dragging the average (ADR D17). Photos live on a `review_photos` medialibrary collection (private disk) served through the guest-reachable, policy-checked `reviews.photos.show` route; a hidden review's photos 404.
 
 ## Integrity rules
 

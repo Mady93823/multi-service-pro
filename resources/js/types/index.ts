@@ -236,6 +236,27 @@ export interface Booking {
     photo_urls?: string[];
 }
 
+export interface Review {
+    id: number;
+    rating: number;
+    comment: string | null;
+    is_hidden: boolean;
+    hidden_reason: string | null;
+    created_at: string | null;
+    customer_name?: string;
+    provider_name?: string;
+    booking_code?: string;
+    booking_id: number;
+    photo_urls?: string[];
+}
+
+export interface ReviewSummary {
+    average: number;
+    count: number;
+    /** Star value (5..1) to how many visible reviews gave it. */
+    distribution: Record<number, number>;
+}
+
 export interface SlotOption {
     value: string;
     label: string;

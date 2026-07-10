@@ -1,5 +1,7 @@
 import { PriceLabel } from '@/components/catalog/price-label';
 import { ServiceCard } from '@/components/catalog/service-card';
+import { ReviewCard } from '@/components/reviews/review-card';
+import { StarRating } from '@/components/reviews/star-rating';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import PublicLayout from '@/layouts/public-layout';
 import { useMoney } from '@/lib/format';
 import { useTrans } from '@/lib/i18n';
-import { type Service } from '@/types';
+import { type Paginated, type Review, type ReviewSummary, type Service } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ChevronRight, Clock, ImageIcon, LoaderCircle, Minus, Plus, ShoppingCart } from 'lucide-react';
 import { FormEventHandler } from 'react';
@@ -15,6 +17,8 @@ import { FormEventHandler } from 'react';
 interface CatalogShowProps {
     service: Service;
     available_in_zone: boolean;
+    reviews: Paginated<Review> | null;
+    review_summary: ReviewSummary | null;
 }
 
 type AddToCartForm = {
@@ -23,7 +27,7 @@ type AddToCartForm = {
     addon_ids: number[];
 };
 
-export default function CatalogShow({ service, available_in_zone: availableInZone }: CatalogShowProps) {
+export default function CatalogShow({ service, available_in_zone: availableInZone, reviews, review_summary: reviewSummary }: CatalogShowProps) {
     const money = useMoney();
     const t = useTrans();
 
@@ -93,6 +97,13 @@ export default function CatalogShow({ service, available_in_zone: availableInZon
                                 {service.is_featured && <Badge variant="secondary">{t('Popular')}</Badge>}
                             </div>
                             {service.short_description && <p className="text-muted-foreground text-sm">{service.short_description}</p>}
+                            {reviewSummary !== null && reviewSummary.count > 0 && (
+                                <div className="flex items-center gap-2 text-sm">
+                                    <StarRating rating={reviewSummary.average} />
+                                    <span className="font-medium">{reviewSummary.average.toFixed(1)}</span>
+                                    <span className="text-muted-foreground">{t(':count reviews', { count: String(reviewSummary.count) })}</span>
+                                </div>
+                            )}
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="flex items-center gap-4">
@@ -166,6 +177,62 @@ export default function CatalogShow({ service, available_in_zone: availableInZon
                     </Card>
                 </div>
             </div>
+
+            {reviews !== null && reviewSummary !== null && reviewSummary.count > 0 && (
+                <section className="space-y-4 py-4">
+                    <h2 className="text-lg font-semibold">{t('Customer reviews')}</h2>
+                    <div className="grid gap-6 lg:grid-cols-3">
+                        <div className="space-y-3">
+                            <div className="flex items-end gap-2">
+                                <span className="text-4xl font-semibold">{reviewSummary.average.toFixed(1)}</span>
+                                <div className="pb-1">
+                                    <StarRating rating={reviewSummary.average} />
+                                    <p className="text-muted-foreground text-xs">{t(':count reviews', { count: String(reviewSummary.count) })}</p>
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                {[5, 4, 3, 2, 1].map((stars) => {
+                                    const count = reviewSummary.distribution[stars] ?? 0;
+                                    const percent = reviewSummary.count > 0 ? (count / reviewSummary.count) * 100 : 0;
+
+                                    return (
+                                        <div key={stars} className="flex items-center gap-2 text-xs">
+                                            <span className="text-muted-foreground w-3 text-right">{stars}</span>
+                                            <div className="bg-muted h-2 flex-1 overflow-hidden rounded-full">
+                                                <div className="h-full rounded-full bg-amber-400" style={{ width: `${percent}%` }} />
+                                            </div>
+                                            <span className="text-muted-foreground w-8">{count}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        <div className="space-y-3 lg:col-span-2">
+                            {reviews.data.map((review) => (
+                                <ReviewCard key={review.id} review={review} />
+                            ))}
+                            {(reviews.links.prev !== null || reviews.links.next !== null) && (
+                                <div className="flex gap-2">
+                                    {reviews.links.prev !== null && (
+                                        <Button asChild variant="outline" size="sm">
+                                            <Link href={reviews.links.prev} preserveScroll>
+                                                {t('Previous')}
+                                            </Link>
+                                        </Button>
+                                    )}
+                                    {reviews.links.next !== null && (
+                                        <Button asChild variant="outline" size="sm">
+                                            <Link href={reviews.links.next} preserveScroll>
+                                                {t('More reviews')}
+                                            </Link>
+                                        </Button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </section>
+            )}
 
             {service.related && service.related.length > 0 && (
                 <section className="space-y-4 py-4">

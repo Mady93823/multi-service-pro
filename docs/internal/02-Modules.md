@@ -95,6 +95,15 @@ Full spec: [[05-Live-Tracking]]. Locked stack (Laravel Reverb + Geolocation + Le
 - Provider `rating_avg` + `rating_count` denormalized (updated via event listener)
 - Admin hide/unhide with reason (covers photos too)
 - ✅ *Done when:* rating updates provider card everywhere; hidden reviews vanish from public.
+- **Shipped 2026-07-10 (ADR D17).** Details:
+  - `reviews` table: `booking_id` **unique** (one review per booking), `is_hidden` + `hidden_reason`; `app/Domain/Reviews` — `SubmitReview` (locked duplicate re-check, photo attach, provider notification), `ModerateReview` (hide/unhide), `ReviewChanged` event.
+  - **Rating sync is a full recompute over visible reviews**, in `SyncProviderRatingOnReviewChange` (auto-discovered, registered once): hiding a 1-star pulls it out of the average, unhiding restores it, and a re-fired event stays idempotent. `SyncProviderJobStatsOnCompletion` recomputes `jobs_completed` the same way — the dashboard counter had been stuck at 0 since M05.
+  - **Three guard layers** on submission: `BookingPolicy@review` (owner + completed), `SubmitReviewRequest` (rating 1–5, `reviews.max_photos` cap, duplicate check, `reviews.enabled` kill-switch → 403), and the action re-checks under `lockForUpdate` with `unique(booking_id)` as the last-resort backstop.
+  - **Photos:** `review_photos` collection on the private disk, served by `reviews.photos.show` — **guest-reachable** because the storefront shows them; `ReviewPolicy@view` takes a nullable user, and a hidden review's photo 404s (not 403) so moderation leaves nothing to probe.
+  - **Storefront:** the service page joins reviews through `booking_items`, so a multi-service booking's review reaches every service page it bought from. Aggregate header (avg + count), 5→1 distribution bars, reviews paginated on their own `reviews_page` param.
+  - Screens: review form + own-review card on customer booking show (the owner still sees a hidden review, with the reason), recent-reviews card on provider dashboard, admin `/admin/reviews` queue with visibility + star filters and hide/unhide dialogs.
+  - Settings: `reviews.enabled` (true), `reviews.max_photos` (4, 0 disables photos) + admin *Reviews* card.
+  - Seeder reviews all three completed demo jobs (avg **4.67**); **ProviderSeeder now runs before BookingSeeder** — the stat listeners no-op against a missing profile row. 26 new tests (372 suite-wide).
 
 ## M11 Notifications
 - Laravel notification classes, channels: `database` (in-app), `mail`, `fcm` (custom channel via `kreait/firebase-php`)

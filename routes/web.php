@@ -10,6 +10,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Provider;
 use App\Http\Controllers\ProviderDocumentController;
+use App\Http\Controllers\ReviewPhotoController;
 use App\Http\Controllers\TrackingController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
@@ -52,6 +53,7 @@ Route::middleware(['auth', 'role:customer'])->group(function () {
     Route::post('bookings/{booking}/cancel', [Customer\BookingController::class, 'cancel'])->name('bookings.cancel');
     Route::post('bookings/{booking}/reschedule', [Customer\BookingController::class, 'reschedule'])->name('bookings.reschedule');
     Route::post('bookings/{booking}/rebook', [Customer\BookingController::class, 'rebook'])->name('bookings.rebook');
+    Route::post('bookings/{booking}/review', [Customer\ReviewController::class, 'store'])->name('bookings.review.store');
     Route::post('providers/{provider}/favorite', [Customer\FavoriteProviderController::class, 'toggle'])->name('providers.favorite');
 });
 
@@ -64,6 +66,11 @@ Route::get('bookings/{booking}/photos/{media}', [BookingPhotoController::class, 
 Route::get('bookings/{booking}/invoice', InvoiceController::class)
     ->middleware('auth')
     ->name('bookings.invoice');
+
+// Review photos (M10) — private disk but guest-reachable: the storefront
+// shows them. ReviewPolicy@view decides; hidden reviews 404.
+Route::get('reviews/{review}/photos/{media}', [ReviewPhotoController::class, 'show'])
+    ->name('reviews.photos.show');
 
 // Map-picker helpers (Nominatim proxy) — used by customer address book and admin zone editor.
 Route::middleware(['auth', 'throttle:30,1'])->group(function () {
@@ -135,6 +142,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('payouts/{payout}/approve', [Admin\PayoutController::class, 'approve'])->name('payouts.approve');
     Route::post('payouts/{payout}/pay', [Admin\PayoutController::class, 'pay'])->name('payouts.pay');
     Route::post('payouts/{payout}/reject', [Admin\PayoutController::class, 'reject'])->name('payouts.reject');
+    // Review moderation (M10).
+    Route::get('reviews', [Admin\ReviewController::class, 'index'])->name('reviews.index');
+    Route::post('reviews/{review}/hide', [Admin\ReviewController::class, 'hide'])->name('reviews.hide');
+    Route::post('reviews/{review}/unhide', [Admin\ReviewController::class, 'unhide'])->name('reviews.unhide');
     Route::get('providers', [Admin\ProviderController::class, 'index'])->name('providers.index');
     Route::get('providers/{provider}', [Admin\ProviderController::class, 'show'])->name('providers.show');
     Route::post('providers/{provider}/review', [Admin\ProviderController::class, 'review'])->name('providers.review');

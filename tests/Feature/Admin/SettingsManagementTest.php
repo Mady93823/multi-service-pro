@@ -39,6 +39,8 @@ function validSettingsPayload(array $overrides = []): array
         'payout_min_amount' => 500,
         'payout_hold_days' => 7,
         'invoice_prefix' => 'INV',
+        'reviews_enabled' => true,
+        'reviews_max_photos' => 4,
     ], $overrides);
 }
 

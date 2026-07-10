@@ -12,6 +12,7 @@ use App\Domain\Dispatch\Enums\OfferStatus;
 use App\Domain\Earnings\Enums\EarningStatus;
 use App\Domain\Payments\Enums\PaymentProvider;
 use App\Domain\Payments\Enums\PaymentState;
+use App\Domain\Reviews\Actions\SubmitReview;
 use App\Domain\Settings\SettingsRegistry;
 use App\Models\Address;
 use App\Models\Booking;
@@ -25,8 +26,8 @@ use Illuminate\Database\Seeder;
  * after `migrate:fresh --seed`: one completed cash job with the full status
  * history, two completed wallet-paid jobs that give the provider a payable
  * balance (M09), one upcoming, one searching with a live offer and one the
- * provider has accepted (M06). Idempotent: skips when the customer has
- * bookings.
+ * provider has accepted (M06). Every finished job gets a review so ratings
+ * show everywhere (M10). Idempotent: skips when the customer has bookings.
  */
 class BookingSeeder extends Seeder
 {
@@ -76,9 +77,19 @@ class BookingSeeder extends Seeder
         // M09 demo: the cash job above leaves the provider *owing* commission,
         // so two wallet-paid jobs give them a real positive balance and the
         // payout request → admin approve → mark-paid loop is clickable.
+        $onlineJobs = [];
+
         foreach ([12, 9] as $daysAgo) {
-            $this->completedOnlineJob($customer, $provider, $address, $services[0], $daysAgo);
+            $onlineJobs[] = $this->completedOnlineJob($customer, $provider, $address, $services[0], $daysAgo);
         }
+
+        // M10 demo: reviews on the finished jobs, so the service page, the
+        // provider dashboard and the admin moderation queue all have content.
+        // Via the action so the rating listener recomputes provider stats.
+        $reviews = app(SubmitReview::class);
+        $reviews->handle($completed, 5, __('Right on time and very professional. The place was spotless afterwards.'));
+        $reviews->handle($onlineJobs[0], 4, __('Good work overall, arrived a little late but kept me posted.'));
+        $reviews->handle($onlineJobs[1], 5, __('Second time booking — consistently great.'));
 
         // Upcoming booking three days out, freshly placed.
         $upcoming = $this->makeBooking(
@@ -128,7 +139,7 @@ class BookingSeeder extends Seeder
      * A wallet-paid job the provider finished a while back. The money settled
      * before completion, so no cash is owed and the earning is theirs.
      */
-    private function completedOnlineJob(User $customer, User $provider, Address $address, Service $service, int $daysAgo): void
+    private function completedOnlineJob(User $customer, User $provider, Address $address, Service $service, int $daysAgo): Booking
     {
         $booking = $this->makeBooking(
             $customer,
@@ -169,6 +180,8 @@ class BookingSeeder extends Seeder
             'status' => EarningStatus::Available->value,
             'available_at' => now()->subDays($daysAgo - 1),
         ]);
+
+        return $booking;
     }
 
     private function makeBooking(

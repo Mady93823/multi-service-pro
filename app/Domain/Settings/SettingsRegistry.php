@@ -81,6 +81,9 @@ class SettingsRegistry
             'invoice.gstin' => ['group' => 'invoice', 'type' => SettingType::String, 'value' => null],
             'invoice.address' => ['group' => 'invoice', 'type' => SettingType::String, 'value' => null],
             'invoice.state' => ['group' => 'invoice', 'type' => SettingType::String, 'value' => null],
+            // M10. Reviews & ratings; max_photos 0 turns photo uploads off.
+            'reviews.enabled' => ['group' => 'reviews', 'type' => SettingType::Boolean, 'value' => true],
+            'reviews.max_photos' => ['group' => 'reviews', 'type' => SettingType::Integer, 'value' => 4],
         ];
     }
 

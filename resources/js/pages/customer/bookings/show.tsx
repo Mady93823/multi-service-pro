@@ -2,6 +2,8 @@ import { BookingTimeline } from '@/components/booking/booking-timeline';
 import { CancelBookingDialog } from '@/components/booking/cancel-booking-dialog';
 import { RescheduleDialog } from '@/components/booking/reschedule-dialog';
 import { BookingStatusBadge } from '@/components/booking/status-badge';
+import { ReviewCard } from '@/components/reviews/review-card';
+import { ReviewForm } from '@/components/reviews/review-form';
 import { TrackingMap } from '@/components/tracking/tracking-map';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import CustomerLayout from '@/layouts/customer-layout';
 import { useMoney } from '@/lib/format';
 import { useTrans } from '@/lib/i18n';
-import { type Booking, type BreadcrumbItem, type SlotDay } from '@/types';
+import { type Booking, type BreadcrumbItem, type Review, type SlotDay } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { CreditCard, FileText, Heart, KeyRound, MapPin, RotateCcw, UserRound } from 'lucide-react';
 
@@ -22,12 +24,22 @@ interface BookingShowProps {
         can_pay: boolean;
         can_download_invoice: boolean;
         cancellation_fee_preview: string | null;
+        can_review: boolean;
     };
     slot_days: SlotDay[];
     is_favorite_provider: boolean;
+    review: Review | null;
+    review_max_photos: number;
 }
 
-export default function BookingShow({ booking, abilities, slot_days: slotDays, is_favorite_provider: isFavorite }: BookingShowProps) {
+export default function BookingShow({
+    booking,
+    abilities,
+    slot_days: slotDays,
+    is_favorite_provider: isFavorite,
+    review,
+    review_max_photos: reviewMaxPhotos,
+}: BookingShowProps) {
     const t = useTrans();
     const money = useMoney();
 
@@ -204,6 +216,26 @@ export default function BookingShow({ booking, abilities, slot_days: slotDays, i
                                         <Heart className={isFavorite ? 'h-4 w-4 fill-current' : 'h-4 w-4'} />
                                         {isFavorite ? t('Favorited') : t('Favorite')}
                                     </Button>
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {abilities.can_review && <ReviewForm bookingId={booking.id} maxPhotos={reviewMaxPhotos} />}
+
+                        {review !== null && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">{t('Your review')}</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-2">
+                                    <ReviewCard review={review} title={t('You')} />
+                                    {review.is_hidden && (
+                                        <p className="text-muted-foreground text-xs">
+                                            {review.hidden_reason !== null
+                                                ? t('This review was hidden by our team: :reason', { reason: review.hidden_reason })
+                                                : t('This review was hidden by our team.')}
+                                        </p>
+                                    )}
                                 </CardContent>
                             </Card>
                         )}

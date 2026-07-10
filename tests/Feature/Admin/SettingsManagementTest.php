@@ -34,6 +34,11 @@ function validSettingsPayload(array $overrides = []): array
         'payment_timeout_minutes' => 30,
         'pay_after_service' => true,
         'wallet_enabled' => true,
+        'commission_percent' => 20,
+        'payouts_enabled' => true,
+        'payout_min_amount' => 500,
+        'payout_hold_days' => 7,
+        'invoice_prefix' => 'INV',
     ], $overrides);
 }
 
@@ -224,4 +229,48 @@ test('payment settings are validated and saved', function () {
     expect($settings->integer('booking.payment_timeout_minutes'))->toBe(45)
         ->and($settings->boolean('payments.pay_after_service'))->toBeFalse()
         ->and($settings->boolean('payments.wallet_enabled'))->toBeFalse();
+});
+
+test('commission and payout settings are validated and saved', function () {
+    $this->actingAs(User::factory()->admin()->create())
+        ->put('/admin/settings', validSettingsPayload([
+            'commission_percent' => 120, // a rate above 100 would owe the provider nothing
+        ]))
+        ->assertSessionHasErrors('commission_percent');
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->put('/admin/settings', validSettingsPayload([
+            'commission_percent' => 25.5,
+            'payouts_enabled' => false,
+            'payout_min_amount' => 250,
+            'payout_hold_days' => 3,
+        ]))
+        ->assertSessionHasNoErrors();
+
+    $settings = app()->make(SettingsRegistry::class);
+    $settings->flush();
+
+    expect($settings->decimal('payments.commission_percent'))->toBe(25.5)
+        ->and($settings->boolean('payouts.enabled'))->toBeFalse()
+        ->and($settings->decimal('payouts.min_amount'))->toBe(250.0)
+        ->and($settings->integer('payouts.hold_days'))->toBe(3);
+});
+
+test('a malformed GSTIN is rejected but a blank one is allowed', function () {
+    $this->actingAs(User::factory()->admin()->create())
+        ->put('/admin/settings', validSettingsPayload(['invoice_gstin' => 'TOO-SHORT']))
+        ->assertSessionHasErrors('invoice_gstin');
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->put('/admin/settings', validSettingsPayload([
+            'invoice_gstin' => '29AAAAA0000A1Z5',
+            'invoice_company_name' => 'Acme Services Pvt Ltd',
+        ]))
+        ->assertSessionHasNoErrors();
+
+    $settings = app()->make(SettingsRegistry::class);
+    $settings->flush();
+
+    expect($settings->string('invoice.gstin'))->toBe('29AAAAA0000A1Z5')
+        ->and($settings->string('invoice.company_name'))->toBe('Acme Services Pvt Ltd');
 });

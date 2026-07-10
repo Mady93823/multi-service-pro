@@ -9,7 +9,7 @@ use Illuminate\Http\UploadedFile;
 class CreateCategory
 {
     /**
-     * @param  array{parent_id?: int|null, name: string, sort_order?: int, is_active?: bool}  $data
+     * @param  array{parent_id?: int|null, name: string, sort_order?: int, is_active?: bool, commission_percent?: string|null}  $data
      */
     public function handle(array $data, ?UploadedFile $icon = null, ?UploadedFile $image = null): Category
     {

@@ -141,12 +141,13 @@ wallet_transactions      ← append-only, never update/delete
   reference_id, note, created_at
 
 earnings                 ← provider ledger, append-only
-  id, provider_id FK, booking_id FK, gross, commission, net,
-  status [pending|available|paid_out], available_at
+  id, provider_id FK, booking_id FK, payout_request_id FK nullable,
+  type [job|reversal|adjustment], gross, commission, collected_amount, net,
+  commission_rate, status [pending|available|paid_out], available_at, note
 
 payout_requests
   id, provider_id FK, amount, status [requested|approved|paid|rejected],
-  method_details JSON, processed_by FK users, processed_at, reference
+  method_details JSON, processed_by FK users, processed_at, reference, note
 ```
 
 > [!note] **Shipped M08 (2026-07-09).** `payments`: `booking_id` FK **restrict** (money-bearing), `gateway(20)`, nullable `gateway_ref`, `amount decimal(12,2)`, `currency char(3)` default `INR`, `status(20)` default `initiated`, `payload` JSON, `captured_at`, `index(booking_id, status)`, and **`unique(gateway, gateway_ref)`** — the webhook-idempotency backstop (`gateway_ref` stays null until a session is opened; MySQL/MariaDB allow repeated NULLs in a unique index, so parallel attempts are fine).
@@ -154,6 +155,16 @@ payout_requests
 > `wallets`: `user_id` unique, cascade on user delete. `wallet_transactions`: `wallet_id` FK **restrict**, `created_at` via `->useCurrent()` and **no `updated_at`** (`public const UPDATED_AT = null;` on the model) — MariaDB strict mode rejects a non-nullable `timestamp` with no default.
 >
 > `WalletService` is the only writer of both wallet tables: it locks the wallet row, appends the ledger entry with `balance_after`, and updates the cached `wallets.balance` inside one transaction, so `balance == sum(credits) − sum(debits)` holds after every movement (pinned by a reconcile assertion in `tests/Feature/Payments/WalletTest.php`).
+
+> [!note] **Shipped M09 (2026-07-10).** `categories.commission_percent decimal(5,2)` nullable — null inherits the parent category, then the `payments.commission_percent` setting.
+>
+> `earnings`: `provider_id`/`booking_id` FK **restrict** (money-bearing), `payout_request_id` FK nullable, `index(provider_id, status)`, and **`unique(booking_id, type)`** — the double-write backstop that stops a re-fired completion listener paying twice, exactly as `payments.unique(gateway, gateway_ref)` stops a replayed webhook.
+>
+> Every row satisfies **`net = gross − commission − collected_amount`** (asserted in `tests/Feature/Earnings/EarningsLedgerTest.php`). `gross` is the pre-tax service value; `collected_amount` is the customer's full total on a **cash** job (zero otherwise), so a cash job's `net` is **negative** — the provider owes commission plus the GST they took at the door. **Never clamp the sign.**
+>
+> Append-only like `wallet_transactions`: a refund appends a `type = reversal` row negating the job row column for column; corrections are `adjustment` rows. `status` is a lifecycle flag, not a money column — `earnings:release` flips `pending → available` once `available_at` passes, and a paid payout flips its claimed rows to `paid_out`.
+>
+> `payout_requests`: `provider_id` FK restrict, `processed_by` FK nullOnDelete. A request claims the provider's **whole** released balance; the claimed `earnings` rows carry its id, so rejection is a clean unclaim (`payout_request_id = null`). Only one open (`requested|approved`) request per provider, enforced under a row lock in `RequestPayout`.
 
 ## Engagement & platform
 
@@ -236,7 +247,10 @@ erDiagram
     bookings ||--o| reviews : rated_by
     users ||--o| wallets : owns
     wallets ||--o{ wallet_transactions : ledger
-    provider_profiles ||--o{ earnings : earns
+    users ||--o{ earnings : earns
+    bookings ||--o{ earnings : splits_into
+    payout_requests ||--o{ earnings : settles
+    users ||--o{ payout_requests : requests
 ```
 
 Related: [[02-Modules]] · [[05-Live-Tracking]]

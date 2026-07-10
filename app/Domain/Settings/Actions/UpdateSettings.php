@@ -50,6 +50,15 @@ class UpdateSettings
         $this->settings->set('booking.payment_timeout_minutes', $data['payment_timeout_minutes']);
         $this->settings->set('payments.razorpay_key_id', $data['razorpay_key_id'] ?? null);
         $this->settings->set('payments.stripe_publishable_key', $data['stripe_publishable_key'] ?? null);
+        $this->settings->set('payments.commission_percent', $data['commission_percent']);
+        $this->settings->set('payouts.enabled', (bool) ($data['payouts_enabled'] ?? false));
+        $this->settings->set('payouts.min_amount', $data['payout_min_amount']);
+        $this->settings->set('payouts.hold_days', $data['payout_hold_days']);
+        $this->settings->set('invoice.prefix', $data['invoice_prefix']);
+        $this->settings->set('invoice.company_name', $data['invoice_company_name'] ?? null);
+        $this->settings->set('invoice.gstin', $data['invoice_gstin'] ?? null);
+        $this->settings->set('invoice.address', $data['invoice_address'] ?? null);
+        $this->settings->set('invoice.state', $data['invoice_state'] ?? null);
 
         foreach (self::SECRETS as $field => $key) {
             $submitted = $data[$field] ?? null;

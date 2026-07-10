@@ -20,6 +20,8 @@ type CategoryForm = {
     is_active: boolean;
     icon: File | null;
     image: File | null;
+    /** Blank = inherit the parent category, then the platform rate (M09). */
+    commission_percent: string;
 };
 
 interface CategoryFormProps {
@@ -39,6 +41,7 @@ export function CategoryForm({ parents, category }: CategoryFormProps) {
         is_active: category?.is_active ?? true,
         icon: null,
         image: null,
+        commission_percent: category?.commission_percent ?? '',
     });
 
     transform((current) => ({
@@ -92,6 +95,21 @@ export function CategoryForm({ parents, category }: CategoryFormProps) {
                     onChange={(e) => setData('sort_order', Number(e.target.value))}
                 />
                 <InputError message={errors.sort_order} />
+            </div>
+
+            <div className="grid gap-2">
+                <Label htmlFor="commission_percent">{t('Commission override (%)')}</Label>
+                <Input
+                    id="commission_percent"
+                    type="number"
+                    min={0}
+                    max={100}
+                    step="0.01"
+                    value={data.commission_percent}
+                    onChange={(e) => setData('commission_percent', e.target.value)}
+                    placeholder={t('Leave blank to use the platform rate')}
+                />
+                <InputError message={errors.commission_percent} />
             </div>
 
             <div className="flex items-center gap-3">

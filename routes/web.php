@@ -6,6 +6,7 @@ use App\Http\Controllers\Customer;
 use App\Http\Controllers\DemoPingController;
 use App\Http\Controllers\FcmTokenController;
 use App\Http\Controllers\GeocodeController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Provider;
 use App\Http\Controllers\ProviderDocumentController;
@@ -59,6 +60,11 @@ Route::get('bookings/{booking}/photos/{media}', [BookingPhotoController::class, 
     ->middleware('auth')
     ->name('bookings.photos.show');
 
+// GST tax invoice PDF (M09) — BookingPolicy@invoice: the customer or an admin.
+Route::get('bookings/{booking}/invoice', InvoiceController::class)
+    ->middleware('auth')
+    ->name('bookings.invoice');
+
 // Map-picker helpers (Nominatim proxy) — used by customer address book and admin zone editor.
 Route::middleware(['auth', 'throttle:30,1'])->group(function () {
     Route::get('geocode/reverse', [GeocodeController::class, 'reverse'])->name('geocode.reverse');
@@ -90,6 +96,10 @@ Route::middleware(['auth', 'role:provider'])->prefix('provider')->name('provider
         Route::post('blackouts', [Provider\AvailabilityController::class, 'storeBlackout'])->name('blackouts.store');
         Route::delete('blackouts/{blackout}', [Provider\AvailabilityController::class, 'destroyBlackout'])->name('blackouts.destroy');
 
+        // Earnings + payouts (M09).
+        Route::get('earnings', [Provider\EarningController::class, 'index'])->name('earnings.index');
+        Route::post('payouts', [Provider\EarningController::class, 'requestPayout'])->name('payouts.store');
+
         // Dispatch (M06): job offers + the provider's own job progression.
         Route::get('jobs', [Provider\JobController::class, 'index'])->name('jobs.index');
         Route::post('jobs/{booking}/advance', [Provider\JobController::class, 'advance'])->name('jobs.advance');
@@ -120,6 +130,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('bookings/{booking}/transition', [Admin\BookingController::class, 'transition'])->name('bookings.transition');
     Route::post('bookings/{booking}/dispatch', [Admin\BookingController::class, 'dispatch'])->name('bookings.dispatch');
     Route::post('bookings/{booking}/refund', [Admin\BookingController::class, 'refund'])->name('bookings.refund');
+    // Payout queue (M09).
+    Route::get('payouts', [Admin\PayoutController::class, 'index'])->name('payouts.index');
+    Route::post('payouts/{payout}/approve', [Admin\PayoutController::class, 'approve'])->name('payouts.approve');
+    Route::post('payouts/{payout}/pay', [Admin\PayoutController::class, 'pay'])->name('payouts.pay');
+    Route::post('payouts/{payout}/reject', [Admin\PayoutController::class, 'reject'])->name('payouts.reject');
     Route::get('providers', [Admin\ProviderController::class, 'index'])->name('providers.index');
     Route::get('providers/{provider}', [Admin\ProviderController::class, 'show'])->name('providers.show');
     Route::post('providers/{provider}/review', [Admin\ProviderController::class, 'review'])->name('providers.review');

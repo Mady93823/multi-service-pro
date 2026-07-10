@@ -48,6 +48,15 @@ type SettingsForm = {
     remove_razorpay_webhook_secret: boolean;
     remove_stripe_secret_key: boolean;
     remove_stripe_webhook_secret: boolean;
+    commission_percent: number;
+    payouts_enabled: boolean;
+    payout_min_amount: number;
+    payout_hold_days: number;
+    invoice_prefix: string;
+    invoice_company_name: string;
+    invoice_gstin: string;
+    invoice_address: string;
+    invoice_state: string;
 };
 
 /** The four write-only secrets: the server sends `*_set`, never the value. */
@@ -83,6 +92,15 @@ interface SettingsEditProps {
         razorpay_webhook_secret_set: boolean;
         stripe_secret_key_set: boolean;
         stripe_webhook_secret_set: boolean;
+        commission_percent: number;
+        payouts_enabled: boolean;
+        payout_min_amount: number;
+        payout_hold_days: number;
+        invoice_prefix: string;
+        invoice_company_name: string | null;
+        invoice_gstin: string | null;
+        invoice_address: string | null;
+        invoice_state: string | null;
     };
 }
 
@@ -133,6 +151,15 @@ export default function SettingsEdit({ values }: SettingsEditProps) {
         remove_razorpay_webhook_secret: false,
         remove_stripe_secret_key: false,
         remove_stripe_webhook_secret: false,
+        commission_percent: values.commission_percent,
+        payouts_enabled: values.payouts_enabled,
+        payout_min_amount: values.payout_min_amount,
+        payout_hold_days: values.payout_hold_days,
+        invoice_prefix: values.invoice_prefix,
+        invoice_company_name: values.invoice_company_name ?? '',
+        invoice_gstin: values.invoice_gstin ?? '',
+        invoice_address: values.invoice_address ?? '',
+        invoice_state: values.invoice_state ?? '',
     });
 
     transform((current) => ({
@@ -563,6 +590,128 @@ export default function SettingsEdit({ values }: SettingsEditProps) {
                                 </div>
                                 {secretField('stripe_secret_key', t('Secret key'), values.stripe_secret_key_set)}
                                 {secretField('stripe_webhook_secret', t('Webhook secret'), values.stripe_webhook_secret_set)}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('Commission and payouts')}</CardTitle>
+                            <CardDescription>
+                                {t(
+                                    'The platform’s cut of each completed job, and how professionals withdraw what they have earned. A category can override the rate.',
+                                )}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="grid gap-2">
+                                <Label htmlFor="commission_percent">{t('Commission (%)')}</Label>
+                                <Input
+                                    id="commission_percent"
+                                    type="number"
+                                    min={0}
+                                    max={100}
+                                    step="0.01"
+                                    value={data.commission_percent}
+                                    onChange={(e) => setData('commission_percent', Number(e.target.value))}
+                                    className="w-40"
+                                    required
+                                />
+                                <InputError message={errors.commission_percent} />
+                            </div>
+
+                            <label className="flex items-center justify-between gap-4 text-sm">
+                                <span>
+                                    <span className="font-medium">{t('Payout requests')}</span>
+                                    <span className="text-muted-foreground block">{t('Let professionals withdraw their available balance.')}</span>
+                                </span>
+                                <Switch checked={data.payouts_enabled} onCheckedChange={(checked) => setData('payouts_enabled', checked)} />
+                            </label>
+
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="payout_min_amount">{t('Minimum payout amount')}</Label>
+                                    <Input
+                                        id="payout_min_amount"
+                                        type="number"
+                                        min={0}
+                                        step="0.01"
+                                        value={data.payout_min_amount}
+                                        onChange={(e) => setData('payout_min_amount', Number(e.target.value))}
+                                        required
+                                    />
+                                    <InputError message={errors.payout_min_amount} />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="payout_hold_days">{t('Hold earnings for (days)')}</Label>
+                                    <Input
+                                        id="payout_hold_days"
+                                        type="number"
+                                        min={0}
+                                        max={90}
+                                        value={data.payout_hold_days}
+                                        onChange={(e) => setData('payout_hold_days', Number(e.target.value))}
+                                        required
+                                    />
+                                    <p className="text-muted-foreground text-xs">
+                                        {t('The window in which a refund can still cancel a completed job’s earning.')}
+                                    </p>
+                                    <InputError message={errors.payout_hold_days} />
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('Invoice')}</CardTitle>
+                            <CardDescription>{t('Printed on every tax invoice. Leave the company name blank to use the app name.')}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="invoice_prefix">{t('Invoice number prefix')}</Label>
+                                    <Input
+                                        id="invoice_prefix"
+                                        value={data.invoice_prefix}
+                                        onChange={(e) => setData('invoice_prefix', e.target.value)}
+                                        required
+                                    />
+                                    <InputError message={errors.invoice_prefix} />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="invoice_company_name">{t('Company name')}</Label>
+                                    <Input
+                                        id="invoice_company_name"
+                                        value={data.invoice_company_name}
+                                        onChange={(e) => setData('invoice_company_name', e.target.value)}
+                                    />
+                                    <InputError message={errors.invoice_company_name} />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="invoice_gstin">{t('GSTIN')}</Label>
+                                    <Input
+                                        id="invoice_gstin"
+                                        value={data.invoice_gstin}
+                                        onChange={(e) => setData('invoice_gstin', e.target.value)}
+                                        placeholder="22AAAAA0000A1Z5"
+                                    />
+                                    <InputError message={errors.invoice_gstin} />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="invoice_state">{t('State')}</Label>
+                                    <Input id="invoice_state" value={data.invoice_state} onChange={(e) => setData('invoice_state', e.target.value)} />
+                                    <InputError message={errors.invoice_state} />
+                                </div>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="invoice_address">{t('Registered address')}</Label>
+                                <Input
+                                    id="invoice_address"
+                                    value={data.invoice_address}
+                                    onChange={(e) => setData('invoice_address', e.target.value)}
+                                />
+                                <InputError message={errors.invoice_address} />
                             </div>
                         </CardContent>
                     </Card>

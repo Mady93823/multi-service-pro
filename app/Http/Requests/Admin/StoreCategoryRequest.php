@@ -26,6 +26,8 @@ class StoreCategoryRequest extends FormRequest
             'is_active' => ['boolean'],
             'icon' => ['nullable', 'image', 'max:2048'],
             'image' => ['nullable', 'image', 'max:4096'],
+            // Blank inherits the parent, then payments.commission_percent (M09).
+            'commission_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ];
     }
 }

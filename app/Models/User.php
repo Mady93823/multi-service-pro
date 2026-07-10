@@ -128,4 +128,23 @@ class User extends Authenticatable
     {
         return $this->hasOne(Wallet::class);
     }
+
+    /**
+     * Provider ledger (M09) — append-only, one row per completed job plus any
+     * compensating rows.
+     *
+     * @return HasMany<Earning, $this>
+     */
+    public function earnings(): HasMany
+    {
+        return $this->hasMany(Earning::class, 'provider_id');
+    }
+
+    /**
+     * @return HasMany<PayoutRequest, $this>
+     */
+    public function payoutRequests(): HasMany
+    {
+        return $this->hasMany(PayoutRequest::class, 'provider_id');
+    }
 }

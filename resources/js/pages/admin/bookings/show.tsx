@@ -13,7 +13,7 @@ import { useMoney } from '@/lib/format';
 import { useTrans } from '@/lib/i18n';
 import { type Booking, type BookingStatus, type BreadcrumbItem, type DispatchOffer, type Payment } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
-import { ArrowRight, Ban, Radar, Undo2, UserRound } from 'lucide-react';
+import { ArrowRight, Ban, FileText, Radar, Undo2, UserRound } from 'lucide-react';
 import { useState } from 'react';
 
 interface AdminBookingShowProps {
@@ -22,6 +22,9 @@ interface AdminBookingShowProps {
     can_dispatch: boolean;
     payments: Payment[];
     can_refund: boolean;
+    can_download_invoice: boolean;
+    /** Snapshotted at completion (M09); null until the job is done. */
+    earning: { commission_rate: string; commission_amount: string; provider_earning: string } | null;
     allowed_transitions: BookingStatus[];
     providers: { id: number; name: string }[];
 }
@@ -73,6 +76,8 @@ export default function AdminBookingShow({
     can_dispatch: canDispatch,
     payments,
     can_refund: canRefund,
+    can_download_invoice: canDownloadInvoice,
+    earning,
     allowed_transitions: allowed,
     providers,
 }: AdminBookingShowProps) {
@@ -325,6 +330,44 @@ export default function AdminBookingShow({
                                             </span>
                                         </div>
                                     ))}
+                                    {canDownloadInvoice && (
+                                        // A plain link, not an Inertia visit: the response is a PDF download.
+                                        <Button asChild variant="outline" size="sm" className="mt-1 w-fit">
+                                            <a href={route('bookings.invoice', booking.id)}>
+                                                <FileText className="h-4 w-4" />
+                                                {t('Download invoice')}
+                                            </a>
+                                        </Button>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {earning !== null && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">{t('Commission')}</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">
+                                            {t('Platform commission')} · {earning.commission_rate}%
+                                        </span>
+                                        <span>{money(earning.commission_amount)}</span>
+                                    </div>
+                                    <div className="flex justify-between font-medium">
+                                        <span>{t('Professional earns')}</span>
+                                        <span className={Number(earning.provider_earning) < 0 ? 'text-red-700 dark:text-red-400' : ''}>
+                                            {money(earning.provider_earning)}
+                                        </span>
+                                    </div>
+                                    {Number(earning.provider_earning) < 0 && (
+                                        // Cash job: the professional took the customer's money at the
+                                        // door, so they owe the platform its commission and the tax.
+                                        <p className="text-muted-foreground text-xs">
+                                            {t('The professional collected cash, so this amount is deducted from their next payout.')}
+                                        </p>
+                                    )}
                                 </CardContent>
                             </Card>
                         )}

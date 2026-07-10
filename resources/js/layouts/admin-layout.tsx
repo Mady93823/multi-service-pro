@@ -1,7 +1,7 @@
 import AppSidebarLayout from '@/layouts/app/app-sidebar-layout';
 import { useTrans } from '@/lib/i18n';
 import { type BreadcrumbItem, type NavItem } from '@/types';
-import { CalendarClock, FolderTree, LayoutGrid, Map, Settings, UsersRound, Wrench } from 'lucide-react';
+import { Banknote, CalendarClock, FolderTree, LayoutGrid, Map, Settings, UsersRound, Wrench } from 'lucide-react';
 
 interface AdminLayoutProps {
     children: React.ReactNode;
@@ -41,6 +41,11 @@ export default function AdminLayout({ children, breadcrumbs }: AdminLayoutProps)
             title: t('Providers'),
             url: '/admin/providers',
             icon: UsersRound,
+        },
+        {
+            title: t('Payouts'),
+            url: '/admin/payouts',
+            icon: Banknote,
         },
         {
             title: t('Settings'),

@@ -13,3 +13,6 @@ Schedule::command('tracking:prune')->dailyAt('03:30');
 
 // M08: free slots held by bookings whose payment window has closed.
 Schedule::command('bookings:expire-unpaid')->everyFiveMinutes();
+
+// M09: end the hold window on completed jobs so providers can cash out.
+Schedule::command('earnings:release')->dailyAt('04:00');

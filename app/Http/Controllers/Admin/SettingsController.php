@@ -51,6 +51,16 @@ class SettingsController extends Controller
                 'razorpay_webhook_secret_set' => $settings->string('payments.razorpay_webhook_secret') !== '',
                 'stripe_secret_key_set' => $settings->string('payments.stripe_secret_key') !== '',
                 'stripe_webhook_secret_set' => $settings->string('payments.stripe_webhook_secret') !== '',
+                // Commission, payouts and invoicing (M09).
+                'commission_percent' => $settings->decimal('payments.commission_percent', 20.0),
+                'payouts_enabled' => $settings->boolean('payouts.enabled', true),
+                'payout_min_amount' => $settings->decimal('payouts.min_amount', 0.0),
+                'payout_hold_days' => $settings->integer('payouts.hold_days', 7),
+                'invoice_prefix' => $settings->string('invoice.prefix', 'INV'),
+                'invoice_company_name' => $settings->string('invoice.company_name') ?: null,
+                'invoice_gstin' => $settings->string('invoice.gstin') ?: null,
+                'invoice_address' => $settings->string('invoice.address') ?: null,
+                'invoice_state' => $settings->string('invoice.state') ?: null,
             ],
         ]);
     }

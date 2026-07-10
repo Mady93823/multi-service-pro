@@ -67,6 +67,20 @@ class SettingsRegistry
             'payments.stripe_publishable_key' => ['group' => 'payments', 'type' => SettingType::String, 'value' => null],
             'payments.stripe_secret_key' => ['group' => 'payments', 'type' => SettingType::String, 'value' => null],
             'payments.stripe_webhook_secret' => ['group' => 'payments', 'type' => SettingType::String, 'value' => null],
+            // M09. Global commission rate; a category may override it.
+            'payments.commission_percent' => ['group' => 'payments', 'type' => SettingType::Decimal, 'value' => '20'],
+            'payouts.enabled' => ['group' => 'payouts', 'type' => SettingType::Boolean, 'value' => true],
+            'payouts.min_amount' => ['group' => 'payouts', 'type' => SettingType::Decimal, 'value' => '500'],
+            // Days a completed job's earning waits before it can be claimed —
+            // the window in which a refund can still reverse it.
+            'payouts.hold_days' => ['group' => 'payouts', 'type' => SettingType::Integer, 'value' => 7],
+            // GST invoice header (D9). Blank company name falls back to the
+            // branding app name, so an un-configured install still prints.
+            'invoice.prefix' => ['group' => 'invoice', 'type' => SettingType::String, 'value' => 'INV'],
+            'invoice.company_name' => ['group' => 'invoice', 'type' => SettingType::String, 'value' => null],
+            'invoice.gstin' => ['group' => 'invoice', 'type' => SettingType::String, 'value' => null],
+            'invoice.address' => ['group' => 'invoice', 'type' => SettingType::String, 'value' => null],
+            'invoice.state' => ['group' => 'invoice', 'type' => SettingType::String, 'value' => null],
         ];
     }
 

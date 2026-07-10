@@ -11,7 +11,7 @@ class UpdateCategory
     /**
      * Slug intentionally stays stable on rename — public URLs keep working.
      *
-     * @param  array{parent_id?: int|null, name: string, sort_order?: int, is_active?: bool}  $data
+     * @param  array{parent_id?: int|null, name: string, sort_order?: int, is_active?: bool, commission_percent?: string|null}  $data
      */
     public function handle(Category $category, array $data, ?UploadedFile $icon = null, ?UploadedFile $image = null): Category
     {

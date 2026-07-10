@@ -11,7 +11,7 @@ import { useMoney } from '@/lib/format';
 import { useTrans } from '@/lib/i18n';
 import { type Booking, type BreadcrumbItem, type SlotDay } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { CreditCard, Heart, KeyRound, MapPin, RotateCcw, UserRound } from 'lucide-react';
+import { CreditCard, FileText, Heart, KeyRound, MapPin, RotateCcw, UserRound } from 'lucide-react';
 
 interface BookingShowProps {
     booking: Booking;
@@ -20,6 +20,7 @@ interface BookingShowProps {
         can_reschedule: boolean;
         can_rebook: boolean;
         can_pay: boolean;
+        can_download_invoice: boolean;
         cancellation_fee_preview: string | null;
     };
     slot_days: SlotDay[];
@@ -142,6 +143,15 @@ export default function BookingShow({ booking, abilities, slot_days: slotDays, i
                                     </div>
                                 )}
                                 <p className="text-muted-foreground text-xs">{paymentNote}</p>
+                                {abilities.can_download_invoice && (
+                                    // A plain link, not an Inertia visit: the response is a PDF download.
+                                    <Button asChild variant="outline" size="sm" className="mt-2 w-fit">
+                                        <a href={route('bookings.invoice', booking.id)}>
+                                            <FileText className="h-4 w-4" />
+                                            {t('Download invoice')}
+                                        </a>
+                                    </Button>
+                                )}
                             </CardContent>
                         </Card>
 

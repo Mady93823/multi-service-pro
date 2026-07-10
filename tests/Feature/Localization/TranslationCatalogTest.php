@@ -5,6 +5,10 @@
  * used in the frontend (t('...')) and every natural-language server string
  * (__('...')) must exist in lang/en.json, so translators and the future
  * language manager always see the full catalog.
+ *
+ * Blade is scanned too — the invoice PDF (M09) is the one user-facing surface
+ * React never renders. Keep these regexes in step with
+ * scratchpad/reconcile_catalog.php.
  */
 function collectTranslationKeys(): array
 {
@@ -28,19 +32,21 @@ function collectTranslationKeys(): array
         }
     }
 
-    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(app_path()));
+    foreach ([app_path(), resource_path('views')] as $root) {
+        $server = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root));
 
-    foreach ($iterator as $file) {
-        if ($file->isDir() || $file->getExtension() !== 'php') {
-            continue;
-        }
-        $contents = (string) file_get_contents($file->getPathname());
-        preg_match_all("/__\\(\\s*'((?:[^'\\\\]|\\\\.)+)'/", $contents, $matches);
+        foreach ($server as $file) {
+            if ($file->isDir() || $file->getExtension() !== 'php') {
+                continue;
+            }
+            $contents = (string) file_get_contents($file->getPathname());
+            preg_match_all("/__\\(\\s*'((?:[^'\\\\]|\\\\.)+)'/", $contents, $matches);
 
-        foreach ($matches[1] as $key) {
-            $key = str_replace("\\'", "'", $key);
-            if (str_contains($key, ' ')) { // natural string, not a lang-file dot key
-                $keys[] = $key;
+            foreach ($matches[1] as $key) {
+                $key = str_replace("\\'", "'", $key);
+                if (str_contains($key, ' ')) { // natural string, not a lang-file dot key
+                    $keys[] = $key;
+                }
             }
         }
     }

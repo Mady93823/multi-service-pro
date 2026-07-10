@@ -26,6 +26,7 @@ class CategoryResource extends JsonResource
             'image_url' => $this->image_path !== null ? Storage::disk('public')->url($this->image_path) : null,
             'sort_order' => $this->sort_order,
             'is_active' => $this->is_active,
+            'commission_percent' => $this->commission_percent,
             'children' => CategoryResource::collection($this->whenLoaded('children')),
             'services' => ServiceResource::collection($this->whenLoaded('services')),
             'services_count' => $this->whenCounted('services'),

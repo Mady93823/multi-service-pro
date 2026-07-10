@@ -34,6 +34,9 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property string $discount
  * @property string $tax
  * @property string $total
+ * @property string|null $commission_rate_snapshot
+ * @property string|null $commission_amount
+ * @property string|null $provider_earning
  * @property string|null $cancellation_fee
  * @property array<string, mixed> $address_snapshot
  * @property array<string, mixed>|null $tax_breakup
@@ -177,6 +180,14 @@ class Booking extends Model implements HasMedia
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * @return HasMany<Earning, $this>
+     */
+    public function earnings(): HasMany
+    {
+        return $this->hasMany(Earning::class);
     }
 
     /**

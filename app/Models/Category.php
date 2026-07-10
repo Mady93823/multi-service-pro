@@ -10,6 +10,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property string|null $commission_percent
+ */
 class Category extends Model
 {
     /** @use HasFactory<CategoryFactory> */
@@ -23,6 +26,7 @@ class Category extends Model
         'image_path',
         'sort_order',
         'is_active',
+        'commission_percent',
     ];
 
     /**
@@ -33,6 +37,9 @@ class Category extends Model
         return [
             'is_active' => 'boolean',
             'sort_order' => 'integer',
+            // Null means "inherit" — the parent category, then the global
+            // payments.commission_percent setting (M09 CommissionResolver).
+            'commission_percent' => 'decimal:2',
         ];
     }
 

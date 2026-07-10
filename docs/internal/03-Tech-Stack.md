@@ -28,8 +28,8 @@ tags:
 | Auth tokens | Laravel Sanctum | bundled |
 | Roles | spatie/laravel-permission | 6.x |
 | Media | spatie/laravel-medialibrary | 11.x |
-| PDF | barryvdh/laravel-dompdf | latest |
-| Payments | razorpay/razorpay (PHP SDK) | latest |
+| PDF | barryvdh/laravel-dompdf | 3.x |
+| Payments | ~~razorpay/razorpay (PHP SDK)~~ raw HTTP client, no vendor SDK (D15) | — |
 | i18n | laravel-react-i18n | latest |
 | PWA | vite-plugin-pwa | latest |
 | Build | Vite | bundled with Laravel |
@@ -100,6 +100,26 @@ Gateway credentials live in **admin-editable settings, not `.env`**, so the inst
 Trust rules: **never trust a redirect.** Razorpay's checkout.js callback is HMAC-verified (`hash_hmac('sha256', "$orderId|$paymentId", $keySecret)` compared with `hash_equals`); Stripe's return leg is re-verified against the API (`isSessionPaid`). Webhooks are the backstop and are signature-verified against the **raw body** (Razorpay: body vs `X-Razorpay-Signature`; Stripe: `"{$t}.{$body}"` vs the `v1=` part of `Stripe-Signature`), CSRF-exempt (`webhooks/*`) and throttled `60,1`. `ConfirmPayment` locks the payment and booking rows and no-ops a replay, so a retried webhook cannot double-place a booking. Money captured against an already-terminal booking stays `Paid`, logs a warning, and is refunded from the admin booking screen.
 
 Wallet is an **append-only ledger** (`wallet_transactions` with `balance_after`) plus a cached `wallets.balance` written in the same locked transaction, so `balance == credits − debits` always holds. **Refunds v1 always go to the wallet** — instant, no gateway round-trip, and the same seam takes gateway-side refunds later. Cancelling a paid booking refunds total minus the cancellation fee; admin cancellation refunds in full. Cash settles on completion via the auto-discovered `SettleCashOnCompletion` listener (registered once — see the M06 double-fire lesson).
+
+### D16 — Commission is signed, the earnings ledger is append-only, payouts claim whole balances (2026-07-10)
+
+`M09` charges commission on the **pre-tax** service value (`subtotal + addons − discount`), never on the GST the platform must remit. The rate is resolved **per booking item**: the item's category override, then its parent's, then the global `payments.commission_percent` setting; the blended result is snapshotted onto `bookings.commission_rate_snapshot` at completion so a later rate change can never rewrite history.
+
+Every earnings row obeys one invariant, asserted in tests:
+
+```
+net = gross − commission − collected_amount
+```
+
+`collected_amount` is what the provider already took at the door — the customer's full total, tax included — on a **cash** job, and zero otherwise. A cash job therefore lands with a **negative net**: the provider owes the platform its commission *and* the GST they pocketed. Nothing clamps that to zero; a payout claims the negative rows alongside the positive ones so the debt offsets rather than being quietly dropped. Positive earnings wait out `payouts.hold_days` (the window a refund can still reverse them in); a debt is available immediately, because a debt does not wait.
+
+`earnings` is append-only like `wallet_transactions`: a refund appends a `reversal` row that negates the job row column for column rather than editing it. Negating a cash job's negative net *credits* the provider — the platform forgives commission on a job it refunded. Recovering the cash the provider physically holds is a real-world action outside the ledger. `unique(booking_id, type)` is the double-write backstop, mirroring `payments.unique(gateway, gateway_ref)`.
+
+A payout request claims the provider's **whole** released balance in one row rather than an arbitrary amount, and the claimed earnings point back at it (`earnings.payout_request_id`). That makes "what did this payout settle" answerable, stops a second request double-spending the same rows without a partial-allocation algorithm, and makes rejection a clean unclaim. Only one request may be open per provider. Money leaves through the admin's own bank transfer — `reference` records the UTR — and the customer wallet is never touched: **a payout is not a wallet movement, it is money leaving the system.**
+
+Invoices are **GST-format PDFs via `barryvdh/laravel-dompdf`** (the first Blade view outside `app.blade.php`; D1's "no Blade" rule was always scoped to UI). Every figure comes from the booking's own snapshot columns — `tax_breakup` was written at checkout — so reprinting an old invoice cannot pick up today's tax rate. The invoice number is derived from the booking id (`INV-2026-000123`), needing no column and never renumbering on reprint. `BookingPolicy@invoice` grants the customer and admins; the assigned provider is not a party to the customer's tax document. Amounts are formatted by `App\Support\Money`, which hand-rolls Indian digit grouping rather than depending on `ext-intl` (shared hosts often omit it, D8).
+
+**Blade now counts for i18n.** `tests/Feature/Localization/TranslationCatalogTest.php` and `scratchpad/reconcile_catalog.php` both scan `resources/views/**/*.blade.php` for `__()`, because the invoice is the one user-facing surface React never renders.
 
 ## UI sourcing workflow (shoogle.dev)
 

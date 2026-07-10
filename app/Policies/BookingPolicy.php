@@ -36,4 +36,13 @@ class BookingPolicy
     {
         return $booking->customer_id === $user->id;
     }
+
+    /**
+     * The tax invoice belongs to whoever paid: the customer (and admins, via
+     * before()). The assigned provider is not a party to it.
+     */
+    public function invoice(User $user, Booking $booking): bool
+    {
+        return $booking->customer_id === $user->id;
+    }
 }

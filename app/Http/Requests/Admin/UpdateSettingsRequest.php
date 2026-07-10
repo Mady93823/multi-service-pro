@@ -57,6 +57,16 @@ class UpdateSettingsRequest extends FormRequest
             'remove_razorpay_webhook_secret' => ['boolean'],
             'remove_stripe_secret_key' => ['boolean'],
             'remove_stripe_webhook_secret' => ['boolean'],
+            'commission_percent' => ['required', 'numeric', 'min:0', 'max:100'],
+            'payouts_enabled' => ['boolean'],
+            'payout_min_amount' => ['required', 'numeric', 'min:0'],
+            'payout_hold_days' => ['required', 'integer', 'min:0', 'max:90'],
+            'invoice_prefix' => ['required', 'string', 'max:8', 'alpha_num:ascii'],
+            'invoice_company_name' => ['nullable', 'string', 'max:150'],
+            // 15 chars: 2 state + 10 PAN + 1 entity + 1 'Z' + 1 checksum.
+            'invoice_gstin' => ['nullable', 'string', 'size:15', 'alpha_num:ascii'],
+            'invoice_address' => ['nullable', 'string', 'max:255'],
+            'invoice_state' => ['nullable', 'string', 'max:100'],
         ];
     }
 

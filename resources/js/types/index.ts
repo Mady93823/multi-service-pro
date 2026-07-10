@@ -73,6 +73,8 @@ export interface Category {
     image_url: string | null;
     sort_order: number;
     is_active: boolean;
+    /** Null inherits the parent category, then the platform rate (M09). */
+    commission_percent: string | null;
     children?: Category[];
     services?: Service[];
     services_count?: number;
@@ -472,4 +474,69 @@ export interface RazorpaySession {
 export interface StripeSession {
     url: string;
     publishable_key: string;
+}
+
+// M09 commission, earnings + payouts.
+
+/** Mirrors App\Domain\Earnings\Enums\EarningType. */
+export type EarningType = 'job' | 'reversal' | 'adjustment';
+
+/** Mirrors App\Domain\Earnings\Enums\EarningStatus. */
+export type EarningStatus = 'pending' | 'available' | 'paid_out';
+
+/** Mirrors App\Domain\Earnings\Enums\PayoutStatus. */
+export type PayoutStatus = 'requested' | 'approved' | 'paid' | 'rejected';
+
+/**
+ * One row of the provider's append-only ledger. `net` is a signed decimal
+ * string: a cash job is negative because the provider already took the money.
+ */
+export interface Earning {
+    id: number;
+    type: EarningType;
+    booking_code: string | null;
+    gross: string;
+    commission: string;
+    net: string;
+    commission_rate: string;
+    status: EarningStatus;
+    available_at: string | null;
+    created_at: string | null;
+}
+
+/** Signed totals across the whole ledger — `claimable` is what a payout is worth now. */
+export interface EarningsSummary {
+    gross: number;
+    commission: number;
+    net: number;
+    pending: number;
+    available: number;
+    paid_out: number;
+    claimable: number;
+}
+
+export interface PayoutRequestRow {
+    id: number;
+    amount: string;
+    status: PayoutStatus;
+    reference: string | null;
+    note: string | null;
+    created_at: string | null;
+    processed_at: string | null;
+}
+
+/** Bank details the provider supplied; shape depends on `method`. */
+export interface PayoutMethodDetails {
+    method: 'upi' | 'bank';
+    upi_id?: string;
+    account_name?: string;
+    account_number?: string;
+    ifsc?: string;
+}
+
+export interface AdminPayoutRow extends PayoutRequestRow {
+    provider: { id: number | null; name: string | null; email: string | null };
+    method_details: PayoutMethodDetails;
+    earnings_count: number | null;
+    processed_by: string | null;
 }

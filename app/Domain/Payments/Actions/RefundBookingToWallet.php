@@ -4,6 +4,7 @@ namespace App\Domain\Payments\Actions;
 
 use App\Domain\Bookings\Enums\PaymentStatus;
 use App\Domain\Payments\Enums\PaymentState;
+use App\Domain\Payments\Events\BookingRefunded;
 use App\Domain\Payments\WalletService;
 use App\Models\Booking;
 use App\Models\Payment;
@@ -69,6 +70,8 @@ class RefundBookingToWallet
                 ? PaymentStatus::PartialRefund
                 : PaymentStatus::Refunded;
             $booking->save();
+
+            BookingRefunded::dispatch($booking, $amount);
 
             return $booking;
         });

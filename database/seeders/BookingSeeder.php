@@ -9,6 +9,9 @@ use App\Domain\Bookings\Enums\PaymentMethod;
 use App\Domain\Bookings\Enums\PaymentStatus;
 use App\Domain\Dispatch\Enums\DispatchMode;
 use App\Domain\Dispatch\Enums\OfferStatus;
+use App\Domain\Earnings\Enums\EarningStatus;
+use App\Domain\Payments\Enums\PaymentProvider;
+use App\Domain\Payments\Enums\PaymentState;
 use App\Domain\Settings\SettingsRegistry;
 use App\Models\Address;
 use App\Models\Booking;
@@ -18,9 +21,12 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
 
 /**
- * Two demo bookings for the demo customer: one completed with a full status
- * history and one upcoming — booking screens are demo-able right after
- * `migrate:fresh --seed`. Idempotent: skips when the customer has bookings.
+ * Demo bookings for the demo customer, so every screen is demo-able right
+ * after `migrate:fresh --seed`: one completed cash job with the full status
+ * history, two completed wallet-paid jobs that give the provider a payable
+ * balance (M09), one upcoming, one searching with a live offer and one the
+ * provider has accepted (M06). Idempotent: skips when the customer has
+ * bookings.
  */
 class BookingSeeder extends Seeder
 {
@@ -67,6 +73,13 @@ class BookingSeeder extends Seeder
 
         $completed->update(['payment_status' => PaymentStatus::Paid]);
 
+        // M09 demo: the cash job above leaves the provider *owing* commission,
+        // so two wallet-paid jobs give them a real positive balance and the
+        // payout request → admin approve → mark-paid loop is clickable.
+        foreach ([12, 9] as $daysAgo) {
+            $this->completedOnlineJob($customer, $provider, $address, $services[0], $daysAgo);
+        }
+
         // Upcoming booking three days out, freshly placed.
         $upcoming = $this->makeBooking(
             $customer,
@@ -111,8 +124,60 @@ class BookingSeeder extends Seeder
         }
     }
 
-    private function makeBooking(User $customer, Address $address, Service $service, CarbonImmutable $scheduledAt): Booking
+    /**
+     * A wallet-paid job the provider finished a while back. The money settled
+     * before completion, so no cash is owed and the earning is theirs.
+     */
+    private function completedOnlineJob(User $customer, User $provider, Address $address, Service $service, int $daysAgo): void
     {
+        $booking = $this->makeBooking(
+            $customer,
+            $address,
+            $service,
+            CarbonImmutable::now()->subDays($daysAgo)->setTime(10, 0),
+            PaymentMethod::Wallet,
+        );
+
+        $booking->payments()->create([
+            'gateway' => PaymentProvider::Wallet,
+            'amount' => $booking->total,
+            'currency' => app(SettingsRegistry::class)->string('localization.currency', 'INR') ?: 'INR',
+            'status' => PaymentState::Captured,
+            'captured_at' => now(),
+        ]);
+        $booking->update(['payment_status' => PaymentStatus::Paid]);
+
+        $machine = app(BookingStateMachine::class);
+        $machine->initialize($booking, BookingActor::Customer, $customer);
+        $booking->provider_id = $provider->id;
+
+        foreach ([
+            BookingStatus::Searching,
+            BookingStatus::Assigned,
+            BookingStatus::Accepted,
+            BookingStatus::EnRoute,
+            BookingStatus::Arrived,
+            BookingStatus::InProgress,
+            BookingStatus::Completed,
+        ] as $status) {
+            $machine->transition($booking, $status, BookingActor::System, null, __('Seeded demo data.'));
+        }
+
+        // Stand in for `earnings:release`: the hold window would have elapsed
+        // by now on a job this old, and the seeder cannot wait for the clock.
+        $booking->earnings()->update([
+            'status' => EarningStatus::Available->value,
+            'available_at' => now()->subDays($daysAgo - 1),
+        ]);
+    }
+
+    private function makeBooking(
+        User $customer,
+        Address $address,
+        Service $service,
+        CarbonImmutable $scheduledAt,
+        PaymentMethod $paymentMethod = PaymentMethod::Cash,
+    ): Booking {
         $settings = app(SettingsRegistry::class);
 
         $subtotal = (float) $service->price;
@@ -150,7 +215,7 @@ class BookingSeeder extends Seeder
             ],
             'total' => number_format($subtotal + $tax, 2, '.', ''),
             'payment_status' => PaymentStatus::Unpaid,
-            'payment_method' => PaymentMethod::Cash,
+            'payment_method' => $paymentMethod,
             'job_otp_code' => str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT),
         ]);
 

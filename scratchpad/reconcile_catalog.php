@@ -4,8 +4,8 @@
  * Reconcile lang/en.json against the keys actually used in code (D8/D9).
  *
  * Mirrors the extraction rules of tests/Feature/Localization/
- * TranslationCatalogTest.php exactly: adds missing keys (value = key),
- * drops orphans, keeps existing translations, and sorts the catalog.
+ * TranslationCatalogTest.php exactly — keep the two in step: adds missing keys
+ * (value = key), drops orphans, keeps existing translations, sorts the catalog.
  *
  * Usage: php scratchpad/reconcile_catalog.php [--dry-run]
  */
@@ -35,21 +35,25 @@ $collect = static function () use ($root): array {
         }
     }
 
-    $backend = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root.'/app'));
+    // Blade counts: the invoice PDF (M09) is the one user-facing surface
+    // React never renders.
+    foreach ([$root.'/app', $root.'/resources/views'] as $dir) {
+        $backend = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir));
 
-    foreach ($backend as $file) {
-        if ($file->isDir() || $file->getExtension() !== 'php') {
-            continue;
-        }
+        foreach ($backend as $file) {
+            if ($file->isDir() || $file->getExtension() !== 'php') {
+                continue;
+            }
 
-        $contents = (string) file_get_contents($file->getPathname());
-        preg_match_all("/__\\(\\s*'((?:[^'\\\\]|\\\\.)+)'/", $contents, $matches);
+            $contents = (string) file_get_contents($file->getPathname());
+            preg_match_all("/__\\(\\s*'((?:[^'\\\\]|\\\\.)+)'/", $contents, $matches);
 
-        foreach ($matches[1] as $key) {
-            $key = str_replace("\\'", "'", $key);
+            foreach ($matches[1] as $key) {
+                $key = str_replace("\\'", "'", $key);
 
-            if (str_contains($key, ' ')) { // natural string, not a lang-file dot key
-                $keys[] = $key;
+                if (str_contains($key, ' ')) { // natural string, not a lang-file dot key
+                    $keys[] = $key;
+                }
             }
         }
     }

@@ -9,6 +9,7 @@ use App\Domain\Bookings\Enums\BookingStatus;
 use App\Domain\Bookings\Enums\PaymentStatus;
 use App\Domain\Bookings\Exceptions\IllegalTransition;
 use App\Domain\Dispatch\Actions\DispatchBooking;
+use App\Domain\Invoicing\BookingInvoice;
 use App\Domain\Payments\Actions\RefundBookingToWallet;
 use App\Domain\Users\Enums\Role;
 use App\Http\Controllers\Controller;
@@ -71,7 +72,7 @@ class BookingController extends Controller
         ]);
     }
 
-    public function show(Booking $booking): Response
+    public function show(Booking $booking, BookingInvoice $invoice): Response
     {
         $booking->load([
             'customer',
@@ -104,6 +105,13 @@ class BookingController extends Controller
                 'created_at' => $payment->created_at?->toIso8601String(),
             ])->all(),
             'can_refund' => $booking->payment_status === PaymentStatus::Paid,
+            'can_download_invoice' => $invoice->isAvailableFor($booking),
+            // Snapshotted at completion (M09) — null until the job is done.
+            'earning' => $booking->commission_amount === null ? null : [
+                'commission_rate' => $booking->commission_rate_snapshot,
+                'commission_amount' => $booking->commission_amount,
+                'provider_earning' => $booking->provider_earning,
+            ],
             'allowed_transitions' => array_map(fn (BookingStatus $status): string => $status->value, $allowed),
             'providers' => User::query()
                 ->role(Role::Provider->value)

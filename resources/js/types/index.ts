@@ -257,6 +257,52 @@ export interface ReviewSummary {
     distribution: Record<number, number>;
 }
 
+export interface Coupon {
+    id: number;
+    code: string;
+    type: 'flat' | 'percent';
+    value: string;
+    max_discount: string | null;
+    min_order: string | null;
+    usage_limit: number | null;
+    per_user_limit: number | null;
+    first_order_only: boolean;
+    starts_at: string | null;
+    ends_at: string | null;
+    is_active: boolean;
+    usages_count?: number;
+    created_at: string | null;
+}
+
+export type BannerPlacement = 'home_hero' | 'home_strip';
+
+export interface Banner {
+    id: number;
+    title: string;
+    link_url: string | null;
+    placement: BannerPlacement;
+    sort_order: number;
+    starts_at: string | null;
+    ends_at: string | null;
+    is_active: boolean;
+    image_url: string | null;
+}
+
+export interface ReferralEntry {
+    id: number;
+    referee_name: string | null;
+    status: 'pending' | 'rewarded';
+    reward_amount: string | null;
+    created_at: string | null;
+}
+
+export interface ReferralCard {
+    code: string;
+    share_url: string;
+    reward_amount: string;
+    entries: ReferralEntry[];
+}
+
 export interface SlotOption {
     value: string;
     label: string;

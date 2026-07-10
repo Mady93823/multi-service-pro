@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers\Customer;
 
+use App\Domain\Banners\Enums\BannerPlacement;
 use App\Domain\Settings\SettingsRegistry;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\BannerResource;
 use App\Http\Resources\CategoryResource;
 use App\Http\Resources\ReviewResource;
 use App\Http\Resources\ServiceResource;
+use App\Models\Banner;
 use App\Models\Category;
 use App\Models\Review;
 use App\Models\Service;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -59,7 +63,24 @@ class CatalogController extends Controller
             ),
             'search' => $search,
             'results' => $results !== null ? ServiceResource::collection($results) : null,
+            'banners' => [
+                'hero' => BannerResource::collection($this->liveBanners(BannerPlacement::HomeHero)),
+                'strip' => BannerResource::collection($this->liveBanners(BannerPlacement::HomeStrip)),
+            ],
         ]);
+    }
+
+    /**
+     * @return EloquentCollection<int, Banner>
+     */
+    private function liveBanners(BannerPlacement $placement): EloquentCollection
+    {
+        return Banner::query()
+            ->live()
+            ->where('placement', $placement->value)
+            ->with('media')
+            ->orderBy('sort_order')
+            ->get();
     }
 
     public function category(Request $request, Category $category): Response

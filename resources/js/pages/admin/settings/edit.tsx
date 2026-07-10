@@ -59,6 +59,8 @@ type SettingsForm = {
     invoice_state: string;
     reviews_enabled: boolean;
     reviews_max_photos: number;
+    referrals_enabled: boolean;
+    referrals_reward_amount: number;
 };
 
 /** The four write-only secrets: the server sends `*_set`, never the value. */
@@ -105,6 +107,8 @@ interface SettingsEditProps {
         invoice_state: string | null;
         reviews_enabled: boolean;
         reviews_max_photos: number;
+        referrals_enabled: boolean;
+        referrals_reward_amount: number;
     };
 }
 
@@ -166,6 +170,8 @@ export default function SettingsEdit({ values }: SettingsEditProps) {
         invoice_state: values.invoice_state ?? '',
         reviews_enabled: values.reviews_enabled,
         reviews_max_photos: values.reviews_max_photos,
+        referrals_enabled: values.referrals_enabled,
+        referrals_reward_amount: values.referrals_reward_amount,
     });
 
     transform((current) => ({
@@ -750,6 +756,40 @@ export default function SettingsEdit({ values }: SettingsEditProps) {
                                 />
                                 <p className="text-muted-foreground text-xs">{t('Set to 0 to disable review photos.')}</p>
                                 <InputError message={errors.reviews_max_photos} />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('Referrals')}</CardTitle>
+                            <CardDescription>{t('Wallet credit for customers whose invited friends complete a first booking.')}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <label className="flex items-center justify-between gap-4 text-sm">
+                                <span>
+                                    <span className="font-medium">{t('Enable referral program')}</span>
+                                    <span className="text-muted-foreground block">
+                                        {t('Hides the refer & earn card and the sign-up code field when off.')}
+                                    </span>
+                                </span>
+                                <Switch checked={data.referrals_enabled} onCheckedChange={(checked) => setData('referrals_enabled', checked)} />
+                            </label>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="referrals_reward_amount">{t('Reward amount')}</Label>
+                                <Input
+                                    id="referrals_reward_amount"
+                                    type="number"
+                                    min={0}
+                                    step="0.01"
+                                    value={data.referrals_reward_amount}
+                                    onChange={(e) => setData('referrals_reward_amount', Number(e.target.value))}
+                                    className="w-40"
+                                    required
+                                />
+                                <p className="text-muted-foreground text-xs">{t('Set to 0 to pause payouts without hiding the program.')}</p>
+                                <InputError message={errors.referrals_reward_amount} />
                             </div>
                         </CardContent>
                     </Card>

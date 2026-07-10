@@ -2,6 +2,7 @@ import { SlotPicker } from '@/components/booking/slot-picker';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,8 +11,8 @@ import { useMoney } from '@/lib/format';
 import { useTrans } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { type Address, type CartSummary, type SlotDay } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { Banknote, CreditCard, ImagePlus, LoaderCircle, MapPin, Wallet } from 'lucide-react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Banknote, CreditCard, ImagePlus, LoaderCircle, MapPin, TicketPercent, Wallet, X } from 'lucide-react';
 import { FormEventHandler, type ComponentType } from 'react';
 
 interface CheckoutLine {
@@ -34,6 +35,8 @@ interface CheckoutPageProps {
     summary: CartSummary;
     payment_methods: string[];
     wallet_balance: string;
+    coupon: { code: string; discount: string } | null;
+    coupon_error: string | null;
 }
 
 type CheckoutForm = {
@@ -51,9 +54,24 @@ export default function CheckoutPage({
     summary,
     payment_methods: paymentMethods,
     wallet_balance: walletBalance,
+    coupon,
+    coupon_error: couponError,
 }: CheckoutPageProps) {
     const t = useTrans();
     const money = useMoney();
+
+    const couponForm = useForm<{ coupon: string }>({ coupon: '' });
+
+    const applyCoupon = () => {
+        couponForm.post(route('checkout.coupon.store'), {
+            preserveScroll: true,
+            onSuccess: () => couponForm.reset(),
+        });
+    };
+
+    const removeCoupon = () => {
+        router.delete(route('checkout.coupon.destroy'), { preserveScroll: true });
+    };
 
     const defaultAddress = addresses.find((entry) => entry.address.is_default && entry.blocked_services.length === 0);
 
@@ -298,10 +316,67 @@ export default function CheckoutPage({
                                 </div>
                             ))}
                             <Separator />
+
+                            {coupon === null ? (
+                                <div className="space-y-1 py-1">
+                                    <div className="flex gap-2">
+                                        <Input
+                                            value={couponForm.data.coupon}
+                                            onChange={(e) => couponForm.setData('coupon', e.target.value.toUpperCase())}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    applyCoupon();
+                                                }
+                                            }}
+                                            placeholder={t('Coupon code')}
+                                            className="h-9 font-mono uppercase"
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-9"
+                                            disabled={couponForm.processing || couponForm.data.coupon.trim() === ''}
+                                            onClick={applyCoupon}
+                                        >
+                                            {couponForm.processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                                            {t('Apply')}
+                                        </Button>
+                                    </div>
+                                    {/* Placement can also reject the coupon (raced cap) — that error
+                                        lands on the main form's bag, not the apply form's. */}
+                                    <InputError message={couponForm.errors.coupon ?? (errors as Record<string, string | undefined>).coupon} />
+                                    {couponError !== null && <p className="text-xs text-amber-700 dark:text-amber-400">{couponError}</p>}
+                                </div>
+                            ) : (
+                                <div className="flex items-center justify-between rounded-lg border border-dashed border-emerald-400 bg-emerald-50 px-3 py-2 dark:border-emerald-700 dark:bg-emerald-950/40">
+                                    <span className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                                        <TicketPercent className="h-4 w-4" />
+                                        {coupon.code}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={removeCoupon}
+                                        aria-label={t('Remove coupon')}
+                                        className="text-muted-foreground hover:text-foreground"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            )}
+
+                            <Separator />
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">{t('Items')}</span>
                                 <span>{money(summary.subtotal)}</span>
                             </div>
+                            {summary.discount !== undefined && Number(summary.discount) > 0 && (
+                                <div className="flex justify-between text-emerald-700 dark:text-emerald-400">
+                                    <span>{t('Coupon discount')}</span>
+                                    <span>− {money(summary.discount)}</span>
+                                </div>
+                            )}
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">
                                     {summary.tax_label} ({summary.tax_percent}%)

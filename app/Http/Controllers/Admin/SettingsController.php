@@ -64,6 +64,9 @@ class SettingsController extends Controller
                 // Reviews (M10).
                 'reviews_enabled' => $settings->boolean('reviews.enabled', true),
                 'reviews_max_photos' => $settings->integer('reviews.max_photos', 4),
+                // Referrals (M12).
+                'referrals_enabled' => $settings->boolean('referrals.enabled', true),
+                'referrals_reward_amount' => $settings->decimal('referrals.reward_amount', 100.0),
             ],
         ]);
     }

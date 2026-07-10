@@ -14,6 +14,7 @@ MySQL 8. Conventions: `id` BIGINT UNSIGNED PK, `created_at/updated_at` everywher
 ```
 users (SD)
   id, name, email (uniq, nullable), phone (uniq, nullable), password,
+  referral_code (uniq, nullable — lazy-generated, M12),
   avatar_path, email_verified_at, phone_verified_at, is_active, last_login_at
 
 (spatie tables) roles, permissions, model_has_roles, ...
@@ -173,16 +174,17 @@ reviews                  ← M10; photos via medialibrary collection review_phot
   id, booking_id (uniq FK), customer_id FK, provider_id FK, rating TINYINT,
   comment, is_hidden, hidden_reason
 
-coupons
+coupons                  ← M12; code stored uppercase, uniq
   id, code (uniq), type [flat|percent], value, max_discount, min_order,
   usage_limit, per_user_limit, first_order_only, starts_at, ends_at, is_active
 
-coupon_usages
-  id, coupon_id FK, user_id FK, booking_id FK, discount_applied
+coupon_usages            ← M12; append-only audit trail (created_at only, no updates)
+  id, coupon_id FK restrict, user_id FK, booking_id FK (uniq), discount_applied
 
-referrals
+referrals                ← M12; referee_id uniq = a user is referred once, ever
   id, referrer_id FK users, referee_id FK users (uniq), code_used,
-  reward_amount, status [pending|rewarded], rewarded_at
+  reward_amount (null until rewarded — snapshot of what was paid),
+  status [pending|rewarded], rewarded_at
 
 provider_blackouts
   id, provider_profile_id FK, starts_on DATE, ends_on DATE, reason
@@ -206,8 +208,9 @@ languages
 notifications            ← Laravel standard database channel table (M11)
   uuid id, type, notifiable_type, notifiable_id, data TEXT, read_at
 
-banners
-  id, title, image_path, link_url, placement [home_hero|home_strip],
+banners                  ← M12; image via medialibrary collection image (PUBLIC disk
+  id, title, link_url,      — marketing content, not user uploads); link_url scheme-
+  placement [home_hero|home_strip],  restricted http/https (stored-XSS guard)
   sort_order, starts_at, ends_at, is_active
 
 pages
@@ -221,6 +224,8 @@ settings
 ```
 
 > [!note] **Shipped M10 (2026-07-10).** `reviews`: `booking_id` unique FK **cascade** (pure child content), `customer_id`/`provider_id` FK restrict, `index(provider_id, is_hidden)` — the rating recompute and every public listing filter on visibility. `rating_avg`/`rating_count`/`jobs_completed` on `provider_profiles` are **recomputed, never incremented**, by listeners (`SyncProviderRatingOnReviewChange` over visible reviews, `SyncProviderJobStatsOnCompletion` over completed bookings) — hiding a review recomputes too, so a hidden 1-star stops dragging the average (ADR D17). Photos live on a `review_photos` medialibrary collection (private disk) served through the guest-reachable, policy-checked `reviews.photos.show` route; a hidden review's photos 404.
+
+> [!note] **Shipped M12 (2026-07-10, ADR D18).** `coupon_usages` is an **append-only audit trail**: `booking_id` unique (one redemption per booking), `coupon_id` FK **restrict** (a redeemed coupon is deactivated, never deleted), `created_at` only. The caps never mutate it — `CouponValidator` counts usages through a join that excludes bookings in `expired`/`failed_payment` (money never moved, the slot frees itself), while a cancelled booking's usage stays spent (UC parity). `bookings.coupon_id` (a bare column since M04) gained its FK `nullOnDelete` here. `referrals.referee_id` unique = referred once ever; `reward_amount` stays null until `RewardReferral` snapshots the amount actually credited. `users.referral_code` is lazy-generated, unique, and never mass-assignable. `banners` carries no image column — medialibrary `image` collection on the **public** disk (marketing content); `image_path` in the sketch above was dropped in favor of it.
 
 ## Integrity rules
 

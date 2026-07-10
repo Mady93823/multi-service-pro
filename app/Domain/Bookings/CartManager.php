@@ -20,6 +20,8 @@ class CartManager
 {
     private const SESSION_KEY = 'cart.items';
 
+    private const COUPON_KEY = 'cart.coupon';
+
     public const MAX_QTY = 10;
 
     public function __construct(private readonly Session $session) {}
@@ -76,6 +78,29 @@ class CartManager
     public function clear(): void
     {
         $this->session->forget(self::SESSION_KEY);
+        $this->session->forget(self::COUPON_KEY);
+    }
+
+    /**
+     * Coupon code the customer applied at checkout (M12). Session-only,
+     * like the cart itself — eligibility is re-checked at placement.
+     */
+    public function setCouponCode(?string $code): void
+    {
+        if ($code === null) {
+            $this->session->forget(self::COUPON_KEY);
+
+            return;
+        }
+
+        $this->session->put(self::COUPON_KEY, strtoupper(trim($code)));
+    }
+
+    public function couponCode(): ?string
+    {
+        $code = $this->session->get(self::COUPON_KEY);
+
+        return is_string($code) && $code !== '' ? $code : null;
     }
 
     /**

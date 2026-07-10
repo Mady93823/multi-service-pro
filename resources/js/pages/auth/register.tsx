@@ -15,15 +15,23 @@ type RegisterForm = {
     email: string;
     password: string;
     password_confirmation: string;
+    referral_code: string;
 };
 
-export default function Register() {
+interface RegisterProps {
+    referrals_enabled: boolean;
+    /** Pre-filled from a ?ref=CODE share link. */
+    referral_code: string;
+}
+
+export default function Register({ referrals_enabled: referralsEnabled, referral_code: prefilledCode }: RegisterProps) {
     const t = useTrans();
     const { data, setData, post, processing, errors, reset } = useForm<RegisterForm>({
         name: '',
         email: '',
         password: '',
         password_confirmation: '',
+        referral_code: prefilledCode,
     });
 
     const submit: FormEventHandler = (e) => {
@@ -102,6 +110,23 @@ export default function Register() {
                         />
                         <InputError message={errors.password_confirmation} />
                     </div>
+
+                    {referralsEnabled && (
+                        <div className="grid gap-2">
+                            <Label htmlFor="referral_code">{t('Referral code (optional)')}</Label>
+                            <Input
+                                id="referral_code"
+                                type="text"
+                                tabIndex={5}
+                                value={data.referral_code}
+                                onChange={(e) => setData('referral_code', e.target.value.toUpperCase())}
+                                disabled={processing}
+                                placeholder={t('Got a code from a friend?')}
+                                className="font-mono uppercase"
+                            />
+                            <InputError message={errors.referral_code} />
+                        </div>
+                    )}
 
                     <Button type="submit" className="mt-2 w-full" tabIndex={5} disabled={processing}>
                         {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}

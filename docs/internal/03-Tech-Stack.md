@@ -129,6 +129,16 @@ Review photos follow the M04 private-disk rule (nothing user-uploaded is web-ser
 
 Moderation **hides, never deletes**: the customer keeps their review (shown to them with the reason), the provider and the public lose it, and the row survives for audit. One review per completed booking is enforced in three layers — policy (owner + completed), FormRequest (duplicate check + `reviews.enabled` kill-switch + `reviews.max_photos`), and a `lockForUpdate` re-check in `SubmitReview` with the `unique(booking_id)` index as the race backstop — the same defense-in-depth shape as M08's payment confirmation.
 
+### D18 — Coupon usage is spent at placement and audited, not counted; referral rewards are referrer-only wallet credits (2026-07-10)
+
+`M12` funnels every coupon decision through one class: `CouponValidator` computes eligibility *and* the discount for both the checkout "apply" preview and the placement itself, so the two can only disagree on timing — and timing is closed by `PlaceBooking` re-running the validator inside the placement transaction under `lockForUpdate` on the coupon row (the M08/M10 lock-and-re-check shape; two tabs cannot double-spend the last `usage_limit` slot). The applied code lives only in the session next to the cart — no persistent "reserved coupon" state to leak or expire.
+
+`coupon_usages` is an **append-only audit trail**, and the caps count it through a join instead of mutating it. A usage is spent at placement; **cancelling or refunding the booking never restores it** (UC parity — the customer exercised the offer). But a booking that dies *unpaid* (`expired` / `failed_payment`) stops counting, because money never moved and the customer never got anything: deleting the row would break the audit, so the counting query excludes those two states instead. The same two states define "first order" for `first_order_only` — a cancelled booking still counts as an order, an abandoned payment attempt does not. Rows are never deleted; a redeemed coupon cannot be deleted either (FK `restrictOnDelete` + action guard) — deactivate it.
+
+The discount enters pricing through the seam M04 left (`bookings.discount` + `coupon_id`) and M09 built around on purpose: `PriceQuote` subtracts it **pre-tax**, and `CommissionResolver` already pro-rates a booking-level discount across lines — a coupon changes no earnings math.
+
+Referral rewards are **referrer-only**: the referee's incentive is a first-order coupon (seeded WELCOME10), not a second wallet credit — one reward path, one wallet writer (`WalletService`, D15). Sign-up creates only a *pending* `referrals` row (`referee_id` unique — a user is referred once, ever); the reward fires on the referee's **first completed booking**, where `RewardReferral` flips pending→rewarded under a row lock, so a double-fired listener or racing completions cannot pay twice. `reward_amount` is snapshotted **at reward time** (null while pending) — the column records what was actually paid, not what the setting said at sign-up; setting it to `0` pauses payouts without hiding the program, and paused referrals stay pending rather than being burned.
+
 ## UI sourcing workflow (shoogle.dev)
 
 1. Need a block (e.g., booking form, dashboard, pricing card) → search **shoogle.dev**

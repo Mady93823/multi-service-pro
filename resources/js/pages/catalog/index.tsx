@@ -1,11 +1,12 @@
 import { Pagination } from '@/components/catalog/pagination';
 import { ServiceCard } from '@/components/catalog/service-card';
+import { HeroBanners, StripBanners } from '@/components/marketing/banners';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import PublicLayout from '@/layouts/public-layout';
 import { useTrans } from '@/lib/i18n';
-import { type Category, type Paginated, type Service, type SharedData } from '@/types';
+import { type Banner, type Category, type Paginated, type Service, type SharedData } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { FolderOpen, Search } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
@@ -15,9 +16,10 @@ interface CatalogIndexProps {
     featured: Service[];
     search: string;
     results: Paginated<Service> | null;
+    banners: { hero: Banner[]; strip: Banner[] };
 }
 
-export default function CatalogIndex({ categories, featured, search, results }: CatalogIndexProps) {
+export default function CatalogIndex({ categories, featured, search, results, banners }: CatalogIndexProps) {
     const { name } = usePage<SharedData>().props;
     const t = useTrans();
     const [term, setTerm] = useState(search);
@@ -30,6 +32,8 @@ export default function CatalogIndex({ categories, featured, search, results }: 
     return (
         <PublicLayout>
             <Head title={t('Home services, on demand')} />
+
+            {results === null && <HeroBanners banners={banners.hero} />}
 
             <section className="mx-auto max-w-2xl py-8 text-center">
                 <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t('Home services, on demand')}</h1>
@@ -90,6 +94,8 @@ export default function CatalogIndex({ categories, featured, search, results }: 
                         </div>
                         {categories.length === 0 && <p className="text-muted-foreground">{t('The catalog is being set up. Check back soon.')}</p>}
                     </section>
+
+                    <StripBanners banners={banners.strip} />
 
                     {featured.length > 0 && (
                         <section className="space-y-4 py-4">

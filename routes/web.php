@@ -38,6 +38,11 @@ Route::middleware(['auth', 'role:customer'])->group(function () {
     Route::get('checkout', [Customer\CheckoutController::class, 'show'])->name('checkout.show');
     Route::post('checkout', [Customer\CheckoutController::class, 'store'])->name('checkout.store');
 
+    // Coupons (M12): session-scoped apply/remove; throttled — codes are guessable.
+    Route::post('checkout/coupon', [Customer\CouponController::class, 'store'])
+        ->middleware('throttle:10,1')->name('checkout.coupon.store');
+    Route::delete('checkout/coupon', [Customer\CouponController::class, 'destroy'])->name('checkout.coupon.destroy');
+
     Route::get('bookings', [Customer\BookingController::class, 'index'])->name('bookings.index');
     Route::get('wallet', [Customer\WalletController::class, 'show'])->name('wallet.show');
 
@@ -150,6 +155,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('providers/{provider}', [Admin\ProviderController::class, 'show'])->name('providers.show');
     Route::post('providers/{provider}/review', [Admin\ProviderController::class, 'review'])->name('providers.review');
     Route::post('provider-documents/{document}/review', [Admin\ProviderController::class, 'reviewDocument'])->name('provider-documents.review');
+    // Coupons + banners (M12).
+    Route::resource('coupons', Admin\CouponController::class)->except(['show']);
+    Route::resource('banners', Admin\BannerController::class)->except(['show']);
     Route::get('settings', [Admin\SettingsController::class, 'edit'])->name('settings.edit');
     Route::put('settings', [Admin\SettingsController::class, 'update'])->name('settings.update');
 });

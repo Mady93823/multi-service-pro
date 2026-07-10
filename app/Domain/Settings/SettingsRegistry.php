@@ -84,6 +84,11 @@ class SettingsRegistry
             // M10. Reviews & ratings; max_photos 0 turns photo uploads off.
             'reviews.enabled' => ['group' => 'reviews', 'type' => SettingType::Boolean, 'value' => true],
             'reviews.max_photos' => ['group' => 'reviews', 'type' => SettingType::Integer, 'value' => 4],
+            // M12. Referral program: reward credited to the referrer's wallet
+            // on the referee's first completed booking; 0 pauses payouts
+            // without hiding the program.
+            'referrals.enabled' => ['group' => 'referrals', 'type' => SettingType::Boolean, 'value' => true],
+            'referrals.reward_amount' => ['group' => 'referrals', 'type' => SettingType::Decimal, 'value' => '100'],
         ];
     }
 

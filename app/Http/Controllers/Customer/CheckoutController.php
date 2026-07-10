@@ -6,6 +6,7 @@ use App\Domain\Bookings\Actions\PlaceBooking;
 use App\Domain\Bookings\CartManager;
 use App\Domain\Bookings\PriceQuote;
 use App\Domain\Bookings\SlotGenerator;
+use App\Domain\Coupons\CouponValidator;
 use App\Domain\Payments\Actions\PayWithWallet;
 use App\Domain\Payments\WalletService;
 use App\Http\Controllers\Controller;
@@ -27,6 +28,7 @@ class CheckoutController extends Controller
         private readonly PriceQuote $quote,
         private readonly SlotGenerator $slots,
         private readonly WalletService $wallet,
+        private readonly CouponValidator $coupons,
     ) {}
 
     public function show(Request $request): Response|RedirectResponse
@@ -41,9 +43,36 @@ class CheckoutController extends Controller
         abort_if($user === null, 403);
 
         $addresses = $user->addresses()->with('zone')->orderByDesc('is_default')->latest()->get();
-        $quote = $this->quote->fromLines($lines);
+
+        // Preview leg of the coupon (M12): a session code that no longer
+        // passes (window closed, cap reached, cart shrank under min_order)
+        // is dropped with an explanation instead of failing at placement.
+        $discount = 0.0;
+        $coupon = null;
+        $couponError = null;
+        $couponCode = $this->cart->couponCode();
+
+        if ($couponCode !== null) {
+            try {
+                $found = $this->coupons->findByCode($couponCode);
+
+                if ($found === null) {
+                    throw ValidationException::withMessages(['coupon' => __('That coupon code is not valid.')]);
+                }
+
+                $discount = $this->coupons->discountFor($found, $user, $this->quote->baseFor($lines));
+                $coupon = ['code' => $found->code, 'discount' => number_format($discount, 2, '.', '')];
+            } catch (ValidationException $exception) {
+                $this->cart->setCouponCode(null);
+                $couponError = collect($exception->errors())->flatten()->first();
+            }
+        }
+
+        $quote = $this->quote->fromLines($lines, $discount);
 
         return Inertia::render('checkout', [
+            'coupon' => $coupon,
+            'coupon_error' => $couponError,
             'lines' => array_map(fn (array $line): array => [
                 'key' => $line['key'],
                 'qty' => $line['qty'],

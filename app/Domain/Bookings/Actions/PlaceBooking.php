@@ -11,9 +11,12 @@ use App\Domain\Bookings\Enums\PaymentStatus;
 use App\Domain\Bookings\Events\BookingPlaced;
 use App\Domain\Bookings\PriceQuote;
 use App\Domain\Bookings\SlotGenerator;
+use App\Domain\Coupons\CouponValidator;
 use App\Domain\Settings\SettingsRegistry;
 use App\Models\Address;
 use App\Models\Booking;
+use App\Models\Coupon;
+use App\Models\CouponUsage;
 use App\Models\ServiceAddon;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -22,6 +25,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
+/**
+ * @phpstan-import-type DetailedLine from CartManager
+ */
 class PlaceBooking
 {
     public function __construct(
@@ -30,6 +36,7 @@ class PlaceBooking
         private readonly BookingStateMachine $machine,
         private readonly SettingsRegistry $settings,
         private readonly PriceQuote $quote,
+        private readonly CouponValidator $coupons,
     ) {}
 
     /**
@@ -75,67 +82,34 @@ class PlaceBooking
             ]);
         }
 
-        $quote = $this->quote->fromLines($lines);
+        // Session coupon must still resolve to a row; eligibility itself is
+        // re-checked inside the transaction under a lock (ADR D18).
+        $couponCode = $this->cart->couponCode();
+        $coupon = $couponCode !== null ? $this->coupons->findByCode($couponCode) : null;
+
+        if ($couponCode !== null && $coupon === null) {
+            $this->cart->setCouponCode(null);
+
+            throw ValidationException::withMessages(['coupon' => __('That coupon code is not valid.')]);
+        }
+
         $initialStatus = $paymentMethod === PaymentMethod::Cash
             ? BookingStatus::Placed
             : BookingStatus::PendingPayment;
 
-        $booking = DB::transaction(function () use ($customer, $address, $scheduledAt, $paymentMethod, $notes, $lines, $quote, $initialStatus) {
-            $booking = Booking::query()->create([
-                'code' => Str::uuid()->toString(), // placeholder until the id exists
-                'customer_id' => $customer->id,
-                'address_id' => $address->id,
-                'address_snapshot' => [
-                    'label' => $address->label->value,
-                    'line1' => $address->line1,
-                    'line2' => $address->line2,
-                    'city' => $address->city,
-                    'postal_code' => $address->postal_code,
-                    'lat' => (float) $address->lat,
-                    'lng' => (float) $address->lng,
-                ],
-                'zone_id' => $address->zone_id,
-                'scheduled_at' => $scheduledAt,
-                'slot_end_at' => $scheduledAt->addMinutes($this->slots->slotMinutes()),
-                'status' => $initialStatus,
-                'subtotal' => number_format($quote['subtotal'], 2, '.', ''),
-                'addon_total' => number_format($quote['addon_total'], 2, '.', ''),
-                'discount' => number_format($quote['discount'], 2, '.', ''),
-                'tax' => number_format($quote['tax'], 2, '.', ''),
-                'tax_breakup' => [
-                    'label' => $quote['tax_label'],
-                    'percent' => $quote['tax_percent'],
-                    'cgst' => $quote['cgst'],
-                    'sgst' => $quote['sgst'],
-                    'igst' => 0.0,
-                ],
-                'total' => number_format($quote['total'], 2, '.', ''),
-                'payment_status' => PaymentStatus::Unpaid,
-                'payment_method' => $paymentMethod,
-                'job_otp_code' => str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT),
-                'notes' => $notes,
-            ]);
-
-            $booking->update(['code' => $this->makeCode($booking->id)]);
-
-            foreach ($lines as $line) {
-                $booking->items()->create([
-                    'service_id' => $line['service']->id,
-                    'name_snapshot' => $line['service']->name,
-                    'price_snapshot' => $line['service']->price,
-                    'qty' => $line['qty'],
-                    'addons_snapshot' => $line['addons']->map(fn (ServiceAddon $addon): array => [
-                        'id' => $addon->id,
-                        'name' => $addon->name,
-                        'price' => (string) $addon->price,
-                    ])->values()->all(),
-                ]);
+        try {
+            $booking = DB::transaction(
+                fn (): Booking => $this->createBooking($customer, $address, $scheduledAt, $paymentMethod, $notes, $lines, $coupon, $initialStatus)
+            );
+        } catch (ValidationException $exception) {
+            // A coupon that passed at "apply" but fails at placement (cap
+            // raced away, window closed) is dropped so the retry is clean.
+            if ($coupon !== null && array_key_exists('coupon', $exception->errors())) {
+                $this->cart->setCouponCode(null);
             }
 
-            $this->machine->initialize($booking, BookingActor::Customer, $customer);
-
-            return $booking;
-        });
+            throw $exception;
+        }
 
         foreach ($photos as $photo) {
             $booking->addMedia($photo)->toMediaCollection('problem_photos');
@@ -146,6 +120,100 @@ class PlaceBooking
         if ($initialStatus === BookingStatus::Placed) {
             BookingPlaced::dispatch($booking);
         }
+
+        return $booking;
+    }
+
+    /**
+     * @param  list<DetailedLine>  $lines
+     */
+    private function createBooking(
+        User $customer,
+        Address $address,
+        CarbonImmutable $scheduledAt,
+        PaymentMethod $paymentMethod,
+        ?string $notes,
+        array $lines,
+        ?Coupon $coupon,
+        BookingStatus $initialStatus,
+    ): Booking {
+        $discount = 0.0;
+
+        if ($coupon !== null) {
+            // The lock serializes concurrent placements of the same coupon —
+            // two tabs cannot double-spend the last usage_limit slot.
+            /** @var Coupon $locked */
+            $locked = Coupon::query()->whereKey($coupon->id)->lockForUpdate()->firstOrFail();
+            $discount = $this->coupons->discountFor($locked, $customer, $this->quote->baseFor($lines));
+        }
+
+        $quote = $this->quote->fromLines($lines, $discount);
+
+        $booking = Booking::query()->create([
+            'code' => Str::uuid()->toString(), // placeholder until the id exists
+            'customer_id' => $customer->id,
+            'address_id' => $address->id,
+            'address_snapshot' => [
+                'label' => $address->label->value,
+                'line1' => $address->line1,
+                'line2' => $address->line2,
+                'city' => $address->city,
+                'postal_code' => $address->postal_code,
+                'lat' => (float) $address->lat,
+                'lng' => (float) $address->lng,
+            ],
+            'zone_id' => $address->zone_id,
+            'scheduled_at' => $scheduledAt,
+            'slot_end_at' => $scheduledAt->addMinutes($this->slots->slotMinutes()),
+            'status' => $initialStatus,
+            'subtotal' => number_format($quote['subtotal'], 2, '.', ''),
+            'addon_total' => number_format($quote['addon_total'], 2, '.', ''),
+            'discount' => number_format($quote['discount'], 2, '.', ''),
+            'coupon_id' => $coupon?->id,
+            'tax' => number_format($quote['tax'], 2, '.', ''),
+            'tax_breakup' => [
+                'label' => $quote['tax_label'],
+                'percent' => $quote['tax_percent'],
+                'cgst' => $quote['cgst'],
+                'sgst' => $quote['sgst'],
+                'igst' => 0.0,
+            ],
+            'total' => number_format($quote['total'], 2, '.', ''),
+            'payment_status' => PaymentStatus::Unpaid,
+            'payment_method' => $paymentMethod,
+            'job_otp_code' => str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT),
+            'notes' => $notes,
+        ]);
+
+        $booking->update(['code' => $this->makeCode($booking->id)]);
+
+        foreach ($lines as $line) {
+            $booking->items()->create([
+                'service_id' => $line['service']->id,
+                'name_snapshot' => $line['service']->name,
+                'price_snapshot' => $line['service']->price,
+                'qty' => $line['qty'],
+                'addons_snapshot' => $line['addons']->map(fn (ServiceAddon $addon): array => [
+                    'id' => $addon->id,
+                    'name' => $addon->name,
+                    'price' => (string) $addon->price,
+                ])->values()->all(),
+            ]);
+        }
+
+        if ($coupon !== null) {
+            // Redemption audit row, spent at placement — a later cancel or
+            // refund never restores it; dying unpaid stops it counting (ADR D18).
+            CouponUsage::query()->create([
+                'coupon_id' => $coupon->id,
+                'user_id' => $customer->id,
+                'booking_id' => $booking->id,
+                'discount_applied' => number_format($quote['discount'], 2, '.', ''),
+                'created_at' => now(),
+            ]);
+        }
+
+        $this->machine->initialize($booking, BookingActor::Customer, $customer);
 
         return $booking;
     }

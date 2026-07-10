@@ -41,6 +41,8 @@ function validSettingsPayload(array $overrides = []): array
         'invoice_prefix' => 'INV',
         'reviews_enabled' => true,
         'reviews_max_photos' => 4,
+        'referrals_enabled' => true,
+        'referrals_reward_amount' => 100,
     ], $overrides);
 }
 

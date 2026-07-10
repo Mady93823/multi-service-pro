@@ -16,10 +16,30 @@ class PriceQuote
     public function __construct(private readonly SettingsRegistry $settings) {}
 
     /**
+     * Pre-discount, pre-tax order value — the base coupons are judged
+     * against and discount percentages are taken from (M12).
+     *
+     * @param  list<DetailedLine>  $lines
+     */
+    public function baseFor(array $lines): float
+    {
+        $base = 0.0;
+
+        foreach ($lines as $line) {
+            $base += (float) $line['service']->price * $line['qty'];
+            $base += (float) $line['addons']->sum(
+                fn (ServiceAddon $addon): float => (float) $addon->price
+            ) * $line['qty'];
+        }
+
+        return $base;
+    }
+
+    /**
      * @param  list<DetailedLine>  $lines
      * @return array{subtotal: float, addon_total: float, discount: float, tax: float, cgst: float, sgst: float, total: float, tax_label: string, tax_percent: float}
      */
-    public function fromLines(array $lines): array
+    public function fromLines(array $lines, float $discount = 0.0): array
     {
         $subtotal = 0.0;
         $addonTotal = 0.0;
@@ -31,7 +51,9 @@ class PriceQuote
             ) * $line['qty'];
         }
 
-        $discount = 0.0; // coupons land with M12
+        // Discount applies before tax (a coupon reduces the taxable value)
+        // and can never exceed the order value.
+        $discount = round(min(max($discount, 0.0), $subtotal + $addonTotal), 2);
         $taxable = $subtotal + $addonTotal - $discount;
         $percent = $this->settings->decimal('payments.tax_percent', 0.0);
         $tax = round($taxable * $percent / 100, 2);

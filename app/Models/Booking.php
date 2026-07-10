@@ -59,6 +59,7 @@ class Booking extends Model implements HasMedia
         'subtotal',
         'addon_total',
         'discount',
+        'coupon_id',
         'tax',
         'tax_breakup',
         'total',
@@ -206,5 +207,13 @@ class Booking extends Model implements HasMedia
     public function review(): HasOne
     {
         return $this->hasOne(Review::class);
+    }
+
+    /**
+     * @return BelongsTo<Coupon, $this>
+     */
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class);
     }
 }

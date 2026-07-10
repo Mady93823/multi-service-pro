@@ -1,20 +1,36 @@
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import CustomerLayout from '@/layouts/customer-layout';
 import { useMoney } from '@/lib/format';
 import { useTrans } from '@/lib/i18n';
-import { type BreadcrumbItem, type NativePaginated, type WalletTransaction } from '@/types';
+import { type BreadcrumbItem, type NativePaginated, type ReferralCard, type WalletTransaction } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowDownLeft, ArrowUpRight, Wallet } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Check, Copy, Gift, Wallet } from 'lucide-react';
+import { useState } from 'react';
 
 interface WalletPageProps {
     balance: string;
     transactions: NativePaginated<WalletTransaction>;
+    referrals: ReferralCard | null;
 }
 
-export default function WalletPage({ balance, transactions }: WalletPageProps) {
+export default function WalletPage({ balance, transactions, referrals }: WalletPageProps) {
     const t = useTrans();
     const money = useMoney();
+    const [copied, setCopied] = useState(false);
+
+    const copyShareUrl = () => {
+        if (referrals === null) {
+            return;
+        }
+
+        void navigator.clipboard.writeText(referrals.share_url).then(() => {
+            setCopied(true);
+            window.setTimeout(() => setCopied(false), 2000);
+        });
+    };
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: t('Dashboard'), href: '/dashboard' },
@@ -26,6 +42,7 @@ export default function WalletPage({ balance, transactions }: WalletPageProps) {
     const typeLabels: Record<string, string> = {
         payment: t('Booking payment'),
         refund: t('Refund'),
+        referral_reward: t('Referral reward'),
     };
 
     const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
@@ -47,6 +64,51 @@ export default function WalletPage({ balance, transactions }: WalletPageProps) {
                         </div>
                     </CardContent>
                 </Card>
+
+                {referrals !== null && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <Gift className="h-4 w-4" />
+                                {t('Refer & earn')}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <p className="text-muted-foreground text-sm">
+                                {t('Share your code — when a friend completes their first booking, you earn :amount in wallet credit.', {
+                                    amount: money(referrals.reward_amount),
+                                })}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="bg-muted rounded-lg px-3 py-2 font-mono text-sm font-semibold tracking-wider">{referrals.code}</span>
+                                <Button type="button" variant="outline" size="sm" onClick={copyShareUrl}>
+                                    {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+                                    {copied ? t('Copied!') : t('Copy invite link')}
+                                </Button>
+                            </div>
+                            {referrals.entries.length > 0 && (
+                                <div className="space-y-2">
+                                    <p className="text-sm font-medium">{t('Your referrals')}</p>
+                                    {referrals.entries.map((entry) => (
+                                        <div key={entry.id} className="flex items-center justify-between text-sm">
+                                            <span className="text-muted-foreground">
+                                                {entry.referee_name ?? t('A friend')}
+                                                {entry.created_at !== null && <span className="ml-2 text-xs">{entry.created_at}</span>}
+                                            </span>
+                                            {entry.status === 'rewarded' ? (
+                                                <Badge className="bg-emerald-600 text-white">
+                                                    {entry.reward_amount !== null ? `+ ${money(entry.reward_amount)}` : t('Rewarded')}
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="outline">{t('Waiting for first booking')}</Badge>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
 
                 <Card>
                     <CardHeader>

@@ -61,6 +61,8 @@ class UpdateSettings
         $this->settings->set('invoice.state', $data['invoice_state'] ?? null);
         $this->settings->set('reviews.enabled', (bool) ($data['reviews_enabled'] ?? false));
         $this->settings->set('reviews.max_photos', $data['reviews_max_photos']);
+        $this->settings->set('referrals.enabled', (bool) ($data['referrals_enabled'] ?? false));
+        $this->settings->set('referrals.reward_amount', $data['referrals_reward_amount']);
 
         foreach (self::SECRETS as $field => $key) {
             $submitted = $data[$field] ?? null;

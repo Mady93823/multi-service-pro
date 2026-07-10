@@ -69,6 +69,8 @@ class UpdateSettingsRequest extends FormRequest
             'invoice_state' => ['nullable', 'string', 'max:100'],
             'reviews_enabled' => ['boolean'],
             'reviews_max_photos' => ['required', 'integer', 'min:0', 'max:10'],
+            'referrals_enabled' => ['boolean'],
+            'referrals_reward_amount' => ['required', 'numeric', 'min:0', 'max:100000'],
         ];
     }
 

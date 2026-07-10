@@ -43,16 +43,38 @@ class ProviderController extends Controller
             ->withQueryString();
 
         return Inertia::render('admin/providers/index', [
-            'providers' => $providers->through(fn (User $user): array => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'approval_status' => $user->providerProfile?->approval_status->value,
-                'is_online' => $user->providerProfile->is_online ?? false,
-                'is_complete' => $user->providerProfile?->isComplete() ?? false,
-                'joined_at' => $user->created_at?->format('j M Y'),
-            ]),
+            // Shaped like a Resource collection (data/meta/links), not the raw
+            // paginator `through()` produces: the shared <Pagination> component
+            // reads `meta.last_page`, and a raw paginator has no `meta` at all —
+            // the page rendered white until this matched. Pest never catches
+            // this class of bug (props are asserted server-side; React never runs).
+            'providers' => [
+                'data' => collect($providers->items())->map(fn (User $user): array => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'approval_status' => $user->providerProfile?->approval_status->value,
+                    'is_online' => $user->providerProfile->is_online ?? false,
+                    'is_complete' => $user->providerProfile?->isComplete() ?? false,
+                    'joined_at' => $user->created_at?->format('j M Y'),
+                ])->all(),
+                'links' => [
+                    'first' => $providers->url(1),
+                    'last' => $providers->url($providers->lastPage()),
+                    'prev' => $providers->previousPageUrl(),
+                    'next' => $providers->nextPageUrl(),
+                ],
+                'meta' => [
+                    'current_page' => $providers->currentPage(),
+                    'from' => $providers->firstItem(),
+                    'last_page' => $providers->lastPage(),
+                    'per_page' => $providers->perPage(),
+                    'to' => $providers->lastItem(),
+                    'total' => $providers->total(),
+                    'links' => $providers->linkCollection()->toArray(),
+                ],
+            ],
             'filters' => [
                 'status' => $status,
                 'search' => $search,

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Activity\ActivityLogger;
 use App\Domain\Settings\Actions\UpdateSettings;
 use App\Domain\Settings\SettingsRegistry;
 use App\Http\Controllers\Controller;
@@ -71,13 +72,22 @@ class SettingsController extends Controller
         ]);
     }
 
-    public function update(UpdateSettingsRequest $request, UpdateSettings $action): RedirectResponse
-    {
+    public function update(
+        UpdateSettingsRequest $request,
+        UpdateSettings $action,
+        ActivityLogger $activity,
+    ): RedirectResponse {
         /** @var array<string, mixed> $data */
         $data = $request->safe()->except(['logo']);
 
         $logo = $request->file('logo');
         $action->handle($data, is_array($logo) ? null : $logo);
+
+        // Keys only — settings values include gateway secrets and must never
+        // land in the activity log.
+        $activity->log($request->user(), 'settings.update', null, [
+            'keys' => array_keys($data),
+        ]);
 
         return back()->with('success', __('Settings saved.'));
     }

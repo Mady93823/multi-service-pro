@@ -61,6 +61,8 @@ export interface SharedData {
     flash: Flash;
     cart: { count: number };
     notifications: NotificationFeed;
+    /** Non-null while an admin is browsing as someone else (M13). */
+    impersonation: { user_name: string } | null;
     [key: string]: unknown;
 }
 
@@ -606,4 +608,70 @@ export interface AdminPayoutRow extends PayoutRequestRow {
     method_details: PayoutMethodDetails;
     earnings_count: number | null;
     processed_by: string | null;
+}
+
+/** Admin dashboard KPI tiles (M13) — every figure is a snapshot-column aggregate. */
+export interface DashboardTiles {
+    bookings_today: number;
+    bookings_week: number;
+    gmv_month: number;
+    commission_month: number;
+    open_jobs: number;
+    pending_payouts_count: number;
+    pending_payouts_amount: number;
+    providers_online: number;
+    providers_pending_kyc: number;
+}
+
+export interface BookingsDayPoint {
+    date: string;
+    bookings: number;
+}
+
+export interface RevenueDayPoint {
+    date: string;
+    gross: number;
+    commission: number;
+}
+
+export interface TopServiceRow {
+    service: string;
+    bookings: number;
+    revenue: number;
+}
+
+export interface LeaderboardRow {
+    id: number;
+    name: string;
+    jobs_completed: number;
+    rating_avg: number;
+    rating_count: number;
+    gross: number;
+    net: number;
+}
+
+/** One admin report's metadata (M13); labels arrive pre-translated. */
+export interface ReportInfo {
+    slug: string;
+    title: string;
+    columns: { key: string; label: string }[];
+    status_options: string[];
+}
+
+export interface ReportFiltersState {
+    from: string | null;
+    to: string | null;
+    status: string | null;
+}
+
+export type ReportRow = Record<string, string | number | null>;
+
+export interface ActivityLogRow {
+    id: number;
+    actor: string | null;
+    action: string;
+    subject_type: string | null;
+    subject_id: number | null;
+    context: Record<string, unknown> | null;
+    created_at: string;
 }

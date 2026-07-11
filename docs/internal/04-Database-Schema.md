@@ -221,11 +221,21 @@ faqs
 
 settings
   id, group, key (uniq), value TEXT, type [string|int|bool|json|decimal]
+
+activity_logs            ← M13; append-only admin audit (created_at only, no updates,
+  id, actor_id FK→users     ActivityLogger is the sole writer); actor nullOnDelete so
+  (nullOnDelete), action,   deleting an admin never deletes their trail; subject =
+  subject_type+subject_id   nullable morph; context JSON (settings saves store KEYS
+  (nullableMorphs),         only — values may contain gateway secrets)
+  context JSON, created_at
+  idx(actor_id, created_at), idx(action, created_at)
 ```
 
 > [!note] **Shipped M10 (2026-07-10).** `reviews`: `booking_id` unique FK **cascade** (pure child content), `customer_id`/`provider_id` FK restrict, `index(provider_id, is_hidden)` — the rating recompute and every public listing filter on visibility. `rating_avg`/`rating_count`/`jobs_completed` on `provider_profiles` are **recomputed, never incremented**, by listeners (`SyncProviderRatingOnReviewChange` over visible reviews, `SyncProviderJobStatsOnCompletion` over completed bookings) — hiding a review recomputes too, so a hidden 1-star stops dragging the average (ADR D17). Photos live on a `review_photos` medialibrary collection (private disk) served through the guest-reachable, policy-checked `reviews.photos.show` route; a hidden review's photos 404.
 
 > [!note] **Shipped M12 (2026-07-10, ADR D18).** `coupon_usages` is an **append-only audit trail**: `booking_id` unique (one redemption per booking), `coupon_id` FK **restrict** (a redeemed coupon is deactivated, never deleted), `created_at` only. The caps never mutate it — `CouponValidator` counts usages through a join that excludes bookings in `expired`/`failed_payment` (money never moved, the slot frees itself), while a cancelled booking's usage stays spent (UC parity). `bookings.coupon_id` (a bare column since M04) gained its FK `nullOnDelete` here. `referrals.referee_id` unique = referred once ever; `reward_amount` stays null until `RewardReferral` snapshots the amount actually credited. `users.referral_code` is lazy-generated, unique, and never mass-assignable. `banners` carries no image column — medialibrary `image` collection on the **public** disk (marketing content); `image_path` in the sketch above was dropped in favor of it.
+
+> [!note] **Shipped M13 (2026-07-11, ADR D19).** `activity_logs` joins the append-only family: `ActivityLogger` is the only writer, `UPDATED_AT = null`, rows never edited or deleted. Impersonation writes through `mustLog()` — the insert failing aborts the impersonation itself. Dashboard and report figures are aggregates over the existing snapshot columns; no new money columns were added.
 
 ## Integrity rules
 

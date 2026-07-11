@@ -29,6 +29,8 @@ tags:
 | Roles | spatie/laravel-permission | 6.x |
 | Media | spatie/laravel-medialibrary | 11.x |
 | PDF | barryvdh/laravel-dompdf | 3.x |
+| CSV | league/csv | 9.x |
+| Charts | recharts | 3.x |
 | Payments | ~~razorpay/razorpay (PHP SDK)~~ raw HTTP client, no vendor SDK (D15) | — |
 | i18n | laravel-react-i18n | latest |
 | PWA | vite-plugin-pwa | latest |
@@ -138,6 +140,14 @@ Moderation **hides, never deletes**: the customer keeps their review (shown to t
 The discount enters pricing through the seam M04 left (`bookings.discount` + `coupon_id`) and M09 built around on purpose: `PriceQuote` subtracts it **pre-tax**, and `CommissionResolver` already pro-rates a booking-level discount across lines — a coupon changes no earnings math.
 
 Referral rewards are **referrer-only**: the referee's incentive is a first-order coupon (seeded WELCOME10), not a second wallet credit — one reward path, one wallet writer (`WalletService`, D15). Sign-up creates only a *pending* `referrals` row (`referee_id` unique — a user is referred once, ever); the reward fires on the referee's **first completed booking**, where `RewardReferral` flips pending→rewarded under a row lock, so a double-fired listener or racing completions cannot pay twice. `reward_amount` is snapshotted **at reward time** (null while pending) — the column records what was actually paid, not what the setting said at sign-up; setting it to `0` pauses payouts without hiding the program, and paused referrals stay pending rather than being burned.
+
+### D19 — Dashboard reads snapshots, reports expose rows not builders, impersonation audits before it swaps (2026-07-11)
+
+`M13`'s dashboard and reports never recompute money from current prices: `DashboardMetrics` and every report are plain aggregates over the snapshot columns (`bookings.total`, `earnings.gross/commission/net`, `payout_requests.amount`), and the gate test reconciles each figure against a raw SQL sum on the same data. Revenue charts read the **earnings ledger**, not bookings — reversal rows carry negative amounts, so a refund nets out on the day it happened instead of silently rewriting history.
+
+The `Report` interface exposes **mapped rows only** (`paginate()` returns the `NativePaginated` array shape directly, `rows()` is a generator, `count()` an integer) — never a query builder. One implementation therefore feeds the screen, the inline CSV stream and the queued CSV job with byte-identical figures, and `ReportRegistry` turns an unknown slug into a 404. CSV export follows the M06 degrade rule: over 2 000 rows *and* a real queue driver → `GenerateReportExport` writes to `storage/app/exports` (7-day scheduled prune) and notifies the admin with an admin-gated download whose filename regex is the path-traversal guard; a sync-queue install always streams inline rather than presenting a dead button.
+
+Admin accountability is one append-only table with one writer: `ActivityLogger` records manual transitions, dispatch, refunds, payout decisions, provider reviews, settings saves (**keys only** — settings values include gateway secrets) and both impersonation legs. `log()` swallows its own failure (an audit hiccup must not break a refund), but impersonation uses `mustLog()` — **no audit row, no impersonation**, written *before* the session swap. Impersonation itself: admin-only start, an admin can never be a target, no nesting, session regenerated on both legs (fixation guard), and the stop route deliberately sits outside the admin group because the actor at that moment *is* the impersonated customer/provider — the session key is its only guard. The banner is a shared Inertia prop rendered by every shell, so there is no page an impersonating admin can stand on without seeing it.
 
 ## UI sourcing workflow (shoogle.dev)
 

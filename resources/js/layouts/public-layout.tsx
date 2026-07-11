@@ -1,4 +1,5 @@
 import AppLogoIcon from '@/components/app-logo-icon';
+import { ImpersonationBanner } from '@/components/impersonation-banner';
 import { Button } from '@/components/ui/button';
 import { useFlashToast } from '@/hooks/use-flash-toast';
 import { useTrans } from '@/lib/i18n';
@@ -23,6 +24,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
 
     return (
         <div className="bg-background text-foreground flex min-h-screen flex-col">
+            <ImpersonationBanner />
             <header className="border-sidebar-border/80 border-b">
                 <div className="mx-auto flex h-16 w-full items-center gap-6 px-4 md:max-w-7xl">
                     <Link href="/" prefetch className="flex items-center gap-2 font-semibold">

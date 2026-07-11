@@ -12,7 +12,7 @@ import AdminLayout from '@/layouts/admin-layout';
 import { useTrans } from '@/lib/i18n';
 import { type BreadcrumbItem, type ProviderDocument, type ProviderProfile } from '@/types';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { Check, ExternalLink, X } from 'lucide-react';
+import { Check, ExternalLink, UserRoundSearch, X } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 import { Marker } from 'react-leaflet';
 
@@ -120,7 +120,13 @@ export default function AdminProviderShow({ provider, profile }: AdminProviderSh
                             {provider.joined_at !== null && ` · ${t('Joined :date', { date: provider.joined_at })}`}
                         </p>
                     </div>
-                    {profile !== null && <ApprovalStatusBadge status={profile.approval_status} />}
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => router.post(route('admin.impersonate.store', provider.id))}>
+                            <UserRoundSearch aria-hidden />
+                            {t('Login as provider')}
+                        </Button>
+                        {profile !== null && <ApprovalStatusBadge status={profile.approval_status} />}
+                    </div>
                 </div>
 
                 {profile === null ? (

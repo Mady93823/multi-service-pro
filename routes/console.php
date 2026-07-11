@@ -16,3 +16,14 @@ Schedule::command('bookings:expire-unpaid')->everyFiveMinutes();
 
 // M09: end the hold window on completed jobs so providers can cash out.
 Schedule::command('earnings:release')->dailyAt('04:00');
+
+// M13: CSV exports are one-shot downloads — clear anything older than 7 days.
+Schedule::call(function (): void {
+    $dir = storage_path('app'.DIRECTORY_SEPARATOR.'exports');
+
+    foreach (glob($dir.DIRECTORY_SEPARATOR.'*.csv') ?: [] as $file) {
+        if (filemtime($file) !== false && filemtime($file) < now()->subDays(7)->getTimestamp()) {
+            @unlink($file);
+        }
+    }
+})->name('exports-prune')->dailyAt('03:45');

@@ -2,6 +2,7 @@ import { AppContent } from '@/components/app-content';
 import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
 import { AppSidebarHeader } from '@/components/app-sidebar-header';
+import { ImpersonationBanner } from '@/components/impersonation-banner';
 import { useFlashToast } from '@/hooks/use-flash-toast';
 import { useNotifications } from '@/hooks/use-notifications';
 import { type BreadcrumbItem, type NavItem } from '@/types';
@@ -21,6 +22,7 @@ export default function AppSidebarLayout({ children, breadcrumbs = [], navItems,
         <AppShell variant="sidebar">
             <AppSidebar navItems={navItems} homeHref={homeHref} />
             <AppContent variant="sidebar">
+                <ImpersonationBanner />
                 <AppSidebarHeader breadcrumbs={breadcrumbs} />
                 {children}
             </AppContent>

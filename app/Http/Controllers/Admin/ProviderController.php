@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Activity\ActivityLogger;
 use App\Domain\Providers\Actions\ReviewProvider;
 use App\Domain\Providers\Actions\ReviewProviderDocument;
 use App\Domain\Providers\Enums\ProviderApprovalStatus;
@@ -116,6 +117,11 @@ class ProviderController extends Controller
             ProviderApprovalStatus::from((string) $request->validated('status')),
             $request->validated('note'),
         );
+
+        app(ActivityLogger::class)->log($request->user(), 'provider.review', $provider, [
+            'status' => (string) $request->validated('status'),
+            'note' => $request->validated('note'),
+        ]);
 
         return back()->with('success', __('Provider review saved.'));
     }

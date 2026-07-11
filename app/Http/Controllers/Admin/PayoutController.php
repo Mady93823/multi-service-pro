@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Activity\ActivityLogger;
 use App\Domain\Earnings\Actions\ProcessPayout;
 use App\Domain\Earnings\Enums\PayoutStatus;
 use App\Http\Controllers\Controller;
@@ -15,7 +16,10 @@ use Inertia\Response;
 
 class PayoutController extends Controller
 {
-    public function __construct(private readonly ProcessPayout $payouts) {}
+    public function __construct(
+        private readonly ProcessPayout $payouts,
+        private readonly ActivityLogger $activity,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -62,6 +66,8 @@ class PayoutController extends Controller
 
         $this->payouts->approve($payout, $admin);
 
+        $this->activity->log($admin, 'payout.approve', $payout, ['amount' => (float) $payout->amount]);
+
         return back()->with('success', __('Payout approved.'));
     }
 
@@ -72,6 +78,11 @@ class PayoutController extends Controller
 
         $this->payouts->markPaid($payout, $admin, (string) $request->validated('reference'));
 
+        $this->activity->log($admin, 'payout.pay', $payout, [
+            'amount' => (float) $payout->amount,
+            'reference' => (string) $request->validated('reference'),
+        ]);
+
         return back()->with('success', __('Payout marked as paid.'));
     }
 
@@ -81,6 +92,11 @@ class PayoutController extends Controller
         abort_if($admin === null, 403);
 
         $this->payouts->reject($payout, $admin, (string) $request->validated('note'));
+
+        $this->activity->log($admin, 'payout.reject', $payout, [
+            'amount' => (float) $payout->amount,
+            'note' => (string) $request->validated('note'),
+        ]);
 
         return back()->with('success', __('Payout rejected.'));
     }

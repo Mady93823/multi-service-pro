@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Activity\ActivityLogger;
 use App\Domain\Bookings\Actions\CancelBooking;
 use App\Domain\Bookings\BookingStateMachine;
 use App\Domain\Bookings\Enums\BookingActor;
@@ -43,7 +44,10 @@ class BookingController extends Controller
         BookingStatus::CancelledAdmin,
     ];
 
-    public function __construct(private readonly BookingStateMachine $machine) {}
+    public function __construct(
+        private readonly BookingStateMachine $machine,
+        private readonly ActivityLogger $activity,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -144,6 +148,11 @@ class BookingController extends Controller
             throw ValidationException::withMessages(['to' => $exception->getMessage()]);
         }
 
+        $this->activity->log($user, 'booking.transition', $booking, [
+            'to' => $to->value,
+            'note' => $note,
+        ]);
+
         return back()->with('success', __('Booking updated.'));
     }
 
@@ -151,7 +160,7 @@ class BookingController extends Controller
      * Kick (or re-kick) auto-dispatch for a placed/searching booking — the
      * manual counterpart to the on-placement listener (M06).
      */
-    public function dispatch(Booking $booking, DispatchBooking $action): RedirectResponse
+    public function dispatch(Request $request, Booking $booking, DispatchBooking $action): RedirectResponse
     {
         if (! in_array($booking->status, [BookingStatus::Placed, BookingStatus::Searching], true)) {
             throw ValidationException::withMessages([
@@ -161,6 +170,8 @@ class BookingController extends Controller
 
         $action->handle($booking);
 
+        $this->activity->log($request->user(), 'booking.dispatch', $booking);
+
         return back()->with('success', __('Dispatch started.'));
     }
 
@@ -168,9 +179,13 @@ class BookingController extends Controller
      * Support refund (M08): full remaining amount back to the customer's
      * wallet. Also the cleanup for payments captured after a booking expired.
      */
-    public function refund(Booking $booking, RefundBookingToWallet $action): RedirectResponse
+    public function refund(Request $request, Booking $booking, RefundBookingToWallet $action): RedirectResponse
     {
         $action->handle($booking);
+
+        $this->activity->log($request->user(), 'booking.refund', $booking, [
+            'total' => (float) $booking->total,
+        ]);
 
         return back()->with('success', __('Refunded to the customer wallet.'));
     }

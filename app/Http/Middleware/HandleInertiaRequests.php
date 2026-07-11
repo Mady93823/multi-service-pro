@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Domain\Admin\Actions\StartImpersonation;
 use App\Domain\Bookings\CartManager;
 use App\Domain\Localization\TranslationLoader;
 use App\Domain\Settings\SettingsRegistry;
@@ -68,7 +69,26 @@ class HandleInertiaRequests extends Middleware
                 'count' => $request->hasSession() ? app(CartManager::class)->count() : 0,
             ],
             'notifications' => $this->notifications($request->user()),
+            'impersonation' => $this->impersonation($request),
         ]);
+    }
+
+    /**
+     * Non-null while an admin is browsing as someone else (M13) — every shell
+     * renders the warning banner + leave control off this prop.
+     *
+     * @return array{user_name: string}|null
+     */
+    private function impersonation(Request $request): ?array
+    {
+        if (! $request->hasSession()
+            || ! $request->session()->has(StartImpersonation::SESSION_KEY)) {
+            return null;
+        }
+
+        // The session key only ever coexists with an authenticated user —
+        // impersonation starts logged in, and logout invalidates the session.
+        return ['user_name' => $request->user()->name];
     }
 
     /**

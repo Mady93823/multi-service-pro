@@ -160,7 +160,21 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::resource('banners', Admin\BannerController::class)->except(['show']);
     Route::get('settings', [Admin\SettingsController::class, 'edit'])->name('settings.edit');
     Route::put('settings', [Admin\SettingsController::class, 'update'])->name('settings.update');
+
+    Route::get('reports/{report}', [Admin\ReportController::class, 'show'])->name('reports.show');
+    // GET so the CSV can stream straight to the browser as a download —
+    // the queued branch just redirects back with a flash instead.
+    Route::get('reports/{report}/export', [Admin\ReportController::class, 'export'])->name('reports.export');
+    Route::get('exports/{file}', [Admin\ExportController::class, 'download'])->name('exports.download');
+    Route::get('activity', [Admin\ActivityLogController::class, 'index'])->name('activity.index');
+    Route::post('impersonate/{user}', [Admin\ImpersonationController::class, 'store'])->name('impersonate.store');
 });
+
+// Leaving impersonation happens while logged in AS the impersonated
+// customer/provider, so this route cannot live in the admin group. The
+// action 403s unless the session carries the impersonator key.
+Route::delete('impersonate', [Admin\ImpersonationController::class, 'destroy'])
+    ->middleware('auth')->name('impersonate.destroy');
 
 // Gateway webhooks (M08): unauthenticated, signature-verified, CSRF-exempt
 // (bootstrap/app.php), throttled against floods.

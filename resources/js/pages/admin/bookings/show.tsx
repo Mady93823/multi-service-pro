@@ -414,8 +414,17 @@ export default function AdminBookingShow({
                                     </div>
                                 )}
                                 <Separator />
-                                <p>
+                                <p className="flex items-center gap-2">
                                     <span className="text-muted-foreground">{t('Customer')}:</span> {booking.customer?.name}
+                                    {booking.customer != null && (
+                                        <button
+                                            type="button"
+                                            onClick={() => router.post(route('admin.impersonate.store', booking.customer?.id))}
+                                            className="text-primary text-xs underline-offset-2 hover:underline"
+                                        >
+                                            {t('Login as customer')}
+                                        </button>
+                                    )}
                                 </p>
                                 <p>
                                     <span className="text-muted-foreground">{t('Professional')}:</span> {booking.provider?.name ?? '—'}

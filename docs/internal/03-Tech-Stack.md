@@ -31,6 +31,8 @@ tags:
 | PDF | barryvdh/laravel-dompdf | 3.x |
 | CSV | league/csv | 9.x |
 | Charts | recharts | 3.x |
+| Markdown | league/commonmark (ships with Laravel, via `Str::markdown`) | bundled |
+| Prose styles | @tailwindcss/typography | 0.5.x |
 | Payments | ~~razorpay/razorpay (PHP SDK)~~ raw HTTP client, no vendor SDK (D15) | — |
 | i18n | laravel-react-i18n | latest |
 | PWA | vite-plugin-pwa | latest |
@@ -148,6 +150,12 @@ Referral rewards are **referrer-only**: the referee's incentive is a first-order
 The `Report` interface exposes **mapped rows only** (`paginate()` returns the `NativePaginated` array shape directly, `rows()` is a generator, `count()` an integer) — never a query builder. One implementation therefore feeds the screen, the inline CSV stream and the queued CSV job with byte-identical figures, and `ReportRegistry` turns an unknown slug into a 404. CSV export follows the M06 degrade rule: over 2 000 rows *and* a real queue driver → `GenerateReportExport` writes to `storage/app/exports` (7-day scheduled prune) and notifies the admin with an admin-gated download whose filename regex is the path-traversal guard; a sync-queue install always streams inline rather than presenting a dead button.
 
 Admin accountability is one append-only table with one writer: `ActivityLogger` records manual transitions, dispatch, refunds, payout decisions, provider reviews, settings saves (**keys only** — settings values include gateway secrets) and both impersonation legs. `log()` swallows its own failure (an audit hiccup must not break a refund), but impersonation uses `mustLog()` — **no audit row, no impersonation**, written *before* the session swap. Impersonation itself: admin-only start, an admin can never be a target, no nesting, session regenerated on both legs (fixation guard), and the stop route deliberately sits outside the admin group because the actor at that moment *is* the impersonated customer/provider — the session key is its only guard. The banner is a shared Inertia prop rendered by every shell, so there is no page an impersonating admin can stand on without seeing it.
+
+### D20 — CMS bodies are markdown sanitized at render, locale codes are filenames and validated like paths (2026-07-11)
+
+`M14`'s public pages store **markdown source, never HTML**. `MarkdownRenderer` is the single output path (`Str::markdown` with `html_input: strip` + `allow_unsafe_links: false`): raw HTML in the body is discarded outright and `javascript:`/`data:` link schemes are dropped, so the output is a whitelist by construction — no purifier dependency, nothing an admin (untrusted on a CodeCanyon install) types can script the storefront. Public pages live under the reserved `/p/{slug}` prefix — a prefix, not a catch-all, so a page slug can never shadow a real route. Footer links come from the pages table through a cached `FooterPages` read model shared on every Inertia request (white-label rule: no hardcoded links), flushed by `SavePage`/`DeletePage`.
+
+The language manager treats a locale code as what it really is — **a filename**. The code is validated against the strict `Language::CODE_PATTERN` (shared with `SetLocale`) at the FormRequest *and* re-checked inside `SaveTranslations`/`DeleteLanguage`, the only two things that ever touch `lang/{code}.json`; the code is immutable after creation. `en` is off-limits everywhere — `lang/en.json` belongs to the reconcile script and the catalog guard test. Saves keep only keys present in the English catalog (a forged payload cannot grow the file), drop blanks (fallback to English stays automatic), and the editor submits one JSON body because the catalog outgrew PHP's `max_input_vars`. Deleting a language removes its file too, but never the site's current locale. FAQs are plain text rendered escaped — only pages get markdown.
 
 ## UI sourcing workflow (shoogle.dev)
 

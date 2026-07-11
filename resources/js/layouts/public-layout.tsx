@@ -19,7 +19,7 @@ interface PublicLayoutProps {
 export default function PublicLayout({ children }: PublicLayoutProps) {
     useFlashToast();
 
-    const { auth, name, cart } = usePage<SharedData>().props;
+    const { auth, name, cart, footer_pages } = usePage<SharedData>().props;
     const t = useTrans();
 
     return (
@@ -69,7 +69,18 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
 
             <main className="mx-auto w-full flex-1 px-4 py-8 md:max-w-7xl">{children}</main>
 
-            <footer className="border-sidebar-border/80 text-muted-foreground border-t py-6 text-center text-sm">{name}</footer>
+            <footer className="border-sidebar-border/80 text-muted-foreground border-t py-6 text-center text-sm">
+                {footer_pages.length > 0 && (
+                    <nav className="mb-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+                        {footer_pages.map((page) => (
+                            <Link key={page.slug} href={`/p/${page.slug}`} className="hover:text-foreground underline-offset-2 hover:underline">
+                                {page.title}
+                            </Link>
+                        ))}
+                    </nav>
+                )}
+                {name}
+            </footer>
         </div>
     );
 }

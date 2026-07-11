@@ -17,6 +17,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [Customer\CatalogController::class, 'index'])->name('home');
 
+// CMS pages (M14) — reserved /p/ prefix so a page slug can never shadow a route.
+Route::get('p/{page:slug}', [Customer\PageController::class, 'show'])->name('pages.show');
+
 Route::get('services', [Customer\CatalogController::class, 'index'])->name('catalog.index');
 Route::get('services/{category:slug}', [Customer\CatalogController::class, 'category'])->name('catalog.category');
 Route::get('services/{category:slug}/{service:slug}', [Customer\CatalogController::class, 'show'])
@@ -158,6 +161,15 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Coupons + banners (M12).
     Route::resource('coupons', Admin\CouponController::class)->except(['show']);
     Route::resource('banners', Admin\BannerController::class)->except(['show']);
+    // CMS + language manager (M14).
+    Route::resource('pages', Admin\PageController::class)->except(['show']);
+    Route::resource('faqs', Admin\FaqController::class)->except(['show']);
+    Route::get('languages', [Admin\LanguageController::class, 'index'])->name('languages.index');
+    Route::post('languages', [Admin\LanguageController::class, 'store'])->name('languages.store');
+    Route::put('languages/{language}', [Admin\LanguageController::class, 'update'])->name('languages.update');
+    Route::delete('languages/{language}', [Admin\LanguageController::class, 'destroy'])->name('languages.destroy');
+    Route::get('languages/{language}/translations', [Admin\LanguageController::class, 'editTranslations'])->name('languages.translations.edit');
+    Route::put('languages/{language}/translations', [Admin\LanguageController::class, 'updateTranslations'])->name('languages.translations.update');
     Route::get('settings', [Admin\SettingsController::class, 'edit'])->name('settings.edit');
     Route::put('settings', [Admin\SettingsController::class, 'update'])->name('settings.update');
 

@@ -63,7 +63,45 @@ export interface SharedData {
     notifications: NotificationFeed;
     /** Non-null while an admin is browsing as someone else (M13). */
     impersonation: { user_name: string } | null;
+    /** Published pages flagged for the storefront footer (M14, white-label). */
+    footer_pages: { title: string; slug: string }[];
     [key: string]: unknown;
+}
+
+export interface CmsPage {
+    id: number;
+    title: string;
+    slug: string;
+    body: string;
+    is_published: boolean;
+    show_in_footer: boolean;
+    sort_order: number;
+    updated_at: string | null;
+}
+
+export interface Faq {
+    id: number;
+    question: string;
+    answer: string;
+    is_active: boolean;
+    sort_order: number;
+}
+
+export interface Language {
+    id: number;
+    code: string;
+    name: string;
+    native_name: string | null;
+    is_active: boolean;
+    is_default: boolean;
+    is_site_locale: boolean;
+    translated_count: number;
+}
+
+export interface TranslationEntry {
+    key: string;
+    source: string;
+    value: string;
 }
 
 export interface Category {

@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Domain\Admin\Actions\StartImpersonation;
 use App\Domain\Bookings\CartManager;
+use App\Domain\Cms\FooterPages;
 use App\Domain\Localization\TranslationLoader;
 use App\Domain\Settings\SettingsRegistry;
 use App\Models\User;
@@ -70,6 +71,8 @@ class HandleInertiaRequests extends Middleware
             ],
             'notifications' => $this->notifications($request->user()),
             'impersonation' => $this->impersonation($request),
+            // M14: white-label footer links — cached, flushed on page save.
+            'footer_pages' => app(FooterPages::class)->all(),
         ]);
     }
 

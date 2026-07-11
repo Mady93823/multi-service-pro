@@ -7,10 +7,12 @@ use App\Domain\Settings\SettingsRegistry;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BannerResource;
 use App\Http\Resources\CategoryResource;
+use App\Http\Resources\FaqResource;
 use App\Http\Resources\ReviewResource;
 use App\Http\Resources\ServiceResource;
 use App\Models\Banner;
 use App\Models\Category;
+use App\Models\Faq;
 use App\Models\Review;
 use App\Models\Service;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -67,6 +69,8 @@ class CatalogController extends Controller
                 'hero' => BannerResource::collection($this->liveBanners(BannerPlacement::HomeHero)),
                 'strip' => BannerResource::collection($this->liveBanners(BannerPlacement::HomeStrip)),
             ],
+            // M14: storefront FAQ section — active rows only, admin-sorted.
+            'faqs' => FaqResource::collection(Faq::query()->active()->get()),
         ]);
     }
 

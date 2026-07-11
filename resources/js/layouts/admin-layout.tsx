@@ -4,9 +4,12 @@ import { type BreadcrumbItem, type NavItem } from '@/types';
 import {
     Banknote,
     CalendarClock,
+    CircleHelp,
     FileSpreadsheet,
+    FileText,
     FolderTree,
     Image,
+    Languages,
     LayoutGrid,
     Map,
     ScrollText,
@@ -75,6 +78,21 @@ export default function AdminLayout({ children, breadcrumbs }: AdminLayoutProps)
             title: t('Banners'),
             url: '/admin/banners',
             icon: Image,
+        },
+        {
+            title: t('Pages'),
+            url: '/admin/pages',
+            icon: FileText,
+        },
+        {
+            title: t('FAQs'),
+            url: '/admin/faqs',
+            icon: CircleHelp,
+        },
+        {
+            title: t('Languages'),
+            url: '/admin/languages',
+            icon: Languages,
         },
         {
             title: t('Reports'),

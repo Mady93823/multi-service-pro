@@ -1,6 +1,8 @@
 @import 'tailwindcss';
 
 @plugin 'tailwindcss-animate';
+/* CMS page bodies (M14) — prose styles for sanitized markdown output. */
+@plugin '@tailwindcss/typography';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 

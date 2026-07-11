@@ -202,8 +202,10 @@ support_ticket_messages
   id, support_ticket_id FK, sender_id FK users, message,
   (attachments via medialibrary), created_at
 
-languages
-  id, code (uniq e.g. en, hi), name, is_active, is_default
+languages                ← M14; code is the lang/{code}.json FILENAME — strictly
+  id, code (uniq e.g.       pattern-validated (path-traversal guard), immutable after
+  en, hi), name,            creation; no is_default column — `en` is the hardcoded
+  native_name, is_active    protected default (Language::DEFAULT_CODE)
 
 notifications            ← Laravel standard database channel table (M11)
   uuid id, type, notifiable_type, notifiable_id, data TEXT, read_at
@@ -213,11 +215,15 @@ banners                  ← M12; image via medialibrary collection image (PUBLI
   placement [home_hero|home_strip],  restricted http/https (stored-XSS guard)
   sort_order, starts_at, ends_at, is_active
 
-pages
-  id, slug (uniq), title, body (markdown), is_published
+pages                    ← M14; body is MARKDOWN SOURCE, HTML never stored —
+  id, slug (uniq), title,   MarkdownRenderer (strip html_input, no unsafe links) is
+  body (markdown),          the single output path; /p/{slug} public route
+  is_published, show_in_footer, sort_order
+  idx(is_published, show_in_footer, sort_order)
 
-faqs
-  id, question, answer, sort_order, is_active
+faqs                     ← M14; plain text, rendered escaped
+  id, question, answer, is_active, sort_order
+  idx(is_active, sort_order)
 
 settings
   id, group, key (uniq), value TEXT, type [string|int|bool|json|decimal]
@@ -236,6 +242,8 @@ activity_logs            ← M13; append-only admin audit (created_at only, no u
 > [!note] **Shipped M12 (2026-07-10, ADR D18).** `coupon_usages` is an **append-only audit trail**: `booking_id` unique (one redemption per booking), `coupon_id` FK **restrict** (a redeemed coupon is deactivated, never deleted), `created_at` only. The caps never mutate it — `CouponValidator` counts usages through a join that excludes bookings in `expired`/`failed_payment` (money never moved, the slot frees itself), while a cancelled booking's usage stays spent (UC parity). `bookings.coupon_id` (a bare column since M04) gained its FK `nullOnDelete` here. `referrals.referee_id` unique = referred once ever; `reward_amount` stays null until `RewardReferral` snapshots the amount actually credited. `users.referral_code` is lazy-generated, unique, and never mass-assignable. `banners` carries no image column — medialibrary `image` collection on the **public** disk (marketing content); `image_path` in the sketch above was dropped in favor of it.
 
 > [!note] **Shipped M13 (2026-07-11, ADR D19).** `activity_logs` joins the append-only family: `ActivityLogger` is the only writer, `UPDATED_AT = null`, rows never edited or deleted. Impersonation writes through `mustLog()` — the insert failing aborts the impersonation itself. Dashboard and report figures are aggregates over the existing snapshot columns; no new money columns were added.
+
+> [!note] **Shipped M14 (2026-07-11, ADR D20).** `pages` stores markdown source only — rendered HTML is never persisted, so the sanitizing renderer stays the single output path and a rule change re-sanitizes all history for free. `languages.code` doubles as a filename: strict pattern validation at the request *and* inside the only two file-touching actions, immutable after creation, `en` row protected (no `is_default` column — the default is code, not data). Deleting a language deletes its `lang/{code}.json`; the current site locale refuses deletion. `faqs` is deliberately plain text.
 
 ## Integrity rules
 

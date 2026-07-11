@@ -22,7 +22,12 @@ interface Props {
     leaderboard: LeaderboardRow[];
 }
 
-const shortDate = (value: string) => new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' }).format(new Date(`${value}T00:00:00`));
+const shortDate = (value: string) => {
+    const date = new Date(`${value}T00:00:00`);
+
+    // Intl throws RangeError on an invalid Date, which unmounts the whole page.
+    return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' }).format(date);
+};
 
 const compact = (value: number) => new Intl.NumberFormat('en-IN', { notation: 'compact' }).format(value);
 
@@ -38,11 +43,14 @@ function ChartTip({
     label,
     payload,
     format,
+    formatLabel,
 }: {
     active?: boolean;
     label?: unknown;
     payload?: readonly TipEntry[];
     format: (value: number) => string;
+    /** Labels are dates on the time-series charts but service names on top services — only date charts pass shortDate. */
+    formatLabel?: (label: string) => string;
 }) {
     if (!active || !payload || payload.length === 0) {
         return null;
@@ -50,7 +58,9 @@ function ChartTip({
 
     return (
         <div className="bg-popover rounded-md border px-3 py-2 text-xs shadow-md">
-            <p className="text-foreground mb-1 font-medium">{typeof label === 'string' ? shortDate(label) : String(label ?? '')}</p>
+            <p className="text-foreground mb-1 font-medium">
+                {typeof label === 'string' ? (formatLabel ? formatLabel(label) : label) : String(label ?? '')}
+            </p>
             {payload.map((entry, i) => (
                 <p key={i} className="text-muted-foreground flex items-center gap-1.5">
                     <span className="inline-block size-2 rounded-[2px]" style={{ background: entry.color }} aria-hidden />
@@ -141,7 +151,10 @@ export default function AdminDashboard({ tiles, bookings_per_day, revenue_per_da
                                     minTickGap={24}
                                 />
                                 <YAxis allowDecimals={false} tick={{ fill: ink, fontSize: 11 }} tickLine={false} axisLine={false} />
-                                <Tooltip cursor={{ fill: 'var(--muted)', opacity: 0.4 }} content={<ChartTip format={(v) => String(v)} />} />
+                                <Tooltip
+                                    cursor={{ fill: 'var(--muted)', opacity: 0.4 }}
+                                    content={<ChartTip format={(v) => String(v)} formatLabel={shortDate} />}
+                                />
                                 <Bar dataKey="bookings" name={t('Bookings')} fill={series1} radius={[4, 4, 0, 0]} maxBarSize={18} />
                             </BarChart>
                         </ResponsiveContainer>
@@ -160,7 +173,7 @@ export default function AdminDashboard({ tiles, bookings_per_day, revenue_per_da
                                     minTickGap={24}
                                 />
                                 <YAxis tickFormatter={compact} tick={{ fill: ink, fontSize: 11 }} tickLine={false} axisLine={false} />
-                                <Tooltip cursor={{ stroke: grid }} content={<ChartTip format={money} />} />
+                                <Tooltip cursor={{ stroke: grid }} content={<ChartTip format={money} formatLabel={shortDate} />} />
                                 <Line
                                     type="monotone"
                                     dataKey="gross"

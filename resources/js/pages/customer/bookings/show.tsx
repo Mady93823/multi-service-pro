@@ -13,7 +13,7 @@ import { useMoney } from '@/lib/format';
 import { useTrans } from '@/lib/i18n';
 import { type Booking, type BreadcrumbItem, type Review, type SlotDay } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { CreditCard, FileText, Heart, KeyRound, MapPin, RotateCcw, UserRound } from 'lucide-react';
+import { CreditCard, FileText, Heart, KeyRound, LifeBuoy, MapPin, RotateCcw, UserRound } from 'lucide-react';
 
 interface BookingShowProps {
     booking: Booking;
@@ -155,15 +155,24 @@ export default function BookingShow({
                                     </div>
                                 )}
                                 <p className="text-muted-foreground text-xs">{paymentNote}</p>
-                                {abilities.can_download_invoice && (
-                                    // A plain link, not an Inertia visit: the response is a PDF download.
+                                <div className="flex flex-wrap gap-2">
+                                    {abilities.can_download_invoice && (
+                                        // A plain link, not an Inertia visit: the response is a PDF download.
+                                        <Button asChild variant="outline" size="sm" className="mt-2 w-fit">
+                                            <a href={route('bookings.invoice', booking.id)}>
+                                                <FileText className="h-4 w-4" />
+                                                {t('Download invoice')}
+                                            </a>
+                                        </Button>
+                                    )}
+                                    {/* Help centre (M16): prefills the ticket form with this booking. */}
                                     <Button asChild variant="outline" size="sm" className="mt-2 w-fit">
-                                        <a href={route('bookings.invoice', booking.id)}>
-                                            <FileText className="h-4 w-4" />
-                                            {t('Download invoice')}
-                                        </a>
+                                        <Link href={route('support.tickets.create', { booking: booking.id })}>
+                                            <LifeBuoy className="h-4 w-4" />
+                                            {t('Get help')}
+                                        </Link>
                                     </Button>
-                                )}
+                                </div>
                             </CardContent>
                         </Card>
 

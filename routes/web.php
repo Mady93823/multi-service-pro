@@ -11,6 +11,8 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Provider;
 use App\Http\Controllers\ProviderDocumentController;
 use App\Http\Controllers\ReviewPhotoController;
+use App\Http\Controllers\SupportTicketController;
+use App\Http\Controllers\TicketAttachmentController;
 use App\Http\Controllers\TrackingController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
@@ -85,6 +87,23 @@ Route::middleware(['auth', 'throttle:30,1'])->group(function () {
     Route::get('geocode/reverse', [GeocodeController::class, 'reverse'])->name('geocode.reverse');
     Route::get('geocode/search', [GeocodeController::class, 'search'])->name('geocode.search');
 });
+
+// Help centre (M16) — customers and providers share one controller; the
+// page picks its shell from the role. Providers can reach it before
+// approval (KYC trouble is exactly what support is for).
+Route::middleware(['auth', 'role:customer|provider'])->prefix('support')->name('support.')->group(function () {
+    Route::get('tickets', [SupportTicketController::class, 'index'])->name('tickets.index');
+    Route::get('tickets/create', [SupportTicketController::class, 'create'])->name('tickets.create');
+    Route::post('tickets', [SupportTicketController::class, 'store'])->name('tickets.store');
+    Route::get('tickets/{ticket}', [SupportTicketController::class, 'show'])->name('tickets.show');
+    Route::post('tickets/{ticket}/reply', [SupportTicketController::class, 'reply'])->name('tickets.reply');
+});
+
+// Private-disk ticket attachments — SupportTicketPolicy decides (owner or
+// admin), so the route sits outside the role groups.
+Route::get('support/tickets/{ticket}/attachments/{media}', [TicketAttachmentController::class, 'show'])
+    ->middleware('auth')
+    ->name('support.attachments.show');
 
 // Cross-role authenticated endpoints (M07 tracking fallback, M11 notifications).
 Route::middleware('auth')->group(function () {
@@ -170,6 +189,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('languages/{language}', [Admin\LanguageController::class, 'destroy'])->name('languages.destroy');
     Route::get('languages/{language}/translations', [Admin\LanguageController::class, 'editTranslations'])->name('languages.translations.edit');
     Route::put('languages/{language}/translations', [Admin\LanguageController::class, 'updateTranslations'])->name('languages.translations.update');
+    // Support & helpdesk (M16).
+    Route::get('tickets', [Admin\SupportTicketController::class, 'index'])->name('tickets.index');
+    Route::get('tickets/{ticket}', [Admin\SupportTicketController::class, 'show'])->name('tickets.show');
+    Route::post('tickets/{ticket}/reply', [Admin\SupportTicketController::class, 'reply'])->name('tickets.reply');
+    Route::post('tickets/{ticket}/assign', [Admin\SupportTicketController::class, 'assign'])->name('tickets.assign');
+    Route::post('tickets/{ticket}/resolve', [Admin\SupportTicketController::class, 'resolve'])->name('tickets.resolve');
+    Route::post('tickets/{ticket}/close', [Admin\SupportTicketController::class, 'close'])->name('tickets.close');
     Route::get('settings', [Admin\SettingsController::class, 'edit'])->name('settings.edit');
     Route::put('settings', [Admin\SettingsController::class, 'update'])->name('settings.update');
 

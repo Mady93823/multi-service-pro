@@ -10,7 +10,7 @@ import AdminLayout from '@/layouts/admin-layout';
 import { useTrans } from '@/lib/i18n';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
+import { LoaderCircle, Plus, Trash2 } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
 type SettingsForm = {
@@ -61,6 +61,8 @@ type SettingsForm = {
     reviews_max_photos: number;
     referrals_enabled: boolean;
     referrals_reward_amount: number;
+    support_max_attachments: number;
+    support_canned_responses: { title: string; body: string }[];
 };
 
 /** The four write-only secrets: the server sends `*_set`, never the value. */
@@ -109,6 +111,8 @@ interface SettingsEditProps {
         reviews_max_photos: number;
         referrals_enabled: boolean;
         referrals_reward_amount: number;
+        support_max_attachments: number;
+        support_canned_responses: { title: string; body: string }[];
     };
 }
 
@@ -172,6 +176,8 @@ export default function SettingsEdit({ values }: SettingsEditProps) {
         reviews_max_photos: values.reviews_max_photos,
         referrals_enabled: values.referrals_enabled,
         referrals_reward_amount: values.referrals_reward_amount,
+        support_max_attachments: values.support_max_attachments,
+        support_canned_responses: values.support_canned_responses,
     });
 
     transform((current) => ({
@@ -790,6 +796,96 @@ export default function SettingsEdit({ values }: SettingsEditProps) {
                                 />
                                 <p className="text-muted-foreground text-xs">{t('Set to 0 to pause payouts without hiding the program.')}</p>
                                 <InputError message={errors.referrals_reward_amount} />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('Support')}</CardTitle>
+                            <CardDescription>{t('Helpdesk limits and the canned responses the reply box offers.')}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="grid gap-2">
+                                <Label htmlFor="support_max_attachments">{t('Attachments per message')}</Label>
+                                <Input
+                                    id="support_max_attachments"
+                                    type="number"
+                                    min={0}
+                                    max={10}
+                                    value={data.support_max_attachments}
+                                    onChange={(e) => setData('support_max_attachments', Number(e.target.value))}
+                                    className="w-40"
+                                    required
+                                />
+                                <p className="text-muted-foreground text-xs">{t('Set to 0 to disable ticket attachments.')}</p>
+                                <InputError message={errors.support_max_attachments} />
+                            </div>
+
+                            <div className="grid gap-3">
+                                <Label>{t('Canned responses')}</Label>
+                                {data.support_canned_responses.map((response, index) => (
+                                    <div key={index} className="grid gap-2 rounded-md border p-3">
+                                        <div className="flex items-center gap-2">
+                                            <Input
+                                                value={response.title}
+                                                placeholder={t('Title')}
+                                                maxLength={100}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'support_canned_responses',
+                                                        data.support_canned_responses.map((item, i) =>
+                                                            i === index ? { ...item, title: e.target.value } : item,
+                                                        ),
+                                                    )
+                                                }
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                aria-label={t('Remove response')}
+                                                onClick={() =>
+                                                    setData(
+                                                        'support_canned_responses',
+                                                        data.support_canned_responses.filter((_, i) => i !== index),
+                                                    )
+                                                }
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                        <textarea
+                                            value={response.body}
+                                            placeholder={t('Response text')}
+                                            rows={2}
+                                            maxLength={2000}
+                                            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                                            onChange={(e) =>
+                                                setData(
+                                                    'support_canned_responses',
+                                                    data.support_canned_responses.map((item, i) =>
+                                                        i === index ? { ...item, body: e.target.value } : item,
+                                                    ),
+                                                )
+                                            }
+                                        />
+                                        <InputError message={errors[`support_canned_responses.${index}.title` as keyof typeof errors]} />
+                                        <InputError message={errors[`support_canned_responses.${index}.body` as keyof typeof errors]} />
+                                    </div>
+                                ))}
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-fit"
+                                    disabled={data.support_canned_responses.length >= 20}
+                                    onClick={() => setData('support_canned_responses', [...data.support_canned_responses, { title: '', body: '' }])}
+                                >
+                                    <Plus className="mr-1 h-4 w-4" />
+                                    {t('Add response')}
+                                </Button>
+                                <InputError message={errors.support_canned_responses} />
                             </div>
                         </CardContent>
                     </Card>

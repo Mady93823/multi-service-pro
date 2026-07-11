@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             BookingSeeder::class,
             MarketingSeeder::class,
             CmsSeeder::class,
+            SupportSeeder::class,
         ]);
     }
 }

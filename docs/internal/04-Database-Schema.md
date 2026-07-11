@@ -192,15 +192,20 @@ provider_blackouts
 favorite_providers
   id, customer_id FK users, provider_id FK users, uniq(customer_id, provider_id)
 
-support_tickets
-  id, user_id FK, booking_id FK nullable, subject,
-  category [booking|payment|provider|account|other],
+support_tickets          ← M16 shipped (ADR D21); status is a plain guarded
+  id, code (uniq TKT-000001), user_id FK cascade,        enum, NOT BookingStateMachine
+  booking_id FK nullable nullOnDelete, subject,
+  category [booking|payment|account|other],
   priority [low|normal|high], status [open|pending|resolved|closed],
-  assigned_to FK users nullable, resolved_at
+  assigned_to FK users nullable nullOnDelete, resolution_note,
+  last_reply_at, resolved_at, closed_at,
+  idx(status, priority), idx(user_id, status), idx(assigned_to)
 
-support_ticket_messages
-  id, support_ticket_id FK, sender_id FK users, message,
-  (attachments via medialibrary), created_at
+support_ticket_messages  ← M16; is_staff snapshots the author's side at write
+  id, ticket_id FK cascade, user_id FK cascade, body,       time (roles can change)
+  is_staff BOOL, (attachments via medialibrary collection
+  `attachments`, PRIVATE disk, policy-checked serve route),
+  idx(ticket_id, created_at)
 
 languages                ← M14; code is the lang/{code}.json FILENAME — strictly
   id, code (uniq e.g.       pattern-validated (path-traversal guard), immutable after

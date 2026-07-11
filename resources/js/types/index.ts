@@ -713,3 +713,51 @@ export interface ActivityLogRow {
     context: Record<string, unknown> | null;
     created_at: string;
 }
+
+// ---- Support & helpdesk (M16) ----
+
+export type TicketStatus = 'open' | 'pending' | 'resolved' | 'closed';
+
+export type TicketPriority = 'low' | 'normal' | 'high';
+
+export type TicketCategory = 'booking' | 'payment' | 'account' | 'other';
+
+export interface SupportTicket {
+    id: number;
+    code: string;
+    subject: string;
+    category: TicketCategory;
+    category_label: string;
+    priority: TicketPriority;
+    priority_label: string;
+    status: TicketStatus;
+    status_label: string;
+    resolution_note: string | null;
+    last_reply_at: string | null;
+    created_at: string | null;
+    messages_count?: number;
+    user?: { id: number; name: string; email: string };
+    booking?: { id: number; code: string } | null;
+    assignee?: { id: number; name: string } | null;
+}
+
+export interface TicketAttachment {
+    id: number;
+    name: string;
+    size: number;
+    url: string;
+}
+
+export interface SupportTicketMessage {
+    id: number;
+    body: string;
+    is_staff: boolean;
+    author_name: string | null;
+    created_at: string | null;
+    attachments: TicketAttachment[];
+}
+
+export interface CannedResponse {
+    title: string;
+    body: string;
+}

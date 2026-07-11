@@ -1,7 +1,7 @@
 import AppHeaderLayout from '@/layouts/app/app-header-layout';
 import { useTrans } from '@/lib/i18n';
 import { type BreadcrumbItem, type NavItem } from '@/types';
-import { CalendarClock, LayoutGrid, MapPin, Search, Wallet } from 'lucide-react';
+import { CalendarClock, LayoutGrid, LifeBuoy, MapPin, Search, Wallet } from 'lucide-react';
 
 interface CustomerLayoutProps {
     children: React.ReactNode;
@@ -38,6 +38,11 @@ export default function CustomerLayout({ children, breadcrumbs }: CustomerLayout
             title: t('Wallet'),
             url: '/wallet',
             icon: Wallet,
+        },
+        {
+            title: t('Help'),
+            url: '/support/tickets',
+            icon: LifeBuoy,
         },
     ];
 

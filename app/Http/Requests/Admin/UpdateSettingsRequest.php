@@ -71,6 +71,10 @@ class UpdateSettingsRequest extends FormRequest
             'reviews_max_photos' => ['required', 'integer', 'min:0', 'max:10'],
             'referrals_enabled' => ['boolean'],
             'referrals_reward_amount' => ['required', 'numeric', 'min:0', 'max:100000'],
+            'support_max_attachments' => ['required', 'integer', 'min:0', 'max:10'],
+            'support_canned_responses' => ['nullable', 'array', 'max:20'],
+            'support_canned_responses.*.title' => ['required', 'string', 'max:100'],
+            'support_canned_responses.*.body' => ['required', 'string', 'max:2000'],
         ];
     }
 

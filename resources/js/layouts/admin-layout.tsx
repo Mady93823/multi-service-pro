@@ -11,6 +11,7 @@ import {
     Image,
     Languages,
     LayoutGrid,
+    LifeBuoy,
     Map,
     ScrollText,
     Settings,
@@ -68,6 +69,11 @@ export default function AdminLayout({ children, breadcrumbs }: AdminLayoutProps)
             title: t('Reviews'),
             url: '/admin/reviews',
             icon: Star,
+        },
+        {
+            title: t('Support'),
+            url: '/admin/tickets',
+            icon: LifeBuoy,
         },
         {
             title: t('Coupons'),

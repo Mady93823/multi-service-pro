@@ -63,6 +63,13 @@ class UpdateSettings
         $this->settings->set('reviews.max_photos', $data['reviews_max_photos']);
         $this->settings->set('referrals.enabled', (bool) ($data['referrals_enabled'] ?? false));
         $this->settings->set('referrals.reward_amount', $data['referrals_reward_amount']);
+        $this->settings->set('support.max_attachments', $data['support_max_attachments']);
+        /** @var array<int, array{title: string, body: string}> $canned */
+        $canned = $data['support_canned_responses'] ?? [];
+        $this->settings->set('support.canned_responses', array_values(array_map(
+            fn (array $response): array => ['title' => $response['title'], 'body' => $response['body']],
+            $canned,
+        )));
 
         foreach (self::SECRETS as $field => $key) {
             $submitted = $data[$field] ?? null;

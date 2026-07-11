@@ -168,6 +168,9 @@ Full spec: [[05-Live-Tracking]]. Locked stack (Laravel Reverb + Geolocation + Le
 - Notifications on reply (FCM + in-app + mail via M11)
 - ✅ *Done when:* ticket raised from a booking reaches admin queue; reply notifies user in-app within 2s; closed tickets read-only.
 
+> [!done] Shipped (ADR D21)
+> `support_tickets` + `support_ticket_messages`; `app/Domain/Support` (OpenTicket / ReplyToTicket / AssignTicket / ResolveTicket / CloseTicket — plain enum + guarded transitions, deliberately **not** `BookingStateMachine`). One cross-role controller behind `role:customer|provider` (`/support/tickets`, page shell picked by role — notifications-page idiom); providers reach it **before approval** (KYC trouble is what support is for). Attachments ride medialibrary on the **private disk**, served only by the policy-checked `support.attachments.show` route (mirrors booking problem photos, one hop longer — media hangs off the message and is cross-checked against the ticket). Closed-read-only enforced in `SupportTicketPolicy@reply` (no admin `before()` bypass) **and** re-checked under a row lock in `ReplyToTicket`. Staff reply → `pending` + auto-assign first responder + notify owner; owner reply → back to `open` (reopens `resolved`) + notify assignee. Notifications ride M11 (`database`+`broadcast`, ShouldQueue + afterCommit → ≤2s gate via Reverb; mail deferred with FCM per D14). Admin queue w/ status/priority/assignee filters, canned responses from the `support.canned_responses` JSON setting (+ `support.max_attachments`), resolve requires a note, close is final; assign/resolve/close audit to `activity_logs`. `SupportSeeder` ships one live + one closed demo thread.
+
 ---
 
 ## Cross-cutting v1 features

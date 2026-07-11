@@ -46,6 +46,7 @@ class SettingsFixtures
             'reviews_max_photos' => 4,
             'referrals_enabled' => true,
             'referrals_reward_amount' => 100,
+            'support_max_attachments' => 3,
         ], $overrides);
     }
 }

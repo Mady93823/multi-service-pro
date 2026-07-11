@@ -68,6 +68,9 @@ class SettingsController extends Controller
                 // Referrals (M12).
                 'referrals_enabled' => $settings->boolean('referrals.enabled', true),
                 'referrals_reward_amount' => $settings->decimal('referrals.reward_amount', 100.0),
+                // Support (M16).
+                'support_max_attachments' => $settings->integer('support.max_attachments', 3),
+                'support_canned_responses' => $settings->get('support.canned_responses') ?? [],
             ],
         ]);
     }

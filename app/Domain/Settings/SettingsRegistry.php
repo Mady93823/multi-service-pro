@@ -89,6 +89,10 @@ class SettingsRegistry
             // without hiding the program.
             'referrals.enabled' => ['group' => 'referrals', 'type' => SettingType::Boolean, 'value' => true],
             'referrals.reward_amount' => ['group' => 'referrals', 'type' => SettingType::Decimal, 'value' => '100'],
+            // M16. Helpdesk: attachment cap per message; canned responses are
+            // a JSON list of {title, body} the admin reply box can insert.
+            'support.max_attachments' => ['group' => 'support', 'type' => SettingType::Integer, 'value' => 3],
+            'support.canned_responses' => ['group' => 'support', 'type' => SettingType::Json, 'value' => []],
         ];
     }
 

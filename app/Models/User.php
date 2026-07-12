@@ -13,6 +13,13 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
+/**
+ * Columns Larastan cannot see (not mass-assignable on purpose).
+ *
+ * @property bool $is_active
+ * @property string|null $blocked_reason
+ * @property string|null $referral_code
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -39,6 +46,18 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+    ];
+
+    /**
+     * `is_active` is a database default, and a database default is never
+     * hydrated back onto the instance that inserted the row — a freshly created
+     * User would read `null` and `EnsureUserActive` (M17) would log it straight
+     * back out. Default it on the model too.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'is_active' => true,
     ];
 
     /**

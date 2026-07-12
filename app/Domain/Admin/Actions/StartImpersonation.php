@@ -33,7 +33,9 @@ class StartImpersonation
             ]);
         }
 
-        if ($target->id === $admin->id || $target->hasRole('admin')) {
+        // A blocked account is logged out by EnsureUserActive on the next
+        // request (M17), which would tear down the admin's own session too.
+        if ($target->id === $admin->id || $target->hasRole('admin') || ! $target->is_active) {
             throw ValidationException::withMessages([
                 'impersonate' => __('This account cannot be impersonated.'),
             ]);

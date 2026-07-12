@@ -68,7 +68,7 @@ tags:
 
 The business logic is done; this is the product a buyer sees and the depth an operator needs. Order below is a **dependency order, not a wish list** — the shell before the screens, the media picker before everything that picks media, the module registry last because it can only register modules that exist.
 
-1. **M17 Admin IA & settings hub** — collapsible sidebar groups, settings split into per-group sub-pages with per-group validation (D24), admin Customers screen. *Everything after this lands in a slot that already exists.*
+1. ~~**M17 Admin IA & settings hub**~~ — **done 2026-07-12**: collapsible sidebar groups, `/admin/settings/{group}` sub-pages with per-group rule providers + a key-ownership guard test (D24), admin Customers screen with block/unblock (D28). Dispatch, tracking and `features.otp_required` got their first UI on the way.
 2. **M18 Media Manager** — central library + the shared `MediaPicker` that M19/M20/M21 all depend on
 3. **M19 Frontend CMS pack** — menus, homepage sections, testimonials, sponsors, popups, footer, social, login-page appearance, header/footer style, custom CSS/JS (D26), cookie banner, become-a-provider page, contact→ticket, newsletter
 4. **M20 Page builder** — block registry + typed blocks (D22); M19's homepage sections migrate onto the `home` page

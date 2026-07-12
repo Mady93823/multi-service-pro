@@ -196,8 +196,16 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('tickets/{ticket}/assign', [Admin\SupportTicketController::class, 'assign'])->name('tickets.assign');
     Route::post('tickets/{ticket}/resolve', [Admin\SupportTicketController::class, 'resolve'])->name('tickets.resolve');
     Route::post('tickets/{ticket}/close', [Admin\SupportTicketController::class, 'close'])->name('tickets.close');
-    Route::get('settings', [Admin\SettingsController::class, 'edit'])->name('settings.edit');
-    Route::put('settings', [Admin\SettingsController::class, 'update'])->name('settings.update');
+    Route::get('customers', [Admin\CustomerController::class, 'index'])->name('customers.index');
+    Route::get('customers/{customer}', [Admin\CustomerController::class, 'show'])->name('customers.show');
+    Route::post('customers/{customer}/block', [Admin\CustomerController::class, 'block'])->name('customers.block');
+    Route::post('customers/{customer}/unblock', [Admin\CustomerController::class, 'unblock'])->name('customers.unblock');
+
+    // Settings is one screen per group (ADR D24): a save carries — and can
+    // therefore only write — the keys of the group named in the URL.
+    Route::get('settings', [Admin\SettingsController::class, 'index'])->name('settings.index');
+    Route::get('settings/{group}', [Admin\SettingsController::class, 'edit'])->name('settings.edit');
+    Route::put('settings/{group}', [Admin\SettingsController::class, 'update'])->name('settings.update');
 
     Route::get('reports/{report}', [Admin\ReportController::class, 'show'])->name('reports.show');
     // GET so the CSV can stream straight to the browser as a download —

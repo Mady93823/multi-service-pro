@@ -151,14 +151,14 @@ test('non-admins cannot touch the admin queue', function () {
 test('canned responses round-trip through the settings save', function () {
     $admin = User::factory()->admin()->create();
 
-    $payload = SettingsFixtures::validPayload([
+    $payload = SettingsFixtures::payload('support', [
         'support_max_attachments' => 5,
         'support_canned_responses' => [
             ['title' => 'Greeting', 'body' => 'Hi! Thanks for reaching out.'],
         ],
     ]);
 
-    $this->actingAs($admin)->put(route('admin.settings.update'), $payload)
+    $this->actingAs($admin)->put(route('admin.settings.update', 'support'), $payload)
         ->assertRedirect()->assertSessionHasNoErrors();
 
     $settings = app(SettingsRegistry::class);

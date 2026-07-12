@@ -20,6 +20,11 @@ export interface NavItem {
     url: string;
     icon?: LucideIcon | null;
     isActive?: boolean;
+    /**
+     * A collapsible group (M17). A group's `url` is the trail it owns — it is
+     * matched against the current URL to auto-expand, and is not itself a link.
+     */
+    children?: NavItem[];
 }
 
 export interface Flash {

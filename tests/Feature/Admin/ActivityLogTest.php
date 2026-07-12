@@ -67,7 +67,7 @@ it('logs settings saves with keys only — never values', function () {
     $admin = activityAdmin();
 
     $this->actingAs($admin)
-        ->put(route('admin.settings.update'), SettingsFixtures::validPayload())
+        ->put(route('admin.settings.update', 'branding'), SettingsFixtures::payload('branding'))
         ->assertRedirect();
 
     $log = ActivityLog::query()->where('action', 'settings.update')->latest('id')->first();

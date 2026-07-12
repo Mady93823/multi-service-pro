@@ -2,21 +2,16 @@ import AppSidebarLayout from '@/layouts/app/app-sidebar-layout';
 import { useTrans } from '@/lib/i18n';
 import { type BreadcrumbItem, type NavItem } from '@/types';
 import {
-    Banknote,
     CalendarClock,
-    CircleHelp,
     FileSpreadsheet,
     FileText,
-    FolderTree,
-    Image,
-    Languages,
     LayoutGrid,
     LifeBuoy,
     Map,
-    ScrollText,
+    Megaphone,
     Settings,
+    ShoppingBag,
     Star,
-    TicketPercent,
     UsersRound,
     Wrench,
 } from 'lucide-react';
@@ -26,6 +21,11 @@ interface AdminLayoutProps {
     breadcrumbs?: BreadcrumbItem[];
 }
 
+/**
+ * Grouped, collapsible admin navigation (M17). A group's `url` is the trail it
+ * owns — the sub-menu auto-expands when the current page sits under it. A group
+ * with a single child is a plain item, not a group.
+ */
 export default function AdminLayout({ children, breadcrumbs }: AdminLayoutProps) {
     const t = useTrans();
 
@@ -36,14 +36,32 @@ export default function AdminLayout({ children, breadcrumbs }: AdminLayoutProps)
             icon: LayoutGrid,
         },
         {
-            title: t('Categories'),
-            url: '/admin/categories',
-            icon: FolderTree,
+            title: t('Bookings'),
+            url: '/admin/bookings',
+            icon: CalendarClock,
         },
         {
-            title: t('Services'),
-            url: '/admin/services',
+            title: t('Catalog'),
+            url: '/admin/catalog',
             icon: Wrench,
+            children: [
+                { title: t('Categories'), url: '/admin/categories' },
+                { title: t('Services'), url: '/admin/services' },
+            ],
+        },
+        {
+            title: t('Providers'),
+            url: '/admin/providers',
+            icon: UsersRound,
+            children: [
+                { title: t('All providers'), url: '/admin/providers' },
+                { title: t('Payouts'), url: '/admin/payouts' },
+            ],
+        },
+        {
+            title: t('Customers'),
+            url: '/admin/customers',
+            icon: ShoppingBag,
         },
         {
             title: t('Zones'),
@@ -51,19 +69,13 @@ export default function AdminLayout({ children, breadcrumbs }: AdminLayoutProps)
             icon: Map,
         },
         {
-            title: t('Bookings'),
-            url: '/admin/bookings',
-            icon: CalendarClock,
-        },
-        {
-            title: t('Providers'),
-            url: '/admin/providers',
-            icon: UsersRound,
-        },
-        {
-            title: t('Payouts'),
-            url: '/admin/payouts',
-            icon: Banknote,
+            title: t('Marketing'),
+            url: '/admin/marketing',
+            icon: Megaphone,
+            children: [
+                { title: t('Coupons'), url: '/admin/coupons' },
+                { title: t('Banners'), url: '/admin/banners' },
+            ],
         },
         {
             title: t('Reviews'),
@@ -76,39 +88,26 @@ export default function AdminLayout({ children, breadcrumbs }: AdminLayoutProps)
             icon: LifeBuoy,
         },
         {
-            title: t('Coupons'),
-            url: '/admin/coupons',
-            icon: TicketPercent,
-        },
-        {
-            title: t('Banners'),
-            url: '/admin/banners',
-            icon: Image,
-        },
-        {
-            title: t('Pages'),
-            url: '/admin/pages',
+            title: t('Content'),
+            url: '/admin/content',
             icon: FileText,
-        },
-        {
-            title: t('FAQs'),
-            url: '/admin/faqs',
-            icon: CircleHelp,
-        },
-        {
-            title: t('Languages'),
-            url: '/admin/languages',
-            icon: Languages,
+            children: [
+                { title: t('Pages'), url: '/admin/pages' },
+                { title: t('FAQs'), url: '/admin/faqs' },
+                { title: t('Languages'), url: '/admin/languages' },
+            ],
         },
         {
             title: t('Reports'),
-            url: '/admin/reports/bookings',
+            url: '/admin/reports',
             icon: FileSpreadsheet,
-        },
-        {
-            title: t('Activity log'),
-            url: '/admin/activity',
-            icon: ScrollText,
+            children: [
+                { title: t('Bookings'), url: '/admin/reports/bookings' },
+                { title: t('Earnings'), url: '/admin/reports/earnings' },
+                { title: t('Services'), url: '/admin/reports/services' },
+                { title: t('Providers'), url: '/admin/reports/providers' },
+                { title: t('Activity log'), url: '/admin/activity' },
+            ],
         },
         {
             title: t('Settings'),

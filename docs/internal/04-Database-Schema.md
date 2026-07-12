@@ -252,6 +252,8 @@ activity_logs            ← M13; append-only admin audit (created_at only, no u
 
 ## Phase 6 — planned tables (M17–M27, specced 2026-07-12)
 
+**M18 shipped (2026-07-13):** `media_assets` (id, name, `uploaded_by` FK nullOnDelete, timestamps) + the medialibrary `library` collection on the **public** disk, one file per asset. Consumers do not reference the row — picking **copies** the file into the consumer's collection and stamps `custom_properties->library_asset_id` on the copy (ADR D29). Usage, deletability and pruning all read that stamp; there is no join table. Banners keep their own `image` collection (now filled from the library).
+
 **M17 shipped (2026-07-12):** no new table — `users.blocked_reason` (nullable string) joins `users.is_active`, which existed since M01 and was never enforced. `SetUserActive` is the only writer; `EnsureUserActive` (in the `web` group) signs a blocked account out on its next request; an admin can never be blocked (ADR D28). Settings gained no columns — the hub is a code-side regrouping of the existing `settings` table (D24).
 
 The rest below is not yet migrated. Shapes are indicative; the ADRs (D22–D27) are the binding part.

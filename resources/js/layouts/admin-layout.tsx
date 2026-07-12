@@ -5,6 +5,7 @@ import {
     CalendarClock,
     FileSpreadsheet,
     FileText,
+    Image,
     LayoutGrid,
     LifeBuoy,
     Map,
@@ -96,6 +97,11 @@ export default function AdminLayout({ children, breadcrumbs }: AdminLayoutProps)
                 { title: t('FAQs'), url: '/admin/faqs' },
                 { title: t('Languages'), url: '/admin/languages' },
             ],
+        },
+        {
+            title: t('Media'),
+            url: '/admin/media',
+            icon: Image,
         },
         {
             title: t('Reports'),

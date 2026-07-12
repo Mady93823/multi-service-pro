@@ -2,21 +2,24 @@
 
 namespace App\Domain\Banners\Actions;
 
+use App\Domain\Media\Actions\AttachLibraryAsset;
 use App\Models\Banner;
-use Illuminate\Http\UploadedFile;
+use App\Models\MediaAsset;
 
 class UpdateBanner
 {
+    public function __construct(private readonly AttachLibraryAsset $attach) {}
+
     /**
      * @param  array<string, mixed>  $data
      */
-    public function handle(Banner $banner, array $data, ?UploadedFile $image): Banner
+    public function handle(Banner $banner, array $data, ?MediaAsset $asset): Banner
     {
         $banner->update($data);
 
-        if ($image !== null) {
+        if ($asset !== null) {
             // singleFile collection — the old image is replaced automatically.
-            $banner->addMedia($image)->toMediaCollection('image');
+            $this->attach->handle($banner, $asset, 'image');
         }
 
         return $banner;

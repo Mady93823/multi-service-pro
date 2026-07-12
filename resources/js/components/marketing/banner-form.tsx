@@ -1,14 +1,15 @@
 import InputError from '@/components/input-error';
+import { MediaPicker } from '@/components/media/media-picker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useTrans } from '@/lib/i18n';
-import { type Banner, type BannerPlacement } from '@/types';
+import { type Banner, type BannerPlacement, type MediaAsset } from '@/types';
 import { Link, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
-import { FormEventHandler } from 'react';
+import { FormEventHandler, useState } from 'react';
 
 type BannerFormData = {
     _method?: string;
@@ -19,7 +20,8 @@ type BannerFormData = {
     starts_at: string;
     ends_at: string;
     is_active: boolean;
-    image: File | null;
+    /** The picture comes from the media library (M18) — see MediaPicker. */
+    media_asset_id: number | null;
 };
 
 interface BannerFormProps {
@@ -29,9 +31,9 @@ interface BannerFormProps {
 export function BannerForm({ banner }: BannerFormProps) {
     const isEdit = banner !== undefined;
     const t = useTrans();
+    const [asset, setAsset] = useState<MediaAsset | null>(null);
 
-    const { data, setData, post, processing, errors, transform } = useForm<BannerFormData>({
-        ...(isEdit ? { _method: 'put' } : {}),
+    const { data, setData, post, put, processing, errors, transform } = useForm<BannerFormData>({
         title: banner?.title ?? '',
         link_url: banner?.link_url ?? '',
         placement: banner?.placement ?? 'home_hero',
@@ -39,7 +41,7 @@ export function BannerForm({ banner }: BannerFormProps) {
         starts_at: banner?.starts_at ?? '',
         ends_at: banner?.ends_at ?? '',
         is_active: banner?.is_active ?? true,
-        image: null,
+        media_asset_id: null,
     });
 
     transform((current) => ({
@@ -52,11 +54,12 @@ export function BannerForm({ banner }: BannerFormProps) {
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        // Files require multipart, and multipart requires POST + _method.
+        // No multipart any more: the file was uploaded by the picker, and the
+        // form only carries the library asset's id (M18).
         if (isEdit) {
-            post(route('admin.banners.update', banner.id), { forceFormData: true });
+            put(route('admin.banners.update', banner.id));
         } else {
-            post(route('admin.banners.store'), { forceFormData: true });
+            post(route('admin.banners.store'));
         }
     };
 
@@ -120,11 +123,17 @@ export function BannerForm({ banner }: BannerFormProps) {
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="image">{t('Image')}</Label>
-                {banner?.image_url && <img src={banner.image_url} alt="" className="h-24 rounded object-cover" />}
-                <Input id="image" type="file" accept="image/*" onChange={(e) => setData('image', e.target.files?.[0] ?? null)} />
+                <Label>{t('Image')}</Label>
+                <MediaPicker
+                    value={asset}
+                    currentUrl={banner?.image_url ?? null}
+                    onChange={(picked) => {
+                        setAsset(picked);
+                        setData('media_asset_id', picked?.id ?? null);
+                    }}
+                    error={errors.media_asset_id}
+                />
                 <p className="text-muted-foreground text-xs">{t('JPG, PNG or WebP up to 4 MB. Hero banners look best at 1600×500.')}</p>
-                <InputError message={errors.image} />
             </div>
 
             <div className="flex gap-2">

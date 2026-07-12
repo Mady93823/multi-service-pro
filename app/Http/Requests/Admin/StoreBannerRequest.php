@@ -28,7 +28,11 @@ class StoreBannerRequest extends FormRequest
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date', 'after:starts_at'],
             'is_active' => ['boolean'],
-            'image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            // M18: a banner takes its picture from the media library. Uploading
+            // one here still works — it becomes a library asset first, so the
+            // library is the whole inventory and not a second silo (D29).
+            'image' => ['required_without:media_asset_id', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'media_asset_id' => ['required_without:image', 'nullable', 'integer', 'exists:media_assets,id'],
         ];
     }
 }

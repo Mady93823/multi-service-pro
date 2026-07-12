@@ -196,6 +196,14 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('tickets/{ticket}/assign', [Admin\SupportTicketController::class, 'assign'])->name('tickets.assign');
     Route::post('tickets/{ticket}/resolve', [Admin\SupportTicketController::class, 'resolve'])->name('tickets.resolve');
     Route::post('tickets/{ticket}/close', [Admin\SupportTicketController::class, 'close'])->name('tickets.close');
+    // Media library (M18). The picker endpoints answer JSON because the dialog
+    // opens over a half-filled form — an Inertia visit would throw it away.
+    Route::get('media', [Admin\MediaController::class, 'index'])->name('media.index');
+    Route::post('media', [Admin\MediaController::class, 'store'])->name('media.store');
+    Route::delete('media/{asset}', [Admin\MediaController::class, 'destroy'])->name('media.destroy');
+    Route::get('media/picker', [Admin\MediaController::class, 'picker'])->name('media.picker');
+    Route::post('media/picker', [Admin\MediaController::class, 'pickerStore'])->name('media.picker.store');
+
     Route::get('customers', [Admin\CustomerController::class, 'index'])->name('customers.index');
     Route::get('customers/{customer}', [Admin\CustomerController::class, 'show'])->name('customers.show');
     Route::post('customers/{customer}/block', [Admin\CustomerController::class, 'block'])->name('customers.block');

@@ -766,3 +766,15 @@ export interface CannedResponse {
     title: string;
     body: string;
 }
+
+/** A reusable image in the media library (M18). */
+export interface MediaAsset {
+    id: number;
+    name: string;
+    url: string | null;
+    thumb_url: string | null;
+    size: number;
+    uploaded_by?: string | null;
+    uploaded_at?: string | null;
+    usage_count?: number;
+}

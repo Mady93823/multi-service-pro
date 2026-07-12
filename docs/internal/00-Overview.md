@@ -30,7 +30,7 @@ Client wants a 3-role (Customer / Provider / Admin) home-services marketplace we
 ## Reading order
 
 1. [[01-Architecture]] — system shape, repos, boundaries
-2. [[02-Modules]] — all 16 modules with acceptance criteria
+2. [[02-Modules]] — all 27 modules with acceptance criteria (M01–M16 shipped; M17–M27 = Phase 6 product surface)
 3. [[03-Tech-Stack]] — exact versions + decisions & why
 4. [[04-Database-Schema]] — tables, relations, status enums
 5. [[05-Live-Tracking]] — the tracking service spec (most critical feature)
@@ -43,8 +43,10 @@ The polished client-facing document lives at `docs/client/Requirement-Analysis.m
 
 ## Status
 
-- **Current phase:** 0 wrap-up — direction approved, key decisions landed 2026-07-04
+- **Current phase:** Phase 6 — *Product surface & admin depth* (M17–M27), scoped 2026-07-12. **M01–M16 all shipped** (business logic complete: book → dispatch → track → pay → invoice → review → support).
 - **Decided:** Razorpay gateway (D7 resolved); multi-city build / single-city India launch; India-first defaults + i18n day one (D9); phone-first auth (D10); CodeCanyon product-ization (D8); **Laravel Reverb realtime — no Node.js (D11, 2026-07-06)**
-- **Urban Company parity pass (2026-07-06):** added job-start OTP, cancellation fees, favorite providers + rebook, review photos, related-services cross-sell, M16 helpdesk; backlog gains membership plans, re-service warranty, SMS channel, product marketplace
-- **Awaiting:** client — commission model, payout cycle, OTP at launch, brand name, hosting, launch city (client doc §10; only Phase 4 blocks)
-- **Next action:** scaffold Laravel app per [[07-Conventions]], start Phase 1 in [[06-Roadmap]]
+- **Phase 6 decisions (2026-07-12):** block-based page builder, not a canvas (D22); one currency per install, format-only settings (D23); per-group settings saves (D24); templates/gateways are optional layers with a shipped fallback (D25); custom CSS/JS is permission-gated and storefront-only (D26); offline payments reuse the existing `ConfirmPayment` path (D27)
+- **Urban Company parity pass (2026-07-06):** added job-start OTP, cancellation fees, favorite providers + rebook, review photos, related-services cross-sell, M16 helpdesk; backlog gains membership plans, re-service warranty, product marketplace
+- **Open gates:** Phase 1 fresh-VPS wizard install; Phase 3 two-device tracking checklist — both deferred, both due before/during Phase 6 (the installer's surface area grows with every new table)
+- **Awaiting:** client — commission model, payout cycle, OTP at launch, brand name, hosting, launch city (client doc §10)
+- **Next action:** M17 (admin IA + settings hub) per [[06-Roadmap]] Phase 6

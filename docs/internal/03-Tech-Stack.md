@@ -163,6 +163,42 @@ The language manager treats a locale code as what it really is — **a filename*
 
 Message attachments are user uploads, so they follow the booking-problem-photos precedent exactly: medialibrary on the **private disk**, no conversions (PDFs are allowed and image conversions would choke), served only through `support.attachments.show`, which authorizes against the *ticket* (`SupportTicketPolicy@view`) and then cross-checks that the media's message actually belongs to that ticket — a valid media id from someone else's thread 404s. Reply notifications reuse M11 wholesale (`database` + `broadcast`, `ShouldQueue` + `afterCommit`) — the "in-app within 2s" gate is just Reverb doing what it already does. Canned responses are a `support.canned_responses` JSON setting (list of `{title, body}`) edited on the Settings screen, so they stay white-label and install-specific; `support.max_attachments` caps uploads per message. Admin assign/resolve/close write `activity_logs` rows through the M13 `ActivityLogger`.
 
+### D22 — The page builder is block-based, not a canvas (2026-07-12)
+
+A drag-and-drop **canvas** builder (free rows/columns, resizable widgets, inline style controls) is a product in its own right: it means a layout engine, a style serializer, a responsive-breakpoint model and a migration story for every layout ever saved. It would cost more than the remaining eleven modules combined and would compete with the thing that actually sells this script — the booking + tracking core.
+
+`M20` therefore models a page as an **ordered list of typed blocks** (`page_blocks`), each one a JSON payload validated against a schema declared in a single `BlockRegistry` (type → schema → admin form → React renderer). The admin reorders, duplicates and hides blocks; they never position pixels. Consequences that matter: the payload is validated on write (an admin cannot save a shape the renderer will choke on), a block type can gain fields without touching stored rows, and an **unknown type renders nothing** instead of 500ing a public page — the failure mode of a removed/renamed block is a gap, not an outage. Layout stays the theme's job, which keeps the storefront coherent no matter what the buyer assembles. M19's homepage sections collapse into blocks on a reserved `home` page once M20 lands, so there is one content model, not two.
+
+### D23 — One currency per install; the setting is *format*, not conversion (2026-07-12)
+
+Multi-currency means live FX rates, a rate snapshot on every booking, refunds at the original rate, and a tax model that stops being GST — the invoice (D16), the earnings ledger (`gross/commission/net`) and the wallet all assume one unit of account. Buying that complexity to serve a market this product does not launch in is a bad trade.
+
+`M24`'s Currency screen configures **presentation only**: symbol, ISO code, position, decimals, and digit grouping (Indian `1,00,000` vs Western `100,000`). `App\Support\Money` — which already does Indian grouping without `ext-intl` — reads those settings instead of hardcoding ₹. A buyer in another market sets their symbol and grouping and everything downstream (checkout, invoice, ledger, reports) follows. True multi-currency stays a v2 add-on module, where an FX snapshot column can be introduced deliberately rather than retrofitted through the money path.
+
+### D24 — Settings save per group, and each group owns its rules (2026-07-12)
+
+The settings registry (D8) scaled; the settings *screen* did not. One `UpdateSettingsRequest` validates **every** key on **every** save, so adding one required key 422s every unrelated form — this has bitten the suite repeatedly (the `SettingsFixtures::validPayload()` landmine). At ~20 groups it becomes unworkable.
+
+`M17` splits the screen into `/admin/settings/{group}` sub-pages, each posting only its own keys. Validation moves to **per-group rule providers**: a group declares its own rules, the request object composes only the rules of the group being saved, and `UpdateSettings` writes only that group's keys. A group's test fixture then covers that group alone. The `SettingsRegistry` stays the single source of defaults, types and grouping — nothing about D8 changes; what changes is that the *write path* stops being global. Secrets keep the M08 rule everywhere: write-only fields, `*_set` booleans out, blank = keep, `remove_*` = erase; `ActivityLogger` keeps recording **keys only**.
+
+### D25 — Templates and gateways are optional layers with a shipped fallback underneath (2026-07-12)
+
+`M23` lets an admin rewrite the subject and body of every transactional message, and lets them plug in an SMS gateway. Both are places where an install can go dark on its most important message — the booking confirmation — because someone deleted a variable or typo'd a template.
+
+So the shipped default always sits underneath: a notification renders through `email_templates` **only if** an enabled row exists for its event key and it renders successfully; otherwise it falls back to the class's shipped Blade/markdown. A broken template degrades one message's *styling*, never its delivery. The SMS channel follows the FCM precedent exactly (D14): the `sms` channel joins `via()` only when a gateway is configured, drivers sit behind an `SmsGateway` contract and speak raw HTTP (no vendor SDKs, D15), and an unconfigured install simply never selects the channel. Same for SMTP: mail settings live in the DB (write-only secrets), and a `Send test email` button proves them before an admin trusts them. Delivery is audited (`sms_logs`) because "the customer says they never got it" is a support ticket, not a mystery.
+
+### D26 — Custom CSS/JS is a real capability with a real blast radius (2026-07-12)
+
+`M19` ships a Custom CSS & JS panel because every script in this category has one and buyers expect it. It is worth being explicit about what it is: **admin-authored code injected into the storefront shell**. There is no sanitizing it — sanitized JS is not JS. It means an admin account (or a staff account holding that permission) is XSS-equivalent by design.
+
+Containment: the capability is **off by default** (empty settings inject nothing); it is gated behind its own `custom_code.manage` permission (M26) so a staff account cannot reach it by default; both snippets render only in the **public storefront shell**, never in the admin or provider shells (a stored payload cannot then harvest an admin session that isn't there); CSS and JS live in separate keys with the JS block emitted last, right before `</body>`; and every save writes an `activity_logs` row with the actor. The install guide states plainly that granting `custom_code.manage` is equivalent to granting site-wide script execution. Analytics IDs (M24) are deliberately **not** implemented via this panel — they are typed ID fields rendering a known snippet, so the common case never needs the dangerous tool.
+
+### D27 — Offline payments reuse the payment state machine; they do not get a second money path (2026-07-12)
+
+`M22` adds "pay offline / bank transfer", which is exactly the kind of feature that grows a parallel money path: a second table, a second way to mark a booking paid, a second refund route, and a reconciliation gap between them.
+
+It gets none of that. An offline payment is a `payments` row with `gateway = offline`, created in `pending` at checkout with the customer's uploaded proof on the **private disk**. The booking stays `pending_payment` — the M08 invariant holds unchanged: **an unpaid booking is never dispatched**. Admin verification calls the same row-locked, idempotent `ConfirmPayment` action every gateway webhook calls, so the booking reaches `placed`, the cash/commission math (D16) sees an ordinary settled payment, and a double-click cannot double-settle. Rejection sets the payment `failed` with a reason and notifies the customer; the booking expires on the existing `bookings:expire-unpaid` schedule. Bank details shown at checkout come from a `bank_accounts` table (settings-adjacent, admin-managed) rather than a free-text blob, so the same account can be referenced by the payment row for reconciliation. Provider payout details move the same way: `payout_accounts` replaces the free-text UPI/bank string typed into M09's payout dialog, and the payout request references an account row.
+
 ## UI sourcing workflow (shoogle.dev)
 
 1. Need a block (e.g., booking form, dashboard, pricing card) → search **shoogle.dev**

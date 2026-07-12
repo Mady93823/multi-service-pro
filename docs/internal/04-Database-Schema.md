@@ -250,6 +250,93 @@ activity_logs            ← M13; append-only admin audit (created_at only, no u
 
 > [!note] **Shipped M14 (2026-07-11, ADR D20).** `pages` stores markdown source only — rendered HTML is never persisted, so the sanitizing renderer stays the single output path and a rule change re-sanitizes all history for free. `languages.code` doubles as a filename: strict pattern validation at the request *and* inside the only two file-touching actions, immutable after creation, `en` row protected (no `is_default` column — the default is code, not data). Deleting a language deletes its `lang/{code}.json`; the current site locale refuses deletion. `faqs` is deliberately plain text.
 
+## Phase 6 — planned tables (M17–M27, specced 2026-07-12)
+
+Not yet migrated. Shapes are indicative; the ADRs (D22–D27) are the binding part.
+
+```
+cities                   ← M25; zones gain city_id (FK restrict — a city with zones
+  id, name, state, slug (uniq),  cannot vanish under live bookings)
+  timezone, center_lat, center_lng, is_active, sort_order
+
+menus                    ← M19; location is the contract the theme renders against
+  id, name, location [header|footer_col_1|footer_col_2|footer_col_3|mobile] (uniq)
+
+menu_items               ← M19; self-nesting one level; target is a discriminated
+  id, menu_id FK cascade,        union, not a free URL string, so a page rename
+  parent_id FK self nullable,    cannot silently 404 a nav item
+  label, target_type [route|page|blog_post|blog_category|url],
+  target_value, is_external, visible_to [all|guest|customer|provider],
+  sort_order, is_active
+
+page_blocks              ← M20; ONE row per block, payload validated against the
+  id, page_id FK cascade,        BlockRegistry schema for `type` on write;
+  type (registry key), payload JSON,   an UNKNOWN type renders nothing (D22)
+  sort_order, is_visible, starts_at, ends_at
+  idx(page_id, sort_order)
+
+testimonials             ← M19; may be authored, or promoted from a real review
+  id, author_name, author_role, quote, rating,
+  review_id FK nullable nullOnDelete, is_active, sort_order
+  (avatar via medialibrary, PUBLIC disk)
+
+sponsors                 ← M19; logo strip (image via medialibrary, PUBLIC disk)
+  id, name, link_url (http/https only — stored-XSS guard), sort_order, is_active
+
+popups                   ← M19; scheduled promo modal; body is MARKDOWN (D20 renderer)
+  id, title, body (markdown), cta_label, cta_url,
+  audience [guest|customer|provider|all], starts_at, ends_at,
+  frequency [once|daily|every_visit], is_active
+
+subscribers              ← M19; newsletter; email uniq; unsubscribe_token
+  id, email (uniq), name, is_confirmed, confirmed_at, unsubscribe_token (uniq)
+
+blog_categories          ← M21
+  id, name, slug (uniq), description, sort_order, is_active
+
+blog_posts               ← M21; body is MARKDOWN SOURCE (same rule as `pages`)
+  id, blog_category_id FK restrict, author_id FK users nullOnDelete,
+  title, slug (uniq), excerpt, body (markdown), tags JSON,
+  meta_title, meta_description,          (cover + OG image via medialibrary,
+  is_featured, published_at (nullable = draft; future = scheduled)   PUBLIC disk)
+  idx(published_at, blog_category_id)
+
+bank_accounts            ← M22; offline/bank-transfer instructions shown at checkout
+  id, label, account_name, account_number, ifsc, upi_id, notes,
+  is_active, sort_order        (QR image via medialibrary, PUBLIC disk)
+
+payout_accounts          ← M22; replaces the free-text UPI/bank string M09's payout
+  id, user_id FK cascade,        dialog collected; payout_requests gain
+  type [upi|bank], upi_id,       payout_account_id FK nullable restrict
+  account_name, account_number, ifsc, is_default, is_verified
+
+email_templates          ← M23; OPTIONAL layer — a missing/broken row falls back to
+  id, event_key (uniq),          the shipped default (D25); body is markdown
+  subject, body (markdown), is_enabled
+
+sms_logs                 ← M23; delivery audit (append-only)
+  id, user_id FK nullable nullOnDelete, phone, event_key, body,
+  gateway, status [queued|sent|failed], response JSON, created_at
+
+notification_preferences ← M23; event × channel toggles; admin defaults + user opt-outs
+  id, user_id FK nullable cascade (null = platform default row),
+  event_key, channel [database|broadcast|mail|sms|fcm], is_enabled
+  uniq(user_id, event_key, channel)
+
+modules                  ← M27; the registry declares modules in CODE; this table
+  id, key (uniq), is_enabled     stores only the on/off state. Disabling never
+                                 deletes data; core modules are not toggleable
+
+permissions / roles / model_has_* ← M26; spatie tables already migrated at M01,
+                                    finally used for real (granular perms + staff role)
+```
+
+> [!note] Where new media lands
+> `library` (M18) and every marketing collection above sit on the **public** disk. **Offline payment proofs (M22) go on the private disk** with a policy-checked serve route — they are financial documents, in the booking-photo / KYC / ticket-attachment family, not marketing assets. The media manager never lists private-disk collections.
+
+> [!warning] Money path stays single (D27)
+> Offline and bank-transfer payments add **no new money table**: they are `payments` rows with `gateway = offline`, settled through the same row-locked idempotent `ConfirmPayment` the gateway webhooks call. No second way to mark a booking paid, no reconciliation gap.
+
 ## Integrity rules
 
 - Booking money columns are **snapshots** — never recompute historical bookings from current prices/rates

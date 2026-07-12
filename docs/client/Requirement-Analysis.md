@@ -1,9 +1,9 @@
 ---
 title: UrbanServe — Requirement Analysis & Technical Proposal
 project: On-Demand Home Services Platform (Urban Company style)
-version: 1.2 (Laravel-only realtime; feature-completeness pass)
-date: 2026-07-06
-status: direction-approved — payments, region strategy & realtime engine decided
+version: 1.3 (extended scope — website content manager, page builder, blog, offline payments, staff accounts)
+date: 2026-07-12
+status: in build — M01–M16 delivered; extended scope (M17–M27) approved 2026-07-12
 tags:
   - requirement-analysis
   - client-deliverable
@@ -164,6 +164,77 @@ The system is split into 16 clean modules. Each module is independent and expand
 
 ---
 
+## 3.1 Extended Scope — Website Content & Admin Depth (added 2026-07-12)
+
+Modules M01–M16 above deliver the working business: a customer books, a provider is dispatched and tracked live, money is collected, invoiced and split, and both sides get support. The modules below make the platform **fully manageable from the browser** — the marketing website, the emails, the staff accounts and the payment options all become admin settings instead of developer tasks.
+
+### M17 — Admin Panel Structure & Customer Management
+- Admin menu reorganised into clear groups with sub-menus (Bookings, Catalog, Providers, Customers, Payments, Marketing, Content, Reports, System settings)
+- Settings split into focused screens instead of one long page
+- **Customers screen**: search, filters, full customer history (bookings, wallet, referrals, tickets) on one page
+
+### M18 — Media Manager
+- Central image library: upload once, reuse anywhere (banners, pages, blog, testimonials)
+- Search, bulk delete, storage usage
+- Customer-uploaded files (ID documents, job photos) remain private and are never exposed here
+
+### M19 — Website Content Manager
+Everything the visitor sees becomes editable:
+- **Menu builder** — header, footer and mobile menus (drag to order, link to any page)
+- **Homepage sections** — hero, how-it-works steps, counters, category strip, call-to-action
+- **Testimonials** (or promote a real customer review) · **Sponsors / partner logos**
+- **Promotional popup** — scheduled, with audience targeting
+- **Footer builder** · social links · login/registration page appearance · header & footer style
+- **Custom CSS / JS** panel for advanced styling
+- **Cookie / GDPR consent banner**
+- **"Become a Provider" landing page** · **Contact form** (messages arrive in the support queue)
+- **Newsletter signup** + subscriber list with CSV export
+
+### M20 — Page Builder
+- Build pages from ready-made blocks: hero, service grid, steps, stats, testimonials, FAQ, call-to-action, gallery, rich text
+- Drag to reorder, duplicate, hide or schedule any block
+- No coding — and no risk of breaking the page layout
+
+### M21 — Blog
+- Categories, posts (cover image, tags, scheduled publishing), public blog with search
+- Per-post SEO fields; posts included in the sitemap
+- Drives organic traffic to the service pages
+
+### M22 — Payments Hub
+- **All payments in one screen** — online, offline, wallet, refunds — with filters and totals
+- **Offline / bank transfer payments**: customer pays to your bank/UPI, uploads the receipt, admin verifies and the booking proceeds automatically
+- Bank account & UPI details managed in the admin and shown at checkout
+- **Provider payout accounts** (UPI / bank) saved and reusable, with admin verification
+
+### M23 — Email, SMS & Push
+- **Email setup in the admin** (SMTP details + "send test email") — no server file editing
+- **Editable email templates** for every notification, with a live preview
+- **SMS notifications** (MSG91 / Twilio) for booking updates and OTP
+- **Notification control panel**: choose which events go out by email, SMS, push or in-app
+- **Push composer**: send an announcement to all customers, all providers, or one city
+
+### M24 — System Settings
+- **SEO**: meta tags, sitemap, structured data (better Google ranking for service pages)
+- **Currency format** (symbol, position, Indian digit grouping) · **timezone** · **languages**
+- **API keys** (Firebase, SMS, analytics) entered safely in the admin
+- **Google Analytics / Tag Manager / Meta Pixel** · **reCAPTCHA** spam protection
+- **Cron status** screen — warns if the scheduler stops running (the #1 cause of "why did nothing happen?")
+- **About & Update** — version, system health, one-click update
+
+### M25 — Cities
+- Multiple cities, each with its own zones; city switcher on the website
+- Per-city performance on the dashboard
+
+### M26 — Staff Accounts & Permissions
+- Create staff logins (support agent, accountant, content editor) with **exactly** the permissions they need
+- Every staff action is recorded in the activity log
+
+### M27 — Module Manager
+- Turn any optional module on or off from the admin (e.g. hide the blog, disable referrals)
+- Disabled modules disappear from the menu and the website; **data is never deleted**
+
+---
+
 ## 4. Technology Stack
 
 | Layer | Technology | Why |
@@ -264,7 +335,8 @@ sequenceDiagram
 | **3. Live tracking** | Realtime engine (Reverb), live map, notifications | M07, M11 |
 | **4. Money** | Razorpay payments, GST invoices, wallet, commission, payouts | M08, M09 |
 | **5. Growth tools** | Reviews, coupons, reports, help center, CMS polish | M10, M12, M13, M16 |
-| **6. Hardening & handover** | Testing, security pass, installer finalization, documentation, deployment | All |
+| **6. Product surface & admin depth** | Website content manager, page builder, blog, media library, offline payments, email/SMS templates, staff accounts, module manager | M17–M27 |
+| **7. Hardening & handover** | Testing, security pass, installer finalization, documentation, deployment | All |
 
 Each phase ends with a working demo the client can click through and approve.
 

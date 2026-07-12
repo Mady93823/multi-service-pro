@@ -64,7 +64,28 @@ tags:
 
 **Gate:** admin can run the business without touching code.
 
-## Phase 6 — Hardening & handover
+## Phase 6 — Product surface & admin depth (M17–M27, scoped 2026-07-12)
+
+The business logic is done; this is the product a buyer sees and the depth an operator needs. Order below is a **dependency order, not a wish list** — the shell before the screens, the media picker before everything that picks media, the module registry last because it can only register modules that exist.
+
+1. **M17 Admin IA & settings hub** — collapsible sidebar groups, settings split into per-group sub-pages with per-group validation (D24), admin Customers screen. *Everything after this lands in a slot that already exists.*
+2. **M18 Media Manager** — central library + the shared `MediaPicker` that M19/M20/M21 all depend on
+3. **M19 Frontend CMS pack** — menus, homepage sections, testimonials, sponsors, popups, footer, social, login-page appearance, header/footer style, custom CSS/JS (D26), cookie banner, become-a-provider page, contact→ticket, newsletter
+4. **M20 Page builder** — block registry + typed blocks (D22); M19's homepage sections migrate onto the `home` page
+5. **M21 Blog** — categories, posts, public `/blog`, RSS, per-post SEO
+6. **M22 Payments hub** — admin payments list, offline + bank-transfer payments through the existing `ConfirmPayment` path (D27), payout accounts, wallet admin
+7. **M23 Communications** — SMTP in settings + test send, email templates with shipped fallback (D25), SMS gateway (`SmsGateway` contract), notification matrix, push composer
+8. **M24 System settings hub** — SEO + sitemap + schema.org, currency format (D23), timezone UI, API keys, reCaptcha, analytics, cron status, about & update
+9. **M25 Cities** — `cities` table, zones belong to a city, storefront city switcher
+10. **M26 Staff roles & permissions** — granular permissions gating routes + nav + actions; staff accounts
+11. **M27 Module manager** — one registry declaring nav/routes/settings per module; admin toggles; dependency guard. **Last, by construction.**
+
+**Gate:** on a fresh install with **zero** third-party keys, an admin can rebrand the storefront (menus, home blocks, footer, legal, blog), take an offline payment end to end, send a templated email, create a staff account that sees only its own group, and disable a module without breaking a page — all from the browser, no code, no `.env` edit.
+
+> [!warning] Deferred gates come due here
+> The Phase 1 gate (fresh-VPS wizard install) and the Phase 3 gate (two-device tracking checklist) are still open. Phase 6 adds ~15 tables and a dozen settings groups to the installer's surface area, so **run the installer gate before or during Phase 6, not after it**.
+
+## Phase 7 — Hardening & handover
 1. Security pass: authz audit on every route, rate limits, file upload validation, webhook idempotency replay tests
 2. Performance: query audit (N+1), image conversions, Lighthouse ≥ 90 on key pages
 3. M15 installer finalized incl. Reverb env + supervisor/systemd templates (reverb + queue worker) + update command + Envato purchase-code toggle (D8)
@@ -76,7 +97,7 @@ tags:
 
 ## Backlog (post-v1)
 
-**v1.5:** extra charges mid-job (provider adds items after inspection, customer approves + pays difference in-app — critical for repair category, UC does this), recurring bookings (subscriptions), provider tips, service bundles/packages, **membership plans** (UC Plus style: paid plan, discount % on every booking, settings-driven), **re-service warranty** (free revisit within X days if issue — linked zero-charge booking), **SMS notification channel** (MSG91/Twilio behind channel abstraction), Hindi translation shipped.
+**v1.5:** extra charges mid-job (provider adds items after inspection, customer approves + pays difference in-app — critical for repair category, UC does this), recurring bookings (subscriptions), provider tips, service bundles/packages, **membership plans** (UC Plus style: paid plan, discount % on every booking, settings-driven), **re-service warranty** (free revisit within X days if issue — linked zero-charge booking), Hindi translation shipped. *(SMS channel was promoted out of this list into M23; multi-currency stays out — see D23.)*
 
 **v2 / sellable add-on modules:** in-app chat customer↔provider (reuse Reverb channels), native mobile apps (API-first ready), WhatsApp notification channel (Gupshup/Interakt), multi-vendor companies (provider teams), city-manager role (franchise), **product marketplace** (UC-style spare parts/consumables sold with services), provider training/certification module, AI provider matching / review summaries.
 

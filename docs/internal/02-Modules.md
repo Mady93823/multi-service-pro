@@ -173,6 +173,139 @@ Full spec: [[05-Live-Tracking]]. Locked stack (Laravel Reverb + Geolocation + Le
 
 ---
 
+# Phase 6 — Product surface (M17–M27)
+
+> [!abstract] Why this phase exists
+> M01–M16 built the *business*: a booking can be placed, dispatched, tracked, paid, invoiced, reviewed and supported. What is missing is the **product surface** a buyer sees on day one — a marketable storefront the admin can restyle without code, a settings panel that scales past one giant form, and the operator depth (staff accounts, offline payments, email templates, module toggles) a CodeCanyon script is judged on. Scope agreed 2026-07-12; decisions recorded as ADRs D22–D27.
+>
+> **Nothing here is a rewrite.** Every module either regroups shipped screens or adds a new one behind the existing seams (settings registry, medialibrary, `MarkdownRenderer`, `ActivityLogger`, M11 notifications).
+
+## Admin information architecture (target)
+
+The admin sidebar is currently 17 flat items and Settings is one long form. Both hit their ceiling here. Target tree — **M17 builds the shell, later modules fill their slots**:
+
+```
+Dashboard
+Bookings          → All bookings · Dispatch offers
+Catalog           → Categories · Services
+Providers         → All providers · KYC queue · Payout requests
+Customers         → All customers · Wallets                                  [M17]
+Locations         → Cities · Zones                                           [M25]
+Payments          → Online received · Offline / bank · Refunds · Wallet ledger [M22]
+Marketing         → Coupons · Sliders & banners · Referrals · Popups
+                    · Testimonials · Sponsors · Subscribers                  [M19]
+Reviews
+Support           → Tickets · Canned responses · Inquiries                   [M19]
+Blog              → Categories · Posts · Blog settings                       [M21]
+Frontend CMS      → Menus · Homepage sections · Pages · Page builder · FAQs
+                    · Footer · Login page · Custom CSS & JS · Header/Footer style [M19, M20]
+Media manager                                                                [M18]
+Reports           → Bookings · Earnings · Services · Providers · Activity log
+System settings   → General · Commission · Payment methods · Payout · Email setup
+                    · Email templates · SMS · API keys · SEO · Analytics · reCaptcha
+                    · Cookie & GDPR · Language · Currency · Timezone · Cron status
+                    · Module manager · Staff & roles · About & update    [M17, M23, M24, M26, M27]
+```
+
+Rules: a group with one child is not a group; every leaf is a route, never a modal-only screen; nav items are **declared by their module** (M27's registry), never hardcoded in the layout.
+
+## M17 Admin IA & Settings Hub
+- Collapsible sidebar groups: `NavItem` gains `children`; active-trail expansion; group visibility driven by role/permission (ready for M26) — no group renders empty
+- **Settings stops being one form.** `/admin/settings/{group}` sub-pages, each posting only its own group. Today's single `UpdateSettingsRequest` validates every key on every save; with ~20 groups that is a 300-rule request object and a landmine factory (a new required key 422s every unrelated save — landmine 13). Replace with **per-group rule providers** (ADR D24)
+- Customers screen (`/admin/customers`): list, search, filters (spend, bookings, joined), detail drawer (bookings, wallet, referrals, tickets), "Login as" (M13 impersonation), block/unblock
+- ✅ *Done when:* every existing admin screen is reachable from its group; saving the Booking settings group cannot be broken by adding a key to the Payments group; a new customer's whole history is on one screen.
+
+## M18 Media Manager
+- Central library over the medialibrary already in use: grid + list, search by name/type, filter by collection/owner, folder-ish tagging, bulk delete, storage usage
+- **`MediaPicker` component** — the single upload/choose UI reused by banners, pages, blocks, blog, testimonials, sponsors, popups (a per-module uploader in seven places is seven bugs)
+- Uploads land in a `library` collection on the **public** disk (marketing assets). User uploads (KYC, problem photos, review photos, ticket attachments) stay on the private disk and are **never listed here** — the library is not a file browser for customer data
+- Orphan report + prune command (`media:prune-library`, dry-run default)
+- ✅ *Done when:* an image uploaded once is reusable across a banner, a page block and a blog post; deleting it warns about every model that references it; no private-disk file is ever visible.
+
+## M19 Frontend CMS Pack
+The storefront becomes admin-editable end to end. All content markdown-or-plaintext, rendered through `MarkdownRenderer` (D20) — never raw HTML.
+- **Menu builder** — `menus` + `menu_items` (nested, sortable); locations `header` / `footer_col_1..3` / `mobile`; item targets: internal route, CMS page, blog post/category, custom URL; visibility per role/guest
+- **Homepage sections** — ordered, toggleable section content (hero copy + image, how-it-works steps, counters, categories strip, CTA band); the storefront home stops being hardcoded JSX
+- **Testimonials** — CRUD (name, role, avatar, quote, rating) **or** promote a real review to a testimonial (one click from M10's queue)
+- **Sponsors / partners** — logo strip (image + link + sort)
+- **Popup content** — scheduled promo modal (markdown + image + CTA), audience (guest / customer / provider), show-once cookie, frequency cap
+- **Footer builder** — columns from menus + about blurb + contact block + app-store links + payment badges
+- **Social links** — settings group, consumed by footer + share buttons
+- **Login & registration page appearance** — side image, headline, sub-copy, toggle social-proof strip (no auth-logic changes here)
+- **Header / footer style** — layout variant (classic / centered / minimal), sticky, transparent-over-hero, container width
+- **Custom CSS & JS** — admin-authored snippets injected into the shell (see ADR D26 — permission-gated, off by default, escaping rules)
+- **Cookie / GDPR banner** — configurable text + link to the privacy page + accept/decline stored client-side
+- **"Become a provider" landing page** — CMS-driven pitch page + apply CTA into M05 onboarding
+- **Contact form → inquiries** — public contact page; a submission **opens a support ticket** (M16) rather than a second inbox; honeypot + rate limit + optional reCaptcha (M24)
+- **Newsletter subscribers** — footer signup, list + CSV export (reuses M13's export pipeline), double-opt-in off by default
+- ✅ *Done when:* a fresh install can rebrand the entire storefront — menus, hero, sections, testimonials, footer, legal — without touching a `.tsx` file.
+
+## M20 Page Builder (block-based)
+- A page is an ordered list of **typed blocks** (`page_blocks`), each a validated JSON payload against a block schema — **not** a free-form drag canvas (ADR D22)
+- Block types v1: `hero`, `rich_text`, `services_grid`, `categories_grid`, `steps`, `stats`, `testimonials`, `faq`, `cta`, `gallery`, `embed` (sanitized allowlist), `spacer`
+- Each block: React renderer + admin form, registered in one `BlockRegistry` (type → schema → form → renderer). An unknown/renamed type renders nothing rather than crashing the page
+- Drag to reorder, duplicate, hide-without-delete, per-block visibility window
+- Homepage sections (M19) become blocks on a reserved `home` page once this lands — one content model, not two
+- ✅ *Done when:* the home page and a landing page are both built from blocks in the admin; removing a block type from the registry degrades to a blank slot, never a 500.
+
+## M21 Blog
+- `blog_categories` + `blog_posts` (markdown body via `MarkdownRenderer`, cover image via `MediaPicker`, excerpt, author, tags, publish window, `is_featured`)
+- Public `/blog` index (paginated, category filter, search) + `/blog/{slug}`; related posts; RSS feed
+- Per-post SEO fields (meta title/description/OG image) — consumed by M24's SEO layer
+- Blog settings: posts per page, comments off (v1), show author, featured-post layout
+- ✅ *Done when:* a post published from the admin appears on `/blog`, in the sitemap, and renders correct OG tags; an unpublished/scheduled post 404s.
+
+## M22 Payments Hub
+- **Admin payments list** (`/admin/payments`) — the `payments` table has existed since M08 but is only visible per-booking. Filters: gateway, status, method, date; totals row; link to booking + refund action
+- **Offline payment method** — customer selects "Pay offline", uploads proof (private disk), booking stays `pending_payment`; admin verifies → `ConfirmPayment` (the existing idempotent, row-locked action — **no second money path**, ADR D27) → booking reaches `placed`. Reject → reason + notification
+- **Bank transfer** — a configured bank-accounts list (`bank_accounts`: label, account name/number, IFSC, UPI ID, QR image, notes) shown at checkout as the offline instructions
+- **Payout accounts** — `payout_accounts` per provider (UPI / bank, verified flag); replaces the free-text details typed into M09's payout dialog; admin sees the account on the payout request
+- **Wallet ledger** admin view + manual adjustment (credit/debit with reason) — writes through `WalletService` only (D15), audited
+- ✅ *Done when:* an offline-paid booking follows the exact same state path as a Razorpay one; every rupee on the payments screen reconciles with the earnings ledger.
+
+## M23 Communications
+- **Email setup** — SMTP host/port/user/password/encryption/from in **settings, not `.env`** (write-only secrets, M08 pattern), plus a **Send test email** button. Mail was deferred at M11 (D14); this is what turns it on
+- **Email templates** — `email_templates` (event key, subject, markdown body, variables, enabled). Every notification renders through a template if one exists, **else the shipped default** (ADR D25 — a mangled template must never break a booking confirmation). Variable picker + live preview + send-test-to-me
+- **SMS channel** — `SmsGateway` contract + MSG91 / Twilio drivers over the raw HTTP client (no vendor SDKs, D15 precedent); `sms` channel joins `via()` only when configured (D14 precedent); `sms_logs` for delivery audit. Pulls the "SMS notification channel" item out of the v1.5 backlog
+- **Notification matrix UI** — the event × role × channel table from M11, but as toggles (`notification_preferences`): admin decides which events send mail/SMS/push; users get an opt-out page
+- **Push composer** — admin sends a broadcast notification (in-app + FCM when configured) to a segment (all / customers / providers / a city), scheduled or now
+- ✅ *Done when:* a booking confirmation arrives by mail with an admin-edited template; deleting the template still delivers the shipped default; an unconfigured SMS gateway silently drops out of `via()` and nothing 500s.
+
+## M24 System Settings Hub
+Fills the System-settings group with the remaining leaves. Each is small; together they are the "professional script" checklist.
+- **SEO** — global meta defaults, per-page/service/post overrides, OG image fallback, `sitemap.xml` (generated, cached), `robots.txt`, schema.org JSON-LD (`LocalBusiness`, `Service`, `Article`)
+- **Currency** — symbol, code, position, decimals, digit grouping (Indian vs Western). **Single currency per install** (ADR D23); `App\Support\Money` becomes settings-driven
+- **Timezone** — select (the setting exists, the UI does not)
+- **API keys** — Firebase/FCM, Google Maps (optional tile/geocode alternative), SMS, analytics — all write-only secrets, `*_set` booleans (M08 rule)
+- **reCaptcha** — v3 keys + per-form toggles (register, login, contact, ticket); **off by default and inert when unconfigured** (the app must install with no third-party keys)
+- **Analytics** — GA4 / GTM / Meta Pixel IDs injected into the shell head; consent-aware (respects the M19 cookie banner)
+- **Cron status** — the scheduled-command list with last-run/next-run + the exact crontab line to paste; a red banner when the scheduler has not run in 24h (the most common broken install)
+- **About & update** — version, PHP/DB/queue/Reverb health, changelog, `app:update` runner (M15's update path gets a UI), optional Envato purchase-code field (D8)
+- ✅ *Done when:* a fresh install with **zero** third-party keys boots, browses, books and pays cash — every optional integration degrades to off, not to an error.
+
+## M25 Cities & Multi-City
+- `cities` (name, state, slug, timezone, is_active, center lat/lng, sort) — zones belong to a city (`zones.city_id`)
+- Storefront city switcher (detected from the address pin, overridable); catalog/dispatch already zone-gated, so this is presentation + grouping, not new geo logic
+- Admin: city CRUD, per-city zone list, per-city KPIs on the dashboard
+- ✅ *Done when:* two cities with distinct zones both work end to end; deactivating a city hides it from the storefront without touching its historical bookings.
+
+## M26 Staff Roles & Permissions
+- `spatie/laravel-permission` has been installed since M01 but only three roles are used. Introduce **granular permissions** (`bookings.view`, `payouts.approve`, `settings.manage`, `cms.publish`, `custom_code.manage`, …) grouped by module
+- `staff` role + admin-managed staff accounts; custom roles (name + permission checkboxes); permissions gate **routes, nav items and actions** (one `can:` middleware + the M27 registry drive all three)
+- Admin (super) is un-deletable and always holds every permission; staff can never grant themselves a permission they lack
+- All staff actions already flow through `ActivityLogger` (M13) — actor is now a named staff member, not "admin"
+- ✅ *Done when:* a staff account with only `bookings.*` sees exactly the Bookings group, and every other route 403s (tested per permission, not per screen).
+
+## M27 Module Manager
+- One `ModuleRegistry`: each module declares **key, name, nav items, routes, settings groups, dependencies, default state**
+- Admin toggles a module off → its nav group disappears, its routes 404, its settings group hides, its scheduled commands stop registering. Data is never deleted
+- Dependency guard: cannot disable a module another enabled module depends on (Payments cannot go while Bookings is on)
+- Core modules (auth, bookings, settings) are **not toggleable** — the list is explicit, not "everything is optional"
+- **Built last on purpose** — every module must exist before it can register itself
+- ✅ *Done when:* disabling Blog removes it from nav, 404s `/blog`, hides its settings group, and re-enabling it restores everything with data intact.
+
+---
+
 ## Cross-cutting v1 features
 
 - **PWA**: vite-plugin-pwa — installable icon, offline shell, FCM web push; app feel without app stores (big India + sales point)

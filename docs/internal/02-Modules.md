@@ -322,10 +322,11 @@ Fills the System-settings group with the remaining leaves. Each is small; togeth
 ---
 
 > [!todo] Cross-cutting definition of done (every module)
-> - Feature tests (Pest) for happy path + failure paths
-> - Policies/authorization for every endpoint
+> - Feature tests (Pest) for happy path + failure paths — and the right *kinds* of test: see the catalogue in [[07-Conventions]] § Testing (policy matrix incl. the admin case, validation failures, idempotency/replay, concurrency where a row lock exists, degradation with the optional service switched off, security exposure, registry sweep)
+> - Policies/authorization for every endpoint — proven by the route-guard **sweep**, not only by the endpoint's own test
 > - Seeded demo data so the module is demo-able immediately
-> - Mobile-responsive UI checked at 375px
+> - Mobile-responsive UI checked at 375px, and **clicked through in a real browser** — Pest asserts props server-side and never runs React
+> - Migration runs up **and** down; `migrate:fresh --seed` still yields a working demo
 > - No hardcoded branding/strings — settings, theme tokens, translation files (D8/D9)
 
 Related: [[04-Database-Schema]] · [[06-Roadmap]] · [[07-Conventions]]

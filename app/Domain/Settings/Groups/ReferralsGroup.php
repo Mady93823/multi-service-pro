@@ -2,8 +2,6 @@
 
 namespace App\Domain\Settings\Groups;
 
-use Illuminate\Http\Request;
-
 class ReferralsGroup extends SettingsGroup
 {
     public function key(): string
@@ -26,7 +24,7 @@ class ReferralsGroup extends SettingsGroup
         return ['referrals.enabled', 'referrals.reward_amount'];
     }
 
-    public function rules(Request $request): array
+    public function rules(array $input): array
     {
         return [
             'referrals_enabled' => ['boolean'],

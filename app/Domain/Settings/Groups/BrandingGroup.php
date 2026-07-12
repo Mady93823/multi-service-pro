@@ -2,7 +2,6 @@
 
 namespace App\Domain\Settings\Groups;
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class BrandingGroup extends SettingsGroup
@@ -27,7 +26,7 @@ class BrandingGroup extends SettingsGroup
         return ['branding.app_name', 'branding.primary_color', 'branding.logo_path'];
     }
 
-    public function rules(Request $request): array
+    public function rules(array $input): array
     {
         return [
             'app_name' => ['required', 'string', 'max:100'],

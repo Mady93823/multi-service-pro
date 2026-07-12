@@ -2,8 +2,6 @@
 
 namespace App\Domain\Settings\Groups;
 
-use Illuminate\Http\Request;
-
 class InvoiceGroup extends SettingsGroup
 {
     public function key(): string
@@ -32,7 +30,7 @@ class InvoiceGroup extends SettingsGroup
         ];
     }
 
-    public function rules(Request $request): array
+    public function rules(array $input): array
     {
         return [
             'invoice_prefix' => ['required', 'string', 'max:8', 'alpha_num:ascii'],

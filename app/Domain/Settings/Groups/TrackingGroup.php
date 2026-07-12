@@ -2,8 +2,6 @@
 
 namespace App\Domain\Settings\Groups;
 
-use Illuminate\Http\Request;
-
 class TrackingGroup extends SettingsGroup
 {
     public function key(): string
@@ -32,7 +30,7 @@ class TrackingGroup extends SettingsGroup
         ];
     }
 
-    public function rules(Request $request): array
+    public function rules(array $input): array
     {
         return [
             'ping_interval_seconds' => ['required', 'integer', 'min:1', 'max:60'],

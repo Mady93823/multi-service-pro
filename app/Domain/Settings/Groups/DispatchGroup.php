@@ -2,8 +2,6 @@
 
 namespace App\Domain\Settings\Groups;
 
-use Illuminate\Http\Request;
-
 class DispatchGroup extends SettingsGroup
 {
     public function key(): string
@@ -26,7 +24,7 @@ class DispatchGroup extends SettingsGroup
         return ['dispatch.mode', 'dispatch.offer_timeout_seconds', 'dispatch.max_rounds', 'dispatch.auto'];
     }
 
-    public function rules(Request $request): array
+    public function rules(array $input): array
     {
         return [
             'dispatch_mode' => ['required', 'in:nearest,broadcast'],

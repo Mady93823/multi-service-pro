@@ -2,8 +2,6 @@
 
 namespace App\Domain\Settings\Groups;
 
-use Illuminate\Http\Request;
-
 class LocalizationGroup extends SettingsGroup
 {
     public function key(): string
@@ -26,7 +24,7 @@ class LocalizationGroup extends SettingsGroup
         return ['localization.currency', 'localization.timezone', 'localization.locale'];
     }
 
-    public function rules(Request $request): array
+    public function rules(array $input): array
     {
         return [
             'currency' => ['required', 'string', 'size:3', 'alpha:ascii', 'uppercase'],

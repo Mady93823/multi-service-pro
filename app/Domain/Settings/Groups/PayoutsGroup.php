@@ -2,8 +2,6 @@
 
 namespace App\Domain\Settings\Groups;
 
-use Illuminate\Http\Request;
-
 /**
  * Commission lives here rather than in Payments because an admin thinks of the
  * platform's cut and the professional's withdrawal as one policy — a screen
@@ -36,7 +34,7 @@ class PayoutsGroup extends SettingsGroup
         ];
     }
 
-    public function rules(Request $request): array
+    public function rules(array $input): array
     {
         return [
             'commission_percent' => ['required', 'numeric', 'min:0', 'max:100'],

@@ -2,8 +2,6 @@
 
 namespace App\Domain\Settings\Groups;
 
-use Illuminate\Http\Request;
-
 class ReviewsGroup extends SettingsGroup
 {
     public function key(): string
@@ -26,7 +24,7 @@ class ReviewsGroup extends SettingsGroup
         return ['reviews.enabled', 'reviews.max_photos'];
     }
 
-    public function rules(Request $request): array
+    public function rules(array $input): array
     {
         return [
             'reviews_enabled' => ['boolean'],

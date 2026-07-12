@@ -3,7 +3,6 @@
 namespace App\Domain\Settings\Groups;
 
 use App\Domain\Settings\SettingsRegistry;
-use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 
 /**
@@ -39,9 +38,13 @@ abstract class SettingsGroup
     /**
      * Validation rules for this group's form fields only.
      *
+     * Takes the raw input array rather than a Request: the domain layer stays
+     * HTTP-free (arch rule), and a conditional rule only ever needs the values.
+     *
+     * @param  array<string, mixed>  $input
      * @return array<string, mixed>
      */
-    abstract public function rules(Request $request): array;
+    abstract public function rules(array $input): array;
 
     /**
      * Props for the screen. Secrets go out as `*_set` booleans — never values:

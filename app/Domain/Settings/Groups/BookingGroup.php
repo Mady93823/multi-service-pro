@@ -2,7 +2,6 @@
 
 namespace App\Domain\Settings\Groups;
 
-use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class BookingGroup extends SettingsGroup
@@ -40,7 +39,7 @@ class BookingGroup extends SettingsGroup
         ];
     }
 
-    public function rules(Request $request): array
+    public function rules(array $input): array
     {
         return [
             'booking_code_prefix' => ['required', 'string', 'max:8', 'alpha_num:ascii'],
@@ -56,7 +55,7 @@ class BookingGroup extends SettingsGroup
                 'required',
                 'numeric',
                 'min:0',
-                Rule::when($request->input('cancellation_fee_type') === 'percent', ['max:100']),
+                Rule::when(($input['cancellation_fee_type'] ?? null) === 'percent', ['max:100']),
             ],
             'reschedule_min_hours' => ['required', 'integer', 'min:0', 'max:168'],
             'payment_timeout_minutes' => ['required', 'integer', 'min:5', 'max:1440'],

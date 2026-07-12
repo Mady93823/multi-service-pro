@@ -5,6 +5,12 @@
          colors="true"
 >
     <testsuites>
+        <!-- Arch: boundary + hygiene rules that hold for the whole codebase.
+             Cheap, and they fail on the class of mistake a feature test can
+             never see (a Domain action importing the HTTP layer, a stray dd()). -->
+        <testsuite name="Arch">
+            <directory>tests/Arch</directory>
+        </testsuite>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
         </testsuite>

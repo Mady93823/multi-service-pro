@@ -21,7 +21,7 @@ class UpdateSettingsRequest extends FormRequest
      */
     public function rules(): array
     {
-        return $this->group()->rules($this);
+        return $this->group()->rules($this->all());
     }
 
     public function group(): SettingsGroup

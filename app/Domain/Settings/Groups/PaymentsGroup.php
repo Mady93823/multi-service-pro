@@ -2,8 +2,6 @@
 
 namespace App\Domain\Settings\Groups;
 
-use Illuminate\Http\Request;
-
 class PaymentsGroup extends SettingsGroup
 {
     /**
@@ -49,7 +47,7 @@ class PaymentsGroup extends SettingsGroup
         ];
     }
 
-    public function rules(Request $request): array
+    public function rules(array $input): array
     {
         return [
             'tax_label' => ['required', 'string', 'max:20'],

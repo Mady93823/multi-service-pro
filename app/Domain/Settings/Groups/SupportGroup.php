@@ -2,8 +2,6 @@
 
 namespace App\Domain\Settings\Groups;
 
-use Illuminate\Http\Request;
-
 class SupportGroup extends SettingsGroup
 {
     public function key(): string
@@ -26,7 +24,7 @@ class SupportGroup extends SettingsGroup
         return ['support.max_attachments', 'support.canned_responses'];
     }
 
-    public function rules(Request $request): array
+    public function rules(array $input): array
     {
         return [
             'support_max_attachments' => ['required', 'integer', 'min:0', 'max:10'],

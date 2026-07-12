@@ -18,6 +18,10 @@ pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature');
 
+// Arch tests boot the app (they resolve the container and read app_path()) but
+// never touch the database — no RefreshDatabase, no seeding, so they stay fast.
+pest()->extend(TestCase::class)->in('Arch');
+
 /*
 |--------------------------------------------------------------------------
 | Expectations

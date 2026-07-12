@@ -52,7 +52,12 @@ export default function MediaIndex({ assets, stats, filters }: MediaIndexProps) 
             return;
         }
 
-        uploadForm.setData('files', Array.from(files));
+        const selected = Array.from(files);
+
+        // setData() is React state: post() on the next line would still send the
+        // *previous* data (an empty file list, so the server answered "the files
+        // field is required"). transform() runs at submit time, so it wins.
+        uploadForm.transform(() => ({ files: selected }));
         uploadForm.post(route('admin.media.store'), {
             forceFormData: true,
             preserveScroll: true,
@@ -65,6 +70,9 @@ export default function MediaIndex({ assets, stats, filters }: MediaIndexProps) 
             },
         });
     };
+
+    // A rejected file reports under `files.0`, not `files` — show either.
+    const uploadError = uploadForm.errors.files ?? Object.entries(uploadForm.errors).find(([key]) => key.startsWith('files.'))?.[1] ?? undefined;
 
     const confirmDelete = () => {
         if (pendingDelete === null) {
@@ -122,7 +130,7 @@ export default function MediaIndex({ assets, stats, filters }: MediaIndexProps) 
                     </Button>
                 </form>
 
-                {uploadForm.errors.files && <p className="text-destructive text-sm">{uploadForm.errors.files}</p>}
+                {uploadError !== undefined && <p className="text-destructive text-sm">{uploadError}</p>}
 
                 {assets.data.length === 0 ? (
                     <div className="text-muted-foreground rounded-xl border border-dashed py-16 text-center text-sm">

@@ -67,6 +67,9 @@ class RequirementsChecker
         return [
             'storage/' => storage_path(),
             'bootstrap/cache/' => base_path('bootstrap/cache'),
+            // The installer publishes public/storage here (uploaded images are
+            // served from it) — a read-only public/ means every image 404s.
+            'public/' => public_path(),
             '.env' => base_path('.env'),
         ];
     }

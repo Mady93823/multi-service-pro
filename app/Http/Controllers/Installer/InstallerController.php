@@ -110,7 +110,28 @@ class InstallerController extends Controller
             ]);
         }
 
+        $this->linkStorage();
+
         return redirect()->route('install.admin');
+    }
+
+    /**
+     * Publish public/storage. Uploaded images (banners, media library, branding
+     * logo) are served from there — without the link every image on the site 404s.
+     * Never fatal: some shared hosts forbid symlinks, and the install must still
+     * finish (the requirements step reports the missing link).
+     */
+    private function linkStorage(): void
+    {
+        if (file_exists(public_path('storage'))) {
+            return;
+        }
+
+        try {
+            Artisan::call('storage:link');
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     public function admin(): Response|RedirectResponse

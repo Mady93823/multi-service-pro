@@ -3,6 +3,7 @@ import { useTrans } from '@/lib/i18n';
 import { type BreadcrumbItem, type NavItem } from '@/types';
 import {
     CalendarClock,
+    CreditCard,
     FileSpreadsheet,
     FileText,
     Image,
@@ -54,15 +55,21 @@ export default function AdminLayout({ children, breadcrumbs }: AdminLayoutProps)
             title: t('Providers'),
             url: '/admin/providers',
             icon: UsersRound,
-            children: [
-                { title: t('All providers'), url: '/admin/providers' },
-                { title: t('Payouts'), url: '/admin/payouts' },
-            ],
         },
         {
             title: t('Customers'),
             url: '/admin/customers',
             icon: ShoppingBag,
+        },
+        {
+            title: t('Payments'),
+            url: '/admin/payments',
+            icon: CreditCard,
+            children: [
+                { title: t('All payments'), url: '/admin/payments' },
+                { title: t('Bank accounts'), url: '/admin/bank-accounts' },
+                { title: t('Payouts'), url: '/admin/payouts' },
+            ],
         },
         {
             title: t('Zones'),

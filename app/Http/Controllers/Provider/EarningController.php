@@ -8,7 +8,9 @@ use App\Domain\Earnings\Enums\PayoutStatus;
 use App\Domain\Settings\SettingsRegistry;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Provider\RequestPayoutRequest;
+use App\Http\Resources\PayoutAccountResource;
 use App\Models\Earning;
+use App\Models\PayoutAccount;
 use App\Models\PayoutRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -57,6 +59,15 @@ class EarningController extends Controller
                     'created_at' => $payout->created_at?->toIso8601String(),
                     'processed_at' => $payout->processed_at?->toIso8601String(),
                 ])->all(),
+            // The payout dialog picks one of these instead of retyping bank
+            // details every time (M22).
+            'accounts' => PayoutAccountResource::collection(
+                PayoutAccount::query()
+                    ->where('provider_id', $provider->id)
+                    ->orderByDesc('is_default')
+                    ->orderBy('id')
+                    ->get(),
+            ),
             'payouts_enabled' => $settings->boolean('payouts.enabled', true),
             'minimum_payout' => $settings->decimal('payouts.min_amount', 0.0),
             // A request is barred while one is already open; the button says so.
@@ -75,7 +86,10 @@ class EarningController extends Controller
         $provider = $request->user();
         abort_if($provider === null, 403);
 
-        $action->handle($provider, $request->methodDetails());
+        /** @var PayoutAccount $account */
+        $account = PayoutAccount::query()->findOrFail((int) $request->validated('payout_account_id'));
+
+        $action->handle($provider, $account);
 
         return back()->with('success', __('Payout requested. You will be notified once it is processed.'));
     }

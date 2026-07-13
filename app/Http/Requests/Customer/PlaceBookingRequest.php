@@ -6,6 +6,7 @@ use App\Domain\Bookings\Enums\PaymentMethod;
 use App\Domain\Payments\Enums\PaymentProvider;
 use App\Domain\Payments\GatewayManager;
 use App\Domain\Settings\SettingsRegistry;
+use App\Models\BankAccount;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -39,9 +40,11 @@ class PlaceBookingRequest extends FormRequest
 
     /**
      * Methods offered at checkout right now (M08): pay-after-service when
-     * enabled, each configured gateway by name, wallet when enabled. These
-     * are the form values; the booking column stores the coarse
-     * cash|gateway|wallet enum via paymentMethod().
+     * enabled, each configured gateway by name, wallet when enabled, bank
+     * transfer when it is switched on *and* an account exists to transfer into
+     * (M22 — an offline option with no instructions behind it is a dead end).
+     * These are the form values; the booking column stores the coarse
+     * cash|gateway|wallet|offline enum via paymentMethod().
      *
      * @return list<string>
      */
@@ -62,6 +65,10 @@ class PlaceBookingRequest extends FormRequest
             $methods[] = PaymentMethod::Wallet->value;
         }
 
+        if ($settings->boolean('payments.offline_enabled', false) && BankAccount::query()->active()->exists()) {
+            $methods[] = PaymentMethod::Offline->value;
+        }
+
         return $methods;
     }
 
@@ -71,6 +78,7 @@ class PlaceBookingRequest extends FormRequest
         return match ($this->chosenMethod()) {
             'cash' => PaymentMethod::Cash,
             'wallet' => PaymentMethod::Wallet,
+            'offline' => PaymentMethod::Offline,
             default => PaymentMethod::Gateway,
         };
     }

@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             CatalogSeeder::class,
             ZoneSeeder::class,
             ProviderSeeder::class,
+            PaymentSeeder::class,
             BookingSeeder::class,
             MarketingSeeder::class,
             CmsSeeder::class,

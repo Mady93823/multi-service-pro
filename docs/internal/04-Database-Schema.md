@@ -129,9 +129,17 @@ tracking_points          ← provider pings via Laravel (1/3s while en_route), p
 
 ```
 payments
-  id, booking_id FK, gateway [razorpay|stripe|cash|wallet], gateway_ref,
+  id, booking_id FK, gateway [razorpay|stripe|cash|wallet|offline], gateway_ref,
   amount, currency, status [initiated|captured|failed|refunded],
-  payload JSON, captured_at
+  payload JSON, captured_at,
+  bank_account_id FK nullable, reference, failure_reason,   ← M22 (offline)
+  reviewed_by FK users nullable, reviewed_at
+  ↳ proof file: medialibrary collection `proof`, private disk, singleFile
+
+bank_accounts            ← M22; the accounts offered at checkout for a transfer
+  id, label, account_name, account_number, ifsc, upi_id, notes,
+  is_active, sort_order
+  ↳ QR image: medialibrary collection `qr`, public disk
 
 wallets
   id, user_id (uniq FK), balance  ← cached; ledger is source of truth
@@ -148,7 +156,13 @@ earnings                 ← provider ledger, append-only
 
 payout_requests
   id, provider_id FK, amount, status [requested|approved|paid|rejected],
-  method_details JSON, processed_by FK users, processed_at, reference, note
+  method_details JSON, processed_by FK users, processed_at, reference, note,
+  payout_account_id FK nullable                             ← M22
+
+payout_accounts          ← M22; the provider's saved destinations
+  id, provider_id FK cascade, type [upi|bank], label,
+  account_name, account_number, ifsc, upi_id,
+  is_default, is_verified, verified_at
 ```
 
 > [!note] **Shipped M08 (2026-07-09).** `payments`: `booking_id` FK **restrict** (money-bearing), `gateway(20)`, nullable `gateway_ref`, `amount decimal(12,2)`, `currency char(3)` default `INR`, `status(20)` default `initiated`, `payload` JSON, `captured_at`, `index(booking_id, status)`, and **`unique(gateway, gateway_ref)`** — the webhook-idempotency backstop (`gateway_ref` stays null until a session is opened; MySQL/MariaDB allow repeated NULLs in a unique index, so parallel attempts are fine).
@@ -166,6 +180,12 @@ payout_requests
 > Append-only like `wallet_transactions`: a refund appends a `type = reversal` row negating the job row column for column; corrections are `adjustment` rows. `status` is a lifecycle flag, not a money column — `earnings:release` flips `pending → available` once `available_at` passes, and a paid payout flips its claimed rows to `paid_out`.
 >
 > `payout_requests`: `provider_id` FK restrict, `processed_by` FK nullOnDelete. A request claims the provider's **whole** released balance; the claimed `earnings` rows carry its id, so rejection is a clean unclaim (`payout_request_id = null`). Only one open (`requested|approved`) request per provider, enforced under a row lock in `RequestPayout`.
+
+> [!note] **Shipped M22 (2026-07-14).** `payments` gains `bank_account_id` (FK **nullOnDelete** — an archived bank account must never take settled payments with it), `reference` (the customer's UTR/txn id), `reviewed_by` (FK users nullOnDelete) + `reviewed_at`, and `failure_reason`. **No new `status` value:** an offline payment waits in the existing `initiated` state and is identified by `gateway = 'offline'` (`Payment::scopeAwaitingVerification()` = exactly that pair). A new state would have obliged every money query written since M08 — the payments hub totals, `bookings:expire-unpaid`, the refund path — to learn about it, and one of them would have been missed. Verification runs through the same row-locked idempotent `ConfirmPayment` a gateway webhook calls (ADR D27).
+>
+> `bank_accounts`: admin-managed, `is_active` + `sort_order` drive what checkout offers; deleting one that has payments is refused (deactivate instead), and the FK is the backstop.
+>
+> `payout_accounts`: `provider_id` FK **cascade** (a destination is not money — it dies with its owner), one default per provider enforced in `SavePayoutAccount`, `is_verified` cleared on every edit. `payout_requests.payout_account_id` is a **back-reference for the screens only** — `method_details` remains the snapshot taken at request time (ADR D33), so editing an account cannot rewrite what a settled payout says it paid to. An account with an open request on it cannot be deleted.
 
 ## Engagement & platform
 
@@ -297,14 +317,7 @@ blog_posts               ← M21; body is MARKDOWN SOURCE (same rule as `pages`)
   is_featured, published_at (nullable = draft; future = scheduled)   PUBLIC disk)
   idx(published_at, blog_category_id)
 
-bank_accounts            ← M22; offline/bank-transfer instructions shown at checkout
-  id, label, account_name, account_number, ifsc, upi_id, notes,
-  is_active, sort_order        (QR image via medialibrary, PUBLIC disk)
-
-payout_accounts          ← M22; replaces the free-text UPI/bank string M09's payout
-  id, user_id FK cascade,        dialog collected; payout_requests gain
-  type [upi|bank], upi_id,       payout_account_id FK nullable restrict
-  account_name, account_number, ifsc, is_default, is_verified
+(M22's `bank_accounts` + `payout_accounts` shipped 2026-07-14 — see **Money** above.)
 
 email_templates          ← M23; OPTIONAL layer — a missing/broken row falls back to
   id, event_key (uniq),          the shipped default (D25); body is markdown

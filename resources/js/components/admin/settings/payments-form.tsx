@@ -4,8 +4,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { useTrans } from '@/lib/i18n';
-import { useForm } from '@inertiajs/react';
+import { Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
 export interface PaymentsValues {
@@ -13,6 +14,8 @@ export interface PaymentsValues {
     tax_percent: number;
     pay_after_service: boolean;
     wallet_enabled: boolean;
+    offline_enabled: boolean;
+    offline_instructions: string;
     razorpay_key_id: string;
     stripe_publishable_key: string;
     razorpay_key_secret_set: boolean;
@@ -29,6 +32,8 @@ type PaymentsForm = {
     tax_percent: number;
     pay_after_service: boolean;
     wallet_enabled: boolean;
+    offline_enabled: boolean;
+    offline_instructions: string;
     razorpay_key_id: string;
     stripe_publishable_key: string;
     razorpay_key_secret: string;
@@ -49,6 +54,8 @@ export default function PaymentsForm({ values }: { values: PaymentsValues }) {
         tax_percent: values.tax_percent,
         pay_after_service: values.pay_after_service,
         wallet_enabled: values.wallet_enabled,
+        offline_enabled: values.offline_enabled,
+        offline_instructions: values.offline_instructions,
         razorpay_key_id: values.razorpay_key_id,
         stripe_publishable_key: values.stripe_publishable_key,
         // Secrets start blank on every load — blank means "keep what is stored".
@@ -135,6 +142,36 @@ export default function PaymentsForm({ values }: { values: PaymentsValues }) {
                 </span>
                 <Switch checked={data.wallet_enabled} onCheckedChange={(checked) => setData('wallet_enabled', checked)} />
             </label>
+
+            <div className="space-y-4 rounded-lg border p-4">
+                <label className="flex items-center justify-between gap-4 text-sm">
+                    <span>
+                        <span className="font-medium">{t('Bank transfer')}</span>
+                        <span className="text-muted-foreground block">
+                            {t('Let customers transfer the money themselves. Their booking waits until you verify the transfer.')}
+                        </span>
+                    </span>
+                    <Switch checked={data.offline_enabled} onCheckedChange={(checked) => setData('offline_enabled', checked)} />
+                </label>
+
+                <div className="grid gap-2">
+                    <Label htmlFor="offline_instructions">{t('Transfer instructions')}</Label>
+                    <Textarea
+                        id="offline_instructions"
+                        value={data.offline_instructions}
+                        onChange={(e) => setData('offline_instructions', e.target.value)}
+                        placeholder={t('Shown above your bank details at checkout.')}
+                        rows={3}
+                    />
+                    <InputError message={errors.offline_instructions} />
+                    <p className="text-muted-foreground text-xs">
+                        <Link href={route('admin.bank-accounts.index')} className="underline">
+                            {t('Bank accounts')}
+                        </Link>{' '}
+                        {t('— at least one active account is needed before this method appears at checkout.')}
+                    </p>
+                </div>
+            </div>
 
             <div className="space-y-4 rounded-lg border p-4">
                 <h3 className="text-sm font-medium">{t('Razorpay')}</h3>

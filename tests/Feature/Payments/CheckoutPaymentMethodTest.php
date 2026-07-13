@@ -8,6 +8,7 @@ use App\Domain\Bookings\SlotGenerator;
 use App\Domain\Payments\WalletService;
 use App\Domain\Settings\SettingsRegistry;
 use App\Models\Address;
+use App\Models\BankAccount;
 use App\Models\Booking;
 use App\Models\Service;
 use App\Models\User;
@@ -144,6 +145,68 @@ test('a wallet booking with too little balance lands on the pay page', function 
 
     expect($booking->status)->toBe(BookingStatus::PendingPayment)
         ->and(app(WalletService::class)->balance($customer))->toBe(10.0);
+});
+
+test('bank transfer is offered only when it is on AND an account exists to pay into', function () {
+    // The seeder ships a demo bank account — start from none (landmine 17).
+    BankAccount::query()->delete();
+
+    [$customer] = payingCustomer();
+    addServiceToCart($customer);
+
+    $settings = app(SettingsRegistry::class);
+
+    // Switched on, but nowhere to send the money — a dead-end option (M22).
+    $settings->set('payments.offline_enabled', true);
+
+    $this->actingAs($customer)
+        ->get(route('checkout.show'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('payment_methods', ['cash', 'wallet']));
+
+    BankAccount::factory()->create();
+
+    $this->actingAs($customer)
+        ->get(route('checkout.show'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('payment_methods', ['cash', 'wallet', 'offline']));
+
+    // An inactive account is not somewhere a customer can be sent either.
+    BankAccount::query()->update(['is_active' => false]);
+
+    $this->actingAs($customer)
+        ->get(route('checkout.show'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('payment_methods', ['cash', 'wallet']));
+});
+
+test('an offline booking waits at pending_payment on the pay page and is not dispatched', function () {
+    Event::fake([BookingPlaced::class]);
+    BankAccount::query()->delete();
+
+    [$customer, $address] = payingCustomer();
+    addServiceToCart($customer);
+
+    app(SettingsRegistry::class)->set('payments.offline_enabled', true);
+    BankAccount::factory()->create();
+
+    checkoutWith($address, 'offline')->assertRedirect();
+
+    $booking = Booking::query()->where('customer_id', $customer->id)->sole();
+
+    expect($booking->status)->toBe(BookingStatus::PendingPayment)
+        ->and($booking->payment_method)->toBe(PaymentMethod::Offline)
+        ->and($booking->payment_status)->toBe(PaymentStatus::Unpaid);
+
+    // The pay page is where the bank details live.
+    $this->get(route('bookings.pay', $booking))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('methods.offline.enabled', true)
+            ->has('methods.offline.accounts', 1),
+        );
+
+    Event::assertNotDispatched(BookingPlaced::class);
 });
 
 test('the pay page redirects away once the booking is no longer awaiting payment', function () {

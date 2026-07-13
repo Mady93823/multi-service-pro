@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import ProviderLayout from '@/layouts/provider-layout';
 import { useMoney } from '@/lib/format';
@@ -15,17 +16,19 @@ import {
     type EarningsSummary,
     type EarningStatus,
     type NativePaginated,
+    type PayoutAccount,
     type PayoutRequestRow,
     type PayoutStatus,
 } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { Banknote, Clock, TrendingUp, Wallet } from 'lucide-react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Banknote, Clock, Pencil, Plus, Trash2, TrendingUp, Wallet } from 'lucide-react';
 import { useState } from 'react';
 
 interface EarningsPageProps {
     summary: EarningsSummary;
     entries: NativePaginated<Earning>;
     payouts: PayoutRequestRow[];
+    accounts: PayoutAccount[];
     payouts_enabled: boolean;
     minimum_payout: number;
     has_open_payout: boolean;
@@ -38,16 +41,7 @@ const payoutStatusStyles: Record<PayoutStatus, string> = {
     rejected: 'text-red-700 dark:text-red-400',
 };
 
-interface PayoutForm {
-    method: 'upi' | 'bank';
-    upi_id: string;
-    account_name: string;
-    account_number: string;
-    ifsc: string;
-    [key: string]: string;
-}
-
-export default function EarningsPage({ summary, entries, payouts, payouts_enabled, minimum_payout, has_open_payout }: EarningsPageProps) {
+export default function EarningsPage({ summary, entries, payouts, accounts, payouts_enabled, minimum_payout, has_open_payout }: EarningsPageProps) {
     const t = useTrans();
     const money = useMoney();
     const [open, setOpen] = useState(false);
@@ -57,18 +51,16 @@ export default function EarningsPage({ summary, entries, payouts, payouts_enable
         { title: t('Earnings'), href: '/provider/earnings' },
     ];
 
-    const { data, setData, post, processing, errors, reset } = useForm<PayoutForm>({
-        method: 'upi',
-        upi_id: '',
-        account_name: '',
-        account_number: '',
-        ifsc: '',
+    const defaultAccount = accounts.find((account) => account.is_default) ?? accounts[0];
+
+    const { data, setData, post, processing, errors, reset } = useForm<{ payout_account_id: number }>({
+        payout_account_id: defaultAccount?.id ?? 0,
     });
 
     // A cash-only provider owes commission, so `claimable` can be negative —
     // the ledger carries the sign and the button stays shut.
     const owesMoney = summary.claimable < 0;
-    const canRequest = payouts_enabled && !has_open_payout && summary.claimable >= minimum_payout && summary.claimable > 0;
+    const canRequest = payouts_enabled && !has_open_payout && accounts.length > 0 && summary.claimable >= minimum_payout && summary.claimable > 0;
 
     const statusLabels: Record<EarningStatus, string> = {
         pending: t('On hold'),
@@ -104,6 +96,7 @@ export default function EarningsPage({ summary, entries, payouts, payouts_enable
     const requestBlockedReason = () => {
         if (!payouts_enabled) return t('Payouts are currently disabled.');
         if (has_open_payout) return t('You already have a payout request in progress.');
+        if (accounts.length === 0) return t('Add a payout account before requesting a payout.');
         if (owesMoney) return t('Commission on your cash jobs is deducted from your next payout.');
         if (summary.claimable <= 0) return t('You have no balance available to withdraw.');
 
@@ -149,59 +142,28 @@ export default function EarningsPage({ summary, entries, payouts, payouts_enable
 
                                 <div className="grid gap-4">
                                     <div className="grid gap-2">
-                                        <Label htmlFor="method">{t('Payout method')}</Label>
-                                        <Select value={data.method} onValueChange={(value) => setData('method', value as 'upi' | 'bank')}>
-                                            <SelectTrigger id="method">
+                                        <Label htmlFor="payout_account_id">{t('Payout account')}</Label>
+                                        <Select
+                                            value={String(data.payout_account_id)}
+                                            onValueChange={(value) => setData('payout_account_id', Number(value))}
+                                        >
+                                            <SelectTrigger id="payout_account_id">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="upi">{t('UPI')}</SelectItem>
-                                                <SelectItem value="bank">{t('Bank transfer')}</SelectItem>
+                                                {accounts.map((account) => (
+                                                    <SelectItem key={account.id} value={String(account.id)}>
+                                                        {accountLabel(account)}
+                                                    </SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
+                                        <InputError message={errors.payout_account_id} />
                                     </div>
 
-                                    {data.method === 'upi' ? (
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="upi_id">{t('UPI ID')}</Label>
-                                            <Input
-                                                id="upi_id"
-                                                value={data.upi_id}
-                                                autoComplete="off"
-                                                onChange={(event) => setData('upi_id', event.target.value)}
-                                            />
-                                            <InputError message={errors.upi_id} />
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <div className="grid gap-2">
-                                                <Label htmlFor="account_name">{t('Account holder name')}</Label>
-                                                <Input
-                                                    id="account_name"
-                                                    value={data.account_name}
-                                                    onChange={(event) => setData('account_name', event.target.value)}
-                                                />
-                                                <InputError message={errors.account_name} />
-                                            </div>
-                                            <div className="grid gap-2">
-                                                <Label htmlFor="account_number">{t('Account number')}</Label>
-                                                <Input
-                                                    id="account_number"
-                                                    value={data.account_number}
-                                                    autoComplete="off"
-                                                    onChange={(event) => setData('account_number', event.target.value)}
-                                                />
-                                                <InputError message={errors.account_number} />
-                                            </div>
-                                            <div className="grid gap-2">
-                                                <Label htmlFor="ifsc">{t('IFSC code')}</Label>
-                                                <Input id="ifsc" value={data.ifsc} onChange={(event) => setData('ifsc', event.target.value)} />
-                                                <InputError message={errors.ifsc} />
-                                            </div>
-                                        </>
-                                    )}
-
-                                    <InputError message={errors.payout} />
+                                    {/* Domain-level refusals (payouts off, nothing claimable) come back
+                                        keyed `payout`, which is not a field on this form. */}
+                                    <InputError message={(errors as Record<string, string | undefined>).payout} />
                                 </div>
 
                                 <DialogFooter>
@@ -250,6 +212,8 @@ export default function EarningsPage({ summary, entries, payouts, payouts_enable
                         )}
                     </CardContent>
                 </Card>
+
+                <PayoutAccountsCard accounts={accounts} />
 
                 <Card>
                     <CardHeader>
@@ -327,6 +291,174 @@ export default function EarningsPage({ summary, entries, payouts, payouts_enable
                 )}
             </div>
         </ProviderLayout>
+    );
+}
+
+/** "UPI · demo@upi" / "Bank · ••••4321" — enough to tell two accounts apart. */
+function accountLabel(account: PayoutAccount): string {
+    const detail = account.type === 'upi' ? (account.upi_id ?? '') : `••••${(account.account_number ?? '').slice(-4)}`;
+
+    return [account.label, detail].filter((part) => part !== '' && part !== null).join(' · ');
+}
+
+/**
+ * Saved payout destinations (M22). The payout dialog picks one of these — bank
+ * details are typed once, an admin verifies them once, and each request
+ * snapshots what it used.
+ */
+function PayoutAccountsCard({ accounts }: { accounts: PayoutAccount[] }) {
+    const t = useTrans();
+    const [editing, setEditing] = useState<PayoutAccount | null | undefined>(undefined);
+
+    return (
+        <Card>
+            <CardHeader className="flex-row items-center justify-between space-y-0">
+                <CardTitle className="text-base">{t('Payout accounts')}</CardTitle>
+                <Button size="sm" variant="outline" onClick={() => setEditing(null)}>
+                    <Plus className="h-4 w-4" />
+                    {t('Add account')}
+                </Button>
+            </CardHeader>
+            <CardContent className="space-y-2">
+                {accounts.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">{t('Add where you would like your earnings paid.')}</p>
+                ) : (
+                    accounts.map((account) => (
+                        <div key={account.id} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
+                            <div className="min-w-0">
+                                <p className="truncate font-medium">{accountLabel(account)}</p>
+                                <p className="text-muted-foreground text-xs">
+                                    {account.is_default && `${t('Default')} · `}
+                                    {account.is_verified ? t('Verified') : t('Not verified yet')}
+                                </p>
+                            </div>
+                            <div className="flex shrink-0 gap-1">
+                                <Button variant="ghost" size="icon" aria-label={t('Edit')} onClick={() => setEditing(account)}>
+                                    <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label={t('Delete')}
+                                    onClick={() => router.delete(route('provider.payout-accounts.destroy', account.id), { preserveScroll: true })}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </CardContent>
+
+            {editing !== undefined && <PayoutAccountDialog key={editing?.id ?? 'new'} account={editing} onClose={() => setEditing(undefined)} />}
+        </Card>
+    );
+}
+
+function PayoutAccountDialog({ account, onClose }: { account: PayoutAccount | null; onClose: () => void }) {
+    const t = useTrans();
+
+    const { data, setData, post, put, processing, errors } = useForm({
+        type: account?.type ?? ('upi' as 'upi' | 'bank'),
+        label: account?.label ?? '',
+        upi_id: account?.upi_id ?? '',
+        account_name: account?.account_name ?? '',
+        account_number: account?.account_number ?? '',
+        ifsc: account?.ifsc ?? '',
+        is_default: account?.is_default ?? true,
+    });
+
+    const submit = () => {
+        const options = { preserveScroll: true, onSuccess: () => onClose() };
+
+        if (account === null) {
+            post(route('provider.payout-accounts.store'), options);
+        } else {
+            put(route('provider.payout-accounts.update', account.id), options);
+        }
+    };
+
+    return (
+        <Dialog open onOpenChange={(open) => !open && onClose()}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{account === null ? t('Add payout account') : t('Edit payout account')}</DialogTitle>
+                    <DialogDescription>{t('Changing these details clears the verified tick until an admin checks them again.')}</DialogDescription>
+                </DialogHeader>
+
+                <div className="grid gap-4">
+                    <div className="grid gap-2">
+                        <Label htmlFor="type">{t('Payout method')}</Label>
+                        <Select value={data.type} onValueChange={(value) => setData('type', value as 'upi' | 'bank')}>
+                            <SelectTrigger id="type">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="upi">{t('UPI')}</SelectItem>
+                                <SelectItem value="bank">{t('Bank transfer')}</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label htmlFor="label">{t('Label')}</Label>
+                        <Input id="label" value={data.label} onChange={(event) => setData('label', event.target.value)} placeholder={t('Primary')} />
+                        <InputError message={errors.label} />
+                    </div>
+
+                    {data.type === 'upi' ? (
+                        <div className="grid gap-2">
+                            <Label htmlFor="upi_id">{t('UPI ID')}</Label>
+                            <Input id="upi_id" value={data.upi_id} autoComplete="off" onChange={(event) => setData('upi_id', event.target.value)} />
+                            <InputError message={errors.upi_id} />
+                        </div>
+                    ) : (
+                        <>
+                            <div className="grid gap-2">
+                                <Label htmlFor="account_name">{t('Account holder name')}</Label>
+                                <Input
+                                    id="account_name"
+                                    value={data.account_name}
+                                    onChange={(event) => setData('account_name', event.target.value)}
+                                />
+                                <InputError message={errors.account_name} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="account_number">{t('Account number')}</Label>
+                                <Input
+                                    id="account_number"
+                                    value={data.account_number}
+                                    autoComplete="off"
+                                    onChange={(event) => setData('account_number', event.target.value)}
+                                />
+                                <InputError message={errors.account_number} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="ifsc">{t('IFSC code')}</Label>
+                                <Input id="ifsc" value={data.ifsc} onChange={(event) => setData('ifsc', event.target.value)} />
+                                <InputError message={errors.ifsc} />
+                            </div>
+                        </>
+                    )}
+
+                    <label className="flex items-center justify-between gap-4 text-sm">
+                        <span className="font-medium">{t('Use as default')}</span>
+                        <Switch checked={data.is_default} onCheckedChange={(checked) => setData('is_default', checked)} />
+                    </label>
+
+                    <InputError message={(errors as Record<string, string | undefined>).payout_account} />
+                </div>
+
+                <DialogFooter>
+                    <Button variant="outline" onClick={onClose} disabled={processing}>
+                        {t('Cancel')}
+                    </Button>
+                    <Button onClick={submit} disabled={processing}>
+                        {t('Save')}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
 

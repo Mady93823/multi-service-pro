@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Domain\Activity\ActivityLogger;
 use App\Domain\Earnings\Actions\ProcessPayout;
+use App\Domain\Earnings\Actions\VerifyPayoutAccount;
 use App\Domain\Earnings\Enums\PayoutStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\MarkPayoutPaidRequest;
 use App\Http\Requests\Admin\RejectPayoutRequest;
+use App\Http\Resources\PayoutAccountResource;
+use App\Models\PayoutAccount;
 use App\Models\PayoutRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,7 +29,7 @@ class PayoutController extends Controller
         $status = (string) $request->string('status');
 
         $payouts = PayoutRequest::query()
-            ->with(['provider:id,name,email', 'processedBy:id,name'])
+            ->with(['provider:id,name,email', 'processedBy:id,name', 'payoutAccount'])
             ->withCount('earnings')
             ->when(
                 PayoutStatus::tryFrom($status) !== null,
@@ -46,7 +49,12 @@ class PayoutController extends Controller
                 ],
                 'amount' => $payout->amount,
                 'status' => $payout->status->value,
+                // The snapshot is what was actually claimed; the account row
+                // (M22) is only there to say whether a human ever checked it.
                 'method_details' => $payout->method_details,
+                'account' => $payout->payoutAccount === null
+                    ? null
+                    : (new PayoutAccountResource($payout->payoutAccount))->resolve(),
                 'earnings_count' => $payout->earnings_count,
                 'reference' => $payout->reference,
                 'note' => $payout->note,
@@ -84,6 +92,27 @@ class PayoutController extends Controller
         ]);
 
         return back()->with('success', __('Payout marked as paid.'));
+    }
+
+    /**
+     * Tick a provider's payout destination as checked against their KYC (M22).
+     * Advisory, not a gate — but it is the record that someone looked before the
+     * money left. Editing the account clears the flag again.
+     */
+    public function verifyAccount(Request $request, PayoutAccount $account, VerifyPayoutAccount $action): RedirectResponse
+    {
+        $admin = $request->user();
+        abort_if($admin === null, 403);
+
+        $verified = $request->boolean('verified', true);
+
+        $action->handle($account, $verified);
+
+        $this->activity->log($admin, 'payout_account.verify', $account, ['verified' => $verified]);
+
+        return back()->with('success', $verified
+            ? __('Payout account marked as verified.')
+            : __('Payout account verification removed.'));
     }
 
     public function reject(RejectPayoutRequest $request, PayoutRequest $payout): RedirectResponse

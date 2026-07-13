@@ -9,13 +9,29 @@ use App\Domain\Earnings\Enums\EarningStatus;
 use App\Domain\Earnings\Enums\PayoutStatus;
 use App\Domain\Settings\SettingsRegistry;
 use App\Models\Earning;
+use App\Models\PayoutAccount;
 use App\Models\PayoutRequest;
 use App\Models\ProviderProfile;
 use App\Models\User;
 use Illuminate\Validation\ValidationException;
 use Tests\Support\EarningsFixtures;
 
-const UPI = ['method' => 'upi', 'upi_id' => 'pro@upi'];
+/**
+ * The provider's saved payout destination (M22): a payout goes to a stored
+ * account, and the request snapshots the details it used.
+ */
+function upiAccount(User $provider): PayoutAccount
+{
+    return PayoutAccount::factory()->create([
+        'provider_id' => $provider->id,
+        'upi_id' => 'pro@upi',
+    ]);
+}
+
+function payoutFor(User $provider): PayoutRequest
+{
+    return app(RequestPayout::class)->handle($provider, upiAccount($provider));
+}
 
 /** An approved provider sitting on `$jobs` released online earnings of 400 each. */
 function payoutProvider(int $jobs = 1): User
@@ -42,7 +58,7 @@ beforeEach(function () {
 test('a payout claims the whole released balance and the earnings that fund it', function () {
     $provider = payoutProvider(jobs: 2);
 
-    $payout = app(RequestPayout::class)->handle($provider, UPI);
+    $payout = app(RequestPayout::class)->handle($provider, upiAccount($provider));
 
     expect($payout->amount)->toBe('800.00')
         ->and($payout->status)->toBe(PayoutStatus::Requested)
@@ -55,7 +71,7 @@ test('a cash-job debt offsets the payout rather than being left behind', functio
     EarningsFixtures::complete(EarningsFixtures::booking(PaymentMethod::Cash, provider: $provider));
 
     // 400 + 400 − 190.
-    expect(app(RequestPayout::class)->handle($provider, UPI)->amount)->toBe('610.00');
+    expect(app(RequestPayout::class)->handle($provider, upiAccount($provider))->amount)->toBe('610.00');
 });
 
 test('a provider who owes more than they earned cannot request a payout', function () {
@@ -64,32 +80,32 @@ test('a provider who owes more than they earned cannot request a payout', functi
 
     expect(app(EarningsLedger::class)->claimable($provider))->toBe(-190.0);
 
-    app(RequestPayout::class)->handle($provider, UPI);
+    app(RequestPayout::class)->handle($provider, upiAccount($provider));
 })->throws(ValidationException::class, 'You have no balance available to withdraw.');
 
 test('a payout below the minimum is refused', function () {
     app(SettingsRegistry::class)->set('payouts.min_amount', '500');
 
-    app(RequestPayout::class)->handle(payoutProvider(), UPI);
+    payoutFor(payoutProvider());
 })->throws(ValidationException::class);
 
 test('a second payout cannot claim earnings an open one already holds', function () {
     $provider = payoutProvider();
-    app(RequestPayout::class)->handle($provider, UPI);
+    app(RequestPayout::class)->handle($provider, upiAccount($provider));
 
-    app(RequestPayout::class)->handle($provider, UPI);
+    app(RequestPayout::class)->handle($provider, upiAccount($provider));
 })->throws(ValidationException::class, 'You already have a payout request in progress.');
 
 test('payouts can be switched off entirely', function () {
     app(SettingsRegistry::class)->set('payouts.enabled', false);
 
-    app(RequestPayout::class)->handle(payoutProvider(), UPI);
+    payoutFor(payoutProvider());
 })->throws(ValidationException::class, 'Payouts are currently disabled.');
 
 test('approving then paying settles the claimed earnings', function () {
     $provider = payoutProvider();
     $admin = User::factory()->admin()->create();
-    $payout = app(RequestPayout::class)->handle($provider, UPI);
+    $payout = app(RequestPayout::class)->handle($provider, upiAccount($provider));
 
     app(ProcessPayout::class)->approve($payout, $admin);
     expect($payout->fresh()->status)->toBe(PayoutStatus::Approved);
@@ -105,7 +121,7 @@ test('approving then paying settles the claimed earnings', function () {
 
 test('rejecting a payout hands the earnings back so the provider can try again', function () {
     $provider = payoutProvider();
-    $payout = app(RequestPayout::class)->handle($provider, UPI);
+    $payout = app(RequestPayout::class)->handle($provider, upiAccount($provider));
 
     app(ProcessPayout::class)->reject($payout, User::factory()->admin()->create(), 'Wrong UPI id.');
 
@@ -114,12 +130,12 @@ test('rejecting a payout hands the earnings back so the provider can try again',
         ->and(Earning::query()->where('provider_id', $provider->id)->sole()->payout_request_id)->toBeNull()
         ->and(app(EarningsLedger::class)->claimable($provider))->toBe(400.0);
 
-    expect(app(RequestPayout::class)->handle($provider, UPI)->amount)->toBe('400.00');
+    expect(app(RequestPayout::class)->handle($provider, upiAccount($provider))->amount)->toBe('400.00');
 });
 
 test('a settled payout cannot be processed twice', function () {
     $admin = User::factory()->admin()->create();
-    $payout = app(RequestPayout::class)->handle(payoutProvider(), UPI);
+    $payout = payoutFor(payoutProvider());
     app(ProcessPayout::class)->markPaid($payout, $admin, 'UTR1');
 
     app(ProcessPayout::class)->markPaid($payout->fresh(), $admin, 'UTR2');
@@ -127,7 +143,7 @@ test('a settled payout cannot be processed twice', function () {
 
 test('reversing a paid-out earning leaves the correction on the next balance', function () {
     $provider = payoutProvider();
-    $payout = app(RequestPayout::class)->handle($provider, UPI);
+    $payout = app(RequestPayout::class)->handle($provider, upiAccount($provider));
     app(ProcessPayout::class)->markPaid($payout, User::factory()->admin()->create(), 'UTR1');
 
     $booking = Earning::query()->where('provider_id', $provider->id)->sole()->booking;
@@ -152,38 +168,30 @@ test('the provider earnings screen renders for an approved provider', function (
 
 test('a provider requests a payout from their earnings screen', function () {
     $provider = payoutProvider();
+    $account = upiAccount($provider);
 
     $this->actingAs($provider)
-        ->post(route('provider.payouts.store'), UPI)
+        ->post(route('provider.payouts.store'), ['payout_account_id' => $account->id])
         ->assertRedirect();
 
+    // The snapshot the request keeps (M22) — never a half-filled bank block.
     expect(PayoutRequest::query()->where('provider_id', $provider->id)->sole()->method_details)
         ->toBe(['method' => 'upi', 'upi_id' => 'pro@upi']);
 });
 
-test('bank details are required when the provider picks a bank transfer', function () {
+test('a payout must name one of the provider\'s own accounts', function () {
     $provider = payoutProvider();
 
     $this->actingAs($provider)
-        ->post(route('provider.payouts.store'), ['method' => 'bank'])
-        ->assertSessionHasErrors(['account_name', 'account_number', 'ifsc']);
-});
+        ->post(route('provider.payouts.store'), [])
+        ->assertSessionHasErrors('payout_account_id');
 
-test('a upi payout never stores a half-filled bank block', function () {
-    $provider = payoutProvider();
-
-    $this->actingAs($provider)->post(route('provider.payouts.store'), [
-        ...UPI,
-        'account_number' => '000111222',
-    ])->assertRedirect();
-
-    expect(PayoutRequest::query()->where('provider_id', $provider->id)->sole()->method_details)
-        ->not->toHaveKey('account_number');
+    expect(PayoutRequest::query()->where('provider_id', $provider->id)->exists())->toBeFalse();
 });
 
 test('the admin payout queue lists requests and only admins may see it', function () {
     $provider = payoutProvider();
-    app(RequestPayout::class)->handle($provider, UPI);
+    app(RequestPayout::class)->handle($provider, upiAccount($provider));
 
     $this->actingAs($provider)->get(route('admin.payouts.index'))->assertForbidden();
 
@@ -194,7 +202,7 @@ test('the admin payout queue lists requests and only admins may see it', functio
 });
 
 test('marking a payout paid from the admin screen requires a reference', function () {
-    $payout = app(RequestPayout::class)->handle(payoutProvider(), UPI);
+    $payout = payoutFor(payoutProvider());
 
     $this->actingAs(User::factory()->admin()->create())
         ->post(route('admin.payouts.pay', $payout->id), [])

@@ -27,6 +27,7 @@ class PayoutRequest extends Model
 
     protected $fillable = [
         'provider_id',
+        'payout_account_id',
         'amount',
         'status',
         'method_details',
@@ -63,6 +64,18 @@ class PayoutRequest extends Model
     public function processedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'processed_by');
+    }
+
+    /**
+     * The stored account this request was made against (M22). `method_details`
+     * remains the snapshot — this only says where it came from, and survives
+     * the account being deleted as a null.
+     *
+     * @return BelongsTo<PayoutAccount, $this>
+     */
+    public function payoutAccount(): BelongsTo
+    {
+        return $this->belongsTo(PayoutAccount::class);
     }
 
     /**

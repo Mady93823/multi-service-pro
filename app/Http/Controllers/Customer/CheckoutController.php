@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Customer;
 
 use App\Domain\Bookings\Actions\PlaceBooking;
 use App\Domain\Bookings\CartManager;
+use App\Domain\Bookings\Enums\BookingStatus;
 use App\Domain\Bookings\PriceQuote;
 use App\Domain\Bookings\SlotGenerator;
 use App\Domain\Coupons\CouponValidator;
@@ -135,7 +136,12 @@ class CheckoutController extends Controller
                     ->route('bookings.pay', $booking)
                     ->with('error', __('Your wallet balance is not enough for this payment.'));
             }
-        } elseif ($request->gatewayProvider() !== null) {
+        }
+
+        // Cash is placed outright; anything still awaiting money — a gateway or
+        // a bank transfer (M22) — goes to the pay page, which is now the one
+        // screen that knows how to settle a pending booking.
+        if ($booking->refresh()->status === BookingStatus::PendingPayment) {
             return redirect()->route('bookings.pay', $booking);
         }
 

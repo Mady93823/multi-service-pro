@@ -99,6 +99,7 @@ test('private file routes are authenticated', function () {
 
         $isFileRoute = str_contains($uri, '/photos/')
             || str_contains($uri, '/attachments/')
+            || str_contains($uri, '/proof/')
             || str_starts_with($uri, 'provider-documents/')
             || str_starts_with($uri, 'admin/exports/');
 

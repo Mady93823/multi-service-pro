@@ -6,13 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AdminLayout from '@/layouts/admin-layout';
 import { useMoney } from '@/lib/format';
 import { useTrans } from '@/lib/i18n';
 import { type BookingStatus, type BreadcrumbItem, type TicketStatus } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Ban, ShieldCheck, UserRoundSearch } from 'lucide-react';
+import { Ban, ShieldCheck, UserRoundSearch, Wallet as WalletIcon } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
 interface CustomerDetail {
@@ -240,8 +241,9 @@ export default function AdminCustomerShow({ customer, stats, bookings, transacti
                     </Card>
 
                     <Card>
-                        <CardHeader>
+                        <CardHeader className="flex-row items-center justify-between space-y-0">
                             <CardTitle>{t('Wallet')}</CardTitle>
+                            <AdjustWalletDialog customerId={customer.id} />
                         </CardHeader>
                         <CardContent>
                             <Table>
@@ -319,5 +321,106 @@ export default function AdminCustomerShow({ customer, stats, bookings, transacti
                 </Card>
             </div>
         </AdminLayout>
+    );
+}
+
+/**
+ * Manual wallet correction (M22). Goes through WalletService like every other
+ * movement, so an overdraw is refused and the ledger still reconciles — and the
+ * reason lands on the entry.
+ */
+function AdjustWalletDialog({ customerId }: { customerId: number }) {
+    const t = useTrans();
+    const [open, setOpen] = useState(false);
+
+    const { data, setData, post, processing, errors, reset } = useForm<{
+        direction: 'credit' | 'debit';
+        amount: string;
+        reason: string;
+    }>({
+        direction: 'credit',
+        amount: '',
+        reason: '',
+    });
+
+    const submit: FormEventHandler = (e) => {
+        e.preventDefault();
+
+        post(route('admin.customers.wallet', customerId), {
+            preserveScroll: true,
+            onSuccess: () => {
+                reset();
+                setOpen(false);
+            },
+        });
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                    <WalletIcon className="h-4 w-4" />
+                    {t('Adjust')}
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <form onSubmit={submit}>
+                    <DialogHeader>
+                        <DialogTitle>{t('Adjust wallet')}</DialogTitle>
+                        <DialogDescription>{t('The entry is added to the ledger with your reason and your name.')}</DialogDescription>
+                    </DialogHeader>
+
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="direction">{t('Direction')}</Label>
+                            <Select value={data.direction} onValueChange={(value) => setData('direction', value as 'credit' | 'debit')}>
+                                <SelectTrigger id="direction">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="credit">{t('Credit (add money)')}</SelectItem>
+                                    <SelectItem value="debit">{t('Debit (take money back)')}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="amount">{t('Amount')}</Label>
+                            <Input
+                                id="amount"
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                value={data.amount}
+                                onChange={(e) => setData('amount', e.target.value)}
+                                required
+                            />
+                            <InputError message={errors.amount} />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="reason">{t('Reason')}</Label>
+                            <Input
+                                id="reason"
+                                value={data.reason}
+                                onChange={(e) => setData('reason', e.target.value)}
+                                placeholder={t('Goodwill credit for a late job')}
+                                required
+                            />
+                            <InputError message={errors.reason} />
+                        </div>
+
+                        {/* A debit that would overdraw the wallet is refused by WalletService. */}
+                        <InputError message={(errors as Record<string, string | undefined>).wallet} />
+                    </div>
+
+                    <DialogFooter>
+                        <Button type="submit" disabled={processing}>
+                            {t('Apply')}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }

@@ -166,4 +166,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(PayoutRequest::class, 'provider_id');
     }
+
+    /**
+     * Saved UPI/bank destinations for this provider's payouts (M22).
+     *
+     * @return HasMany<PayoutAccount, $this>
+     */
+    public function payoutAccounts(): HasMany
+    {
+        return $this->hasMany(PayoutAccount::class, 'provider_id');
+    }
 }

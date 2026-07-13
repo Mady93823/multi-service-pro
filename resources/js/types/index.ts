@@ -621,7 +621,7 @@ export interface ProviderProfile {
 // M08 payments + wallet.
 
 /** Who settled the money — mirrors App\Domain\Payments\Enums\PaymentProvider. */
-export type PaymentProvider = 'razorpay' | 'stripe' | 'cash' | 'wallet';
+export type PaymentProvider = 'razorpay' | 'stripe' | 'cash' | 'wallet' | 'offline';
 
 /** Mirrors App\Domain\Payments\Enums\PaymentState. */
 export type PaymentState = 'initiated' | 'captured' | 'failed' | 'refunded';
@@ -649,13 +649,68 @@ export interface WalletTransaction {
     created_at: string;
 }
 
-/** What the pay page may offer right now: configured gateways + the wallet. */
+// M22 payments hub: bank/UPI accounts, payout destinations, the admin list row.
+
+export interface BankAccount {
+    id: number;
+    label: string;
+    account_name: string | null;
+    account_number: string | null;
+    ifsc: string | null;
+    upi_id: string | null;
+    notes: string | null;
+    is_active: boolean;
+    sort_order: number;
+    qr_url: string | null;
+    qr_thumb_url: string | null;
+}
+
+export interface PayoutAccount {
+    id: number;
+    type: 'upi' | 'bank';
+    label: string | null;
+    account_name: string | null;
+    account_number: string | null;
+    ifsc: string | null;
+    upi_id: string | null;
+    is_default: boolean;
+    is_verified: boolean;
+    verified_at: string | null;
+}
+
+/** One row of the admin payments list. */
+export interface AdminPayment {
+    id: number;
+    gateway: PaymentProvider;
+    status: PaymentState;
+    amount: number;
+    currency: string;
+    reference: string | null;
+    failure_reason: string | null;
+    bank_account: string | null;
+    has_proof: boolean;
+    proof_url: string | null;
+    booking: {
+        id: number;
+        code: string | null;
+        customer: string | null;
+    };
+    created_at: string | null;
+    captured_at: string | null;
+}
+
+/** What the pay page may offer right now: gateways, wallet, bank transfer. */
 export interface PayMethods {
     gateways: PaymentProvider[];
     wallet: {
         enabled: boolean;
         balance: string;
         sufficient: boolean;
+    };
+    offline: {
+        enabled: boolean;
+        instructions: string;
+        accounts: BankAccount[];
     };
 }
 
@@ -734,6 +789,8 @@ export interface PayoutMethodDetails {
 export interface AdminPayoutRow extends PayoutRequestRow {
     provider: { id: number | null; name: string | null; email: string | null };
     method_details: PayoutMethodDetails;
+    /** The stored account it was requested against (M22); null for pre-M22 rows. */
+    account: PayoutAccount | null;
     earnings_count: number | null;
     processed_by: string | null;
 }

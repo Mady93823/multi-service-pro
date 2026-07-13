@@ -70,10 +70,10 @@ The business logic is done; this is the product a buyer sees and the depth an op
 
 1. ~~**M17 Admin IA & settings hub**~~ — **done 2026-07-12**: collapsible sidebar groups, `/admin/settings/{group}` sub-pages with per-group rule providers + a key-ownership guard test (D24), admin Customers screen with block/unblock (D28). Dispatch, tracking and `features.otp_required` got their first UI on the way.
 2. ~~**M18 Media Manager**~~ — **done 2026-07-13**: `media_assets` + public-disk `library` collection, `/admin/media`, the shared `MediaPicker` (pick-or-upload, JSON so it can sit on top of a form), copy-on-pick with usage stamping (D29), `media:prune-library`. Banners are its first consumer.
-3. **M19 Frontend CMS pack** — menus, homepage sections, testimonials, sponsors, popups, footer, social, login-page appearance, header/footer style, custom CSS/JS (D26), cookie banner, become-a-provider page, contact→ticket, newsletter
-4. **M20 Page builder** — block registry + typed blocks (D22); M19's homepage sections migrate onto the `home` page
-5. **M21 Blog** — categories, posts, public `/blog`, RSS, per-post SEO
-6. **M22 Payments hub** — admin payments list, offline + bank-transfer payments through the existing `ConfirmPayment` path (D27), payout accounts, wallet admin
+3. ~~**M19 Frontend CMS pack**~~ — **done 2026-07-13**: menus resolved server-side with rotten items dropped (D30), storefront header/footer/cookie banner/custom code (D26), login-page appearance, testimonials, sponsors, popups, contact→ticket, newsletter. Homepage sections were dropped here and built once as blocks (D31).
+4. ~~**M20 Page builder**~~ — **done 2026-07-14**: `page_blocks` + `BlockRegistry`, 14 typed blocks behind one schema-driven admin form (D22), server-resolved blocks presented through the existing resources (D32); the storefront home *is* a page now.
+5. ~~**M21 Blog**~~ — **done 2026-07-14**: categories, markdown posts, publication as a moment (scheduled posts 404 until their time), public `/blog` + RSS feed, per-post SEO fields for M24.
+6. ~~**M22 Payments hub**~~ — **done 2026-07-14**: `/admin/payments`, offline + bank-transfer payments settled through the existing row-locked `ConfirmPayment` with **no new payment state** (D27), payout accounts that the request still snapshots (D33), admin wallet adjustment through `WalletService`.
 7. **M23 Communications** — SMTP in settings + test send, email templates with shipped fallback (D25), SMS gateway (`SmsGateway` contract), notification matrix, push composer
 8. **M24 System settings hub** — SEO + sitemap + schema.org, currency format (D23), timezone UI, API keys, reCaptcha, analytics, cron status, about & update
 9. **M25 Cities** — `cities` table, zones belong to a city, storefront city switcher

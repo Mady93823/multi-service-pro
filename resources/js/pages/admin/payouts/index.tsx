@@ -109,6 +109,27 @@ export default function AdminPayouts({ payouts, filters, statuses }: AdminPayout
                                             <TableCell className="text-sm">
                                                 <span className="uppercase">{payout.method_details.method}</span>
                                                 <span className="text-muted-foreground block text-xs">{methodSummary(payout.method_details)}</span>
+                                                {/* The snapshot above is what was claimed; the tick below says
+                                                    whether anyone ever checked the account it came from (M22). */}
+                                                {payout.account !== null &&
+                                                    (payout.account.is_verified ? (
+                                                        <span className="text-xs text-emerald-700 dark:text-emerald-400">{t('Verified')}</span>
+                                                    ) : (
+                                                        <Button
+                                                            variant="link"
+                                                            size="sm"
+                                                            className="h-auto p-0 text-xs"
+                                                            onClick={() =>
+                                                                router.post(
+                                                                    route('admin.payout-accounts.verify', payout.account!.id),
+                                                                    { verified: true },
+                                                                    { preserveScroll: true },
+                                                                )
+                                                            }
+                                                        >
+                                                            {t('Mark account verified')}
+                                                        </Button>
+                                                    ))}
                                             </TableCell>
                                             <TableCell className={`text-sm ${statusStyles[payout.status]}`}>
                                                 {statusLabels[payout.status]}

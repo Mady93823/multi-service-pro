@@ -61,6 +61,11 @@ class SettingsRegistry
             'payments.tax_percent' => ['group' => 'payments', 'type' => SettingType::Decimal, 'value' => '18'],
             'payments.pay_after_service' => ['group' => 'payments', 'type' => SettingType::Boolean, 'value' => true],
             'payments.wallet_enabled' => ['group' => 'payments', 'type' => SettingType::Boolean, 'value' => true],
+            // M22. Bank transfer / offline: off until an admin has added at
+            // least one bank account, or checkout would offer a method with no
+            // instructions behind it.
+            'payments.offline_enabled' => ['group' => 'payments', 'type' => SettingType::Boolean, 'value' => false],
+            'payments.offline_instructions' => ['group' => 'payments', 'type' => SettingType::String, 'value' => null],
             'payments.razorpay_key_id' => ['group' => 'payments', 'type' => SettingType::String, 'value' => null],
             'payments.razorpay_key_secret' => ['group' => 'payments', 'type' => SettingType::String, 'value' => null],
             'payments.razorpay_webhook_secret' => ['group' => 'payments', 'type' => SettingType::String, 'value' => null],

@@ -6,6 +6,7 @@ use App\Domain\Bookings\Enums\BookingStatus;
 use App\Domain\Payments\Actions\ConfirmPayment;
 use App\Domain\Payments\Actions\InitiateGatewayPayment;
 use App\Domain\Payments\Actions\PayWithWallet;
+use App\Domain\Payments\Actions\SubmitOfflinePayment;
 use App\Domain\Payments\Enums\PaymentProvider;
 use App\Domain\Payments\Enums\PaymentState;
 use App\Domain\Payments\GatewayManager;
@@ -14,12 +15,17 @@ use App\Domain\Payments\Gateways\StripeGateway;
 use App\Domain\Payments\WalletService;
 use App\Domain\Settings\SettingsRegistry;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Customer\SubmitOfflinePaymentRequest;
+use App\Http\Resources\BankAccountResource;
 use App\Http\Resources\BookingResource;
+use App\Models\BankAccount;
 use App\Models\Booking;
+use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -48,6 +54,17 @@ class PaymentController extends Controller
         $balance = $wallet->balance($customer);
         $timeout = $settings->integer('booking.payment_timeout_minutes', 30);
 
+        $offlineEnabled = $settings->boolean('payments.offline_enabled', false);
+
+        $accounts = $offlineEnabled
+            ? BankAccount::query()->active()->with('media')->orderBy('sort_order')->orderBy('id')->get()
+            : collect();
+
+        // An offline declaration already waiting for an admin (M22): the page
+        // shows "we are checking your transfer" instead of the form again.
+        /** @var Payment|null $pending */
+        $pending = $booking->payments()->awaitingVerification()->latest('id')->first();
+
         return Inertia::render('customer/bookings/pay', [
             'booking' => new BookingResource($booking),
             'methods' => [
@@ -60,9 +77,43 @@ class PaymentController extends Controller
                     'balance' => number_format($balance, 2, '.', ''),
                     'sufficient' => $balance >= (float) $booking->total,
                 ],
+                'offline' => [
+                    'enabled' => $offlineEnabled && $accounts->isNotEmpty(),
+                    'instructions' => $settings->string('payments.offline_instructions'),
+                    'accounts' => BankAccountResource::collection($accounts)->resolve(),
+                ],
+            ],
+            'pending_offline' => $pending === null ? null : [
+                'id' => $pending->id,
+                'reference' => $pending->reference,
+                'submitted_at' => $pending->updated_at?->toIso8601String(),
             ],
             'expires_at' => $booking->created_at?->addMinutes($timeout)->toIso8601String(),
         ]);
+    }
+
+    /**
+     * "I have transferred the money." Creates the offline payments row and
+     * stores the proof; an admin still has to verify it before the booking
+     * moves (D27) — nothing here settles anything.
+     */
+    public function offline(SubmitOfflinePaymentRequest $request, Booking $booking, SubmitOfflinePayment $action): RedirectResponse
+    {
+        $this->customerFor($request, $booking);
+
+        /** @var BankAccount $account */
+        $account = BankAccount::query()->findOrFail((int) $request->validated('bank_account_id'));
+
+        $proof = $request->file('proof');
+
+        $action->handle(
+            $booking,
+            $account,
+            $request->validated('reference'),
+            $proof instanceof UploadedFile ? $proof : null,
+        );
+
+        return back()->with('success', __('Thanks — we will confirm your transfer shortly.'));
     }
 
     /**

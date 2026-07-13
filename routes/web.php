@@ -11,6 +11,7 @@ use App\Http\Controllers\GeocodeController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PaymentProofController;
 use App\Http\Controllers\Provider;
 use App\Http\Controllers\ProviderDocumentController;
 use App\Http\Controllers\ReviewPhotoController;
@@ -75,6 +76,9 @@ Route::middleware(['auth', 'role:customer'])->group(function () {
     // Online payment leg (M08): pay page + gateway session + confirmations.
     Route::get('bookings/{booking}/pay', [Customer\PaymentController::class, 'show'])->name('bookings.pay');
     Route::post('bookings/{booking}/pay/wallet', [Customer\PaymentController::class, 'payWithWallet'])->name('payments.wallet');
+    // Offline / bank transfer (M22): declares a transfer + uploads the proof.
+    // Settles nothing — an admin verifies it through ConfirmPayment (D27).
+    Route::post('bookings/{booking}/pay/offline', [Customer\PaymentController::class, 'offline'])->name('payments.offline');
     Route::post('bookings/{booking}/pay/razorpay/callback', [Customer\PaymentController::class, 'razorpayCallback'])->name('payments.razorpay.callback');
     Route::get('bookings/{booking}/pay/stripe/return', [Customer\PaymentController::class, 'stripeReturn'])->name('payments.stripe.return');
     Route::post('bookings/{booking}/pay/{provider}', [Customer\PaymentController::class, 'initiate'])
@@ -92,6 +96,12 @@ Route::middleware(['auth', 'role:customer'])->group(function () {
 Route::get('bookings/{booking}/photos/{media}', [BookingPhotoController::class, 'show'])
     ->middleware('auth')
     ->name('bookings.photos.show');
+
+// Offline-payment proof (M22) — private disk; PaymentPolicy@view: the customer
+// who uploaded it or an admin. The assigned provider is not a party to it.
+Route::get('payments/{payment}/proof/{media}', [PaymentProofController::class, 'show'])
+    ->middleware('auth')
+    ->name('payments.proof.show');
 
 // GST tax invoice PDF (M09) — BookingPolicy@invoice: the customer or an admin.
 Route::get('bookings/{booking}/invoice', InvoiceController::class)
@@ -151,9 +161,12 @@ Route::middleware(['auth', 'role:provider'])->prefix('provider')->name('provider
         Route::post('blackouts', [Provider\AvailabilityController::class, 'storeBlackout'])->name('blackouts.store');
         Route::delete('blackouts/{blackout}', [Provider\AvailabilityController::class, 'destroyBlackout'])->name('blackouts.destroy');
 
-        // Earnings + payouts (M09).
+        // Earnings + payouts (M09); payout destinations are saved rows (M22).
         Route::get('earnings', [Provider\EarningController::class, 'index'])->name('earnings.index');
         Route::post('payouts', [Provider\EarningController::class, 'requestPayout'])->name('payouts.store');
+        Route::post('payout-accounts', [Provider\PayoutAccountController::class, 'store'])->name('payout-accounts.store');
+        Route::put('payout-accounts/{account}', [Provider\PayoutAccountController::class, 'update'])->name('payout-accounts.update');
+        Route::delete('payout-accounts/{account}', [Provider\PayoutAccountController::class, 'destroy'])->name('payout-accounts.destroy');
 
         // Dispatch (M06): job offers + the provider's own job progression.
         Route::get('jobs', [Provider\JobController::class, 'index'])->name('jobs.index');
@@ -185,11 +198,22 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('bookings/{booking}/transition', [Admin\BookingController::class, 'transition'])->name('bookings.transition');
     Route::post('bookings/{booking}/dispatch', [Admin\BookingController::class, 'dispatch'])->name('bookings.dispatch');
     Route::post('bookings/{booking}/refund', [Admin\BookingController::class, 'refund'])->name('bookings.refund');
-    // Payout queue (M09).
+    // Payments hub (M22): every payment row in one place. Offline rows are
+    // verified/rejected here, through the same ConfirmPayment a webhook calls.
+    Route::get('payments', [Admin\PaymentController::class, 'index'])->name('payments.index');
+    Route::post('payments/{payment}/verify', [Admin\PaymentController::class, 'verify'])->name('payments.verify');
+    Route::post('payments/{payment}/reject', [Admin\PaymentController::class, 'reject'])->name('payments.reject');
+    // The accounts customers transfer into (M22).
+    Route::get('bank-accounts', [Admin\BankAccountController::class, 'index'])->name('bank-accounts.index');
+    Route::post('bank-accounts', [Admin\BankAccountController::class, 'store'])->name('bank-accounts.store');
+    Route::put('bank-accounts/{account}', [Admin\BankAccountController::class, 'update'])->name('bank-accounts.update');
+    Route::delete('bank-accounts/{account}', [Admin\BankAccountController::class, 'destroy'])->name('bank-accounts.destroy');
+    // Payout queue (M09); the destination is a stored account (M22).
     Route::get('payouts', [Admin\PayoutController::class, 'index'])->name('payouts.index');
     Route::post('payouts/{payout}/approve', [Admin\PayoutController::class, 'approve'])->name('payouts.approve');
     Route::post('payouts/{payout}/pay', [Admin\PayoutController::class, 'pay'])->name('payouts.pay');
     Route::post('payouts/{payout}/reject', [Admin\PayoutController::class, 'reject'])->name('payouts.reject');
+    Route::post('payout-accounts/{account}/verify', [Admin\PayoutController::class, 'verifyAccount'])->name('payout-accounts.verify');
     // Review moderation (M10).
     Route::get('reviews', [Admin\ReviewController::class, 'index'])->name('reviews.index');
     Route::post('reviews/{review}/hide', [Admin\ReviewController::class, 'hide'])->name('reviews.hide');
@@ -269,6 +293,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('customers/{customer}', [Admin\CustomerController::class, 'show'])->name('customers.show');
     Route::post('customers/{customer}/block', [Admin\CustomerController::class, 'block'])->name('customers.block');
     Route::post('customers/{customer}/unblock', [Admin\CustomerController::class, 'unblock'])->name('customers.unblock');
+    // Manual wallet correction (M22) — WalletService is still the only writer.
+    Route::post('customers/{customer}/wallet', [Admin\CustomerController::class, 'adjustWallet'])->name('customers.wallet');
 
     // Settings is one screen per group (ADR D24): a save carries — and can
     // therefore only write — the keys of the group named in the URL.

@@ -5,6 +5,7 @@ namespace App\Domain\Earnings\Actions;
 use App\Domain\Earnings\Enums\PayoutStatus;
 use App\Domain\Settings\SettingsRegistry;
 use App\Models\Earning;
+use App\Models\PayoutAccount;
 use App\Models\PayoutRequest;
 use App\Models\User;
 use App\Support\Money;
@@ -25,9 +26,12 @@ class RequestPayout
     public function __construct(private readonly SettingsRegistry $settings) {}
 
     /**
-     * @param  array<string, mixed>  $methodDetails
+     * The destination is a stored account (M22): `method_details` keeps the
+     * snapshot it had at request time — a later edit to the account cannot
+     * rewrite what was paid — while `payout_account_id` records which row it
+     * came from.
      */
-    public function handle(User $provider, array $methodDetails): PayoutRequest
+    public function handle(User $provider, PayoutAccount $account): PayoutRequest
     {
         if (! $this->settings->boolean('payouts.enabled', true)) {
             throw ValidationException::withMessages([
@@ -35,7 +39,15 @@ class RequestPayout
             ]);
         }
 
-        return DB::transaction(function () use ($provider, $methodDetails): PayoutRequest {
+        if ($account->provider_id !== $provider->id) {
+            throw ValidationException::withMessages([
+                'payout_account_id' => __('That payout account does not belong to you.'),
+            ]);
+        }
+
+        $methodDetails = $account->toSnapshot();
+
+        return DB::transaction(function () use ($provider, $account, $methodDetails): PayoutRequest {
             $openRequest = PayoutRequest::query()
                 ->where('provider_id', $provider->id)
                 ->whereIn('status', array_map(fn (PayoutStatus $status): string => $status->value, PayoutStatus::open()))
@@ -73,6 +85,7 @@ class RequestPayout
 
             $payout = PayoutRequest::query()->create([
                 'provider_id' => $provider->id,
+                'payout_account_id' => $account->id,
                 'amount' => Money::decimal($amount),
                 'status' => PayoutStatus::Requested,
                 'method_details' => $methodDetails,

@@ -12,7 +12,7 @@ import { useTrans } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { type Address, type CartSummary, type SlotDay } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Banknote, CreditCard, ImagePlus, LoaderCircle, MapPin, TicketPercent, Wallet, X } from 'lucide-react';
+import { Banknote, CreditCard, ImagePlus, Landmark, LoaderCircle, MapPin, TicketPercent, Wallet, X } from 'lucide-react';
 import { FormEventHandler, type ComponentType } from 'react';
 
 interface CheckoutLine {
@@ -111,6 +111,11 @@ export default function CheckoutPage({
                 ? t('Balance :balance — not enough for this booking.', { balance: money(walletBalance) })
                 : t('Balance :balance', { balance: money(walletBalance) }),
         },
+        offline: {
+            icon: Landmark,
+            title: t('Bank transfer'),
+            hint: t('Transfer from your bank or UPI app; we confirm the booking once it lands.'),
+        },
     };
 
     const submit: FormEventHandler = (e) => {
@@ -123,10 +128,12 @@ export default function CheckoutPage({
     const labels: Record<string, string> = {
         cash: t('Place booking'),
         wallet: t('Pay from wallet'),
+        offline: t('Continue to bank details'),
     };
     const hints: Record<string, string> = {
         cash: t('No charge until the service is completed.'),
         wallet: t('Paid instantly from your wallet balance.'),
+        offline: t('You will see where to transfer the money on the next screen.'),
     };
 
     const submitLabel = labels[data.payment_method] ?? t('Continue to payment');

@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Activity\ActivityLogger;
 use App\Domain\Bookings\Enums\BookingStatus;
+use App\Domain\Payments\Actions\AdjustWallet;
 use App\Domain\Users\Actions\SetUserActive;
 use App\Domain\Users\Enums\Role;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AdjustWalletRequest;
 use App\Http\Requests\Admin\BlockCustomerRequest;
 use App\Models\Booking;
 use App\Models\Referral;
@@ -179,5 +182,36 @@ class CustomerController extends Controller
         $action->handle($admin, $customer, true);
 
         return back()->with('success', __('Customer unblocked.'));
+    }
+
+    /**
+     * Manual wallet correction (M22). It writes through WalletService like every
+     * other movement (D15), so the ledger still reconciles and an overdraw is
+     * still refused — and the admin who did it is on the activity log.
+     */
+    public function adjustWallet(
+        AdjustWalletRequest $request,
+        User $customer,
+        AdjustWallet $action,
+        ActivityLogger $activity,
+    ): RedirectResponse {
+        abort_unless($customer->hasRole(Role::Customer->value), 404);
+
+        /** @var User $admin */
+        $admin = $request->user();
+
+        $direction = (string) $request->validated('direction');
+        $amount = (float) $request->validated('amount');
+        $reason = (string) $request->validated('reason');
+
+        $action->handle($customer, $direction, $amount, $reason);
+
+        $activity->log($admin, 'wallet.adjust', $customer, [
+            'direction' => $direction,
+            'amount' => $amount,
+            'reason' => $reason,
+        ]);
+
+        return back()->with('success', __('Wallet updated.'));
     }
 }

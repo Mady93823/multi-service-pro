@@ -38,6 +38,8 @@ class PaymentsGroup extends SettingsGroup
             'payments.tax_percent',
             'payments.pay_after_service',
             'payments.wallet_enabled',
+            'payments.offline_enabled',
+            'payments.offline_instructions',
             'payments.razorpay_key_id',
             'payments.razorpay_key_secret',
             'payments.razorpay_webhook_secret',
@@ -54,6 +56,8 @@ class PaymentsGroup extends SettingsGroup
             'tax_percent' => ['required', 'numeric', 'min:0', 'max:100'],
             'pay_after_service' => ['boolean'],
             'wallet_enabled' => ['boolean'],
+            'offline_enabled' => ['boolean'],
+            'offline_instructions' => ['nullable', 'string', 'max:2000'],
             'razorpay_key_id' => ['nullable', 'string', 'max:191'],
             'stripe_publishable_key' => ['nullable', 'string', 'max:191'],
             // Write-only. Blank keeps the stored secret; remove_* erases it.
@@ -75,6 +79,8 @@ class PaymentsGroup extends SettingsGroup
             'tax_percent' => $this->settings->decimal('payments.tax_percent', 18.0),
             'pay_after_service' => $this->settings->boolean('payments.pay_after_service', true),
             'wallet_enabled' => $this->settings->boolean('payments.wallet_enabled', true),
+            'offline_enabled' => $this->settings->boolean('payments.offline_enabled', false),
+            'offline_instructions' => $this->settings->string('payments.offline_instructions'),
             // Publishable halves of each key pair are safe to render.
             'razorpay_key_id' => $this->settings->string('payments.razorpay_key_id'),
             'stripe_publishable_key' => $this->settings->string('payments.stripe_publishable_key'),
@@ -95,6 +101,8 @@ class PaymentsGroup extends SettingsGroup
         $this->settings->set('payments.tax_percent', $data['tax_percent']);
         $this->settings->set('payments.pay_after_service', $this->toggle($data, 'pay_after_service'));
         $this->settings->set('payments.wallet_enabled', $this->toggle($data, 'wallet_enabled'));
+        $this->settings->set('payments.offline_enabled', $this->toggle($data, 'offline_enabled'));
+        $this->settings->set('payments.offline_instructions', $data['offline_instructions'] ?? null);
         $this->settings->set('payments.razorpay_key_id', $data['razorpay_key_id'] ?? null);
         $this->settings->set('payments.stripe_publishable_key', $data['stripe_publishable_key'] ?? null);
 

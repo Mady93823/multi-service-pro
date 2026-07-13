@@ -62,6 +62,7 @@ class SettingsFixtures
                 'tax_percent' => 18,
                 'pay_after_service' => true,
                 'wallet_enabled' => true,
+                'offline_enabled' => false,
             ],
             'payouts' => [
                 'commission_percent' => 20,

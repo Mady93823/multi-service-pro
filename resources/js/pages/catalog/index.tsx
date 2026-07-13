@@ -1,15 +1,12 @@
 import { Pagination } from '@/components/catalog/pagination';
 import { ServiceCard } from '@/components/catalog/service-card';
-import { HeroBanners, StripBanners } from '@/components/marketing/banners';
-import { FaqSection } from '@/components/marketing/faq-section';
-import { Sponsors, Testimonials } from '@/components/marketing/social-proof';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import PublicLayout from '@/layouts/public-layout';
 import { useTrans } from '@/lib/i18n';
-import { type Banner, type Category, type Faq, type Paginated, type Service, type SharedData, type Sponsor, type Testimonial } from '@/types';
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { type Category, type Paginated, type Service } from '@/types';
+import { Head, Link, router } from '@inertiajs/react';
 import { FolderOpen, Search } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
@@ -18,14 +15,13 @@ interface CatalogIndexProps {
     featured: Service[];
     search: string;
     results: Paginated<Service> | null;
-    banners: { hero: Banner[]; strip: Banner[] };
-    faqs: Faq[];
-    testimonials: Testimonial[];
-    sponsors: Sponsor[];
 }
 
-export default function CatalogIndex({ categories, featured, search, results, banners, faqs, testimonials, sponsors }: CatalogIndexProps) {
-    const { name } = usePage<SharedData>().props;
+/**
+ * The services page. The marketing sections that used to sit here moved to the
+ * home page as blocks (M20) — this screen is the catalog and its search.
+ */
+export default function CatalogIndex({ categories, featured, search, results }: CatalogIndexProps) {
     const t = useTrans();
     const [term, setTerm] = useState(search);
 
@@ -36,15 +32,10 @@ export default function CatalogIndex({ categories, featured, search, results, ba
 
     return (
         <PublicLayout>
-            <Head title={t('Home services, on demand')} />
-
-            {results === null && <HeroBanners banners={banners.hero} />}
+            <Head title={t('All services')} />
 
             <section className="mx-auto max-w-2xl py-8 text-center">
-                <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t('Home services, on demand')}</h1>
-                <p className="text-muted-foreground mt-3">
-                    {t('Book trusted professionals with :name — cleaning, repairs, beauty and more, at your doorstep.', { name })}
-                </p>
+                <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t('All services')}</h1>
                 <form onSubmit={submitSearch} className="mt-6 flex gap-2">
                     <Input value={term} onChange={(e) => setTerm(e.target.value)} placeholder={t('What do you need help with?')} className="h-11" />
                     <Button type="submit" className="h-11">
@@ -100,8 +91,6 @@ export default function CatalogIndex({ categories, featured, search, results, ba
                         {categories.length === 0 && <p className="text-muted-foreground">{t('The catalog is being set up. Check back soon.')}</p>}
                     </section>
 
-                    <StripBanners banners={banners.strip} />
-
                     {featured.length > 0 && (
                         <section className="space-y-4 py-4">
                             <h2 className="text-lg font-semibold">{t('Popular services')}</h2>
@@ -112,11 +101,6 @@ export default function CatalogIndex({ categories, featured, search, results, ba
                             </div>
                         </section>
                     )}
-
-                    <Testimonials testimonials={testimonials} />
-                    <Sponsors sponsors={sponsors} />
-
-                    <FaqSection faqs={faqs} />
                 </>
             )}
         </PublicLayout>

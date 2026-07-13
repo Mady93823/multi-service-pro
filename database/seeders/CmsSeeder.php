@@ -74,7 +74,70 @@ class CmsSeeder extends Seeder
             );
         }
 
+        $this->home();
         $this->menus();
+    }
+
+    /**
+     * M20: the storefront home page, built from blocks. Every section a visitor
+     * sees on `/` is a row here — the admin can reorder, hide or delete any of
+     * them from /admin/pages/{home}/blocks.
+     */
+    private function home(): void
+    {
+        $home = Page::query()->firstOrCreate(
+            ['slug' => Page::HOME_SLUG],
+            [
+                'title' => 'Home',
+                'body' => '',
+                'is_published' => true,
+                'show_in_footer' => false,
+                'sort_order' => 0,
+            ],
+        );
+
+        if ($home->blocks()->exists()) {
+            return;
+        }
+
+        $blocks = [
+            ['type' => 'hero', 'payload' => [
+                'heading' => 'Home services, on demand',
+                'subheading' => 'Book trusted professionals — cleaning, repairs, beauty and more, at your doorstep.',
+                'show_search' => true,
+                'cta_label' => '',
+                'cta_url' => '/services',
+                'align' => 'center',
+            ]],
+            ['type' => 'banners', 'payload' => ['placement' => 'home_hero']],
+            ['type' => 'categories_grid', 'payload' => ['heading' => 'Browse by category', 'limit' => 6]],
+            ['type' => 'banners', 'payload' => ['placement' => 'home_strip']],
+            ['type' => 'services_grid', 'payload' => [
+                'heading' => 'Popular services',
+                'featured_only' => true,
+                'category_id' => null,
+                'limit' => 8,
+            ]],
+            ['type' => 'steps', 'payload' => [
+                'heading' => 'How it works',
+                'items' => [
+                    ['title' => 'Pick a service', 'description' => 'Choose what you need and when — upfront pricing, no surprises.'],
+                    ['title' => 'We assign a professional', 'description' => 'A verified, background-checked professional accepts your job.'],
+                    ['title' => 'Track them live', 'description' => 'Follow them on the map from acceptance to your doorstep.'],
+                ],
+            ]],
+            ['type' => 'testimonials', 'payload' => ['heading' => 'What our customers say', 'limit' => 6]],
+            ['type' => 'sponsors', 'payload' => ['heading' => 'Trusted by']],
+            ['type' => 'faq', 'payload' => ['heading' => 'Frequently asked questions', 'limit' => 10]],
+        ];
+
+        foreach ($blocks as $index => $block) {
+            $home->blocks()->create([
+                ...$block,
+                'sort_order' => $index + 1,
+                'is_active' => true,
+            ]);
+        }
     }
 
     /**

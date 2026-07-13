@@ -1,3 +1,4 @@
+import { type FormDataConvertible } from '@inertiajs/core';
 import { LucideIcon } from 'lucide-react';
 
 export interface Auth {
@@ -163,6 +164,8 @@ export interface CmsPage {
     is_published: boolean;
     show_in_footer: boolean;
     sort_order: number;
+    is_home: boolean;
+    blocks_count?: number;
     updated_at: string | null;
 }
 
@@ -859,4 +862,43 @@ export interface MediaAsset {
     uploaded_by?: string | null;
     uploaded_at?: string | null;
     usage_count?: number;
+}
+
+/** A block on a page, resolved by the server (M20). `props` is whatever the block type declared. */
+export interface RenderedBlock {
+    id: number;
+    type: string;
+    props: Record<string, unknown>;
+}
+
+export interface BlockFieldSchema {
+    name: string;
+    type: 'text' | 'textarea' | 'markdown' | 'number' | 'toggle' | 'select' | 'media' | 'repeater';
+    label: string;
+    default: FormDataConvertible;
+    options: { value: string; label: string }[];
+    fields: BlockFieldSchema[];
+    help: string | null;
+}
+
+/** A block's payload travels through Inertia's form helper, so it must be form-convertible. */
+export type BlockPayload = Record<string, FormDataConvertible>;
+
+export interface BlockSchema {
+    type: string;
+    label: string;
+    fields: BlockFieldSchema[];
+    defaults: BlockPayload;
+}
+
+/** One saved block, as the admin block editor sees it. */
+export interface EditableBlock {
+    id: number;
+    type: string;
+    label: string | null;
+    payload: BlockPayload;
+    is_active: boolean;
+    starts_at: string | null;
+    ends_at: string | null;
+    image_urls: Record<number, string>;
 }

@@ -18,6 +18,7 @@ class PageController extends Controller
     public function index(): Response
     {
         $pages = Page::query()
+            ->withCount('blocks')
             ->orderBy('sort_order')
             ->orderBy('title')
             ->paginate(15);

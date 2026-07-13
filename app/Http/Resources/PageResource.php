@@ -24,6 +24,10 @@ class PageResource extends JsonResource
             'is_published' => $this->is_published,
             'show_in_footer' => $this->show_in_footer,
             'sort_order' => $this->sort_order,
+            // M20: the home page is a page like any other — except it cannot be
+            // deleted and it renders at `/`, not at /p/home.
+            'is_home' => $this->resource->isHome(),
+            'blocks_count' => $this->whenCounted('blocks'),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }

@@ -2,24 +2,14 @@
 
 namespace App\Http\Controllers\Customer;
 
-use App\Domain\Banners\Enums\BannerPlacement;
 use App\Domain\Settings\SettingsRegistry;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\BannerResource;
 use App\Http\Resources\CategoryResource;
-use App\Http\Resources\FaqResource;
 use App\Http\Resources\ReviewResource;
 use App\Http\Resources\ServiceResource;
-use App\Http\Resources\SponsorResource;
-use App\Http\Resources\TestimonialResource;
-use App\Models\Banner;
 use App\Models\Category;
-use App\Models\Faq;
 use App\Models\Review;
 use App\Models\Service;
-use App\Models\Sponsor;
-use App\Models\Testimonial;
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -27,8 +17,12 @@ use Inertia\Response;
 class CatalogController extends Controller
 {
     /**
-     * Public storefront: category grid + featured services; doubles as
-     * the search results page when ?search= is present.
+     * The services page: category grid + featured services, doubling as the
+     * search results page when ?search= is present.
+     *
+     * The *home* page is no longer this screen — since M20 it is a page built
+     * from blocks (HomeController), and the marketing sections that used to
+     * live here (banners, testimonials, sponsors, FAQ) are blocks on it.
      */
     public function index(Request $request): Response
     {
@@ -69,33 +63,7 @@ class CatalogController extends Controller
             ),
             'search' => $search,
             'results' => $results !== null ? ServiceResource::collection($results) : null,
-            'banners' => [
-                'hero' => BannerResource::collection($this->liveBanners(BannerPlacement::HomeHero)),
-                'strip' => BannerResource::collection($this->liveBanners(BannerPlacement::HomeStrip)),
-            ],
-            // M14: storefront FAQ section — active rows only, admin-sorted.
-            'faqs' => FaqResource::collection(Faq::query()->active()->get()),
-            // M19: admin-owned social proof. Empty collections render nothing.
-            'testimonials' => TestimonialResource::collection(
-                Testimonial::query()->active()->with('media')->orderBy('sort_order')->orderBy('id')->get(),
-            ),
-            'sponsors' => SponsorResource::collection(
-                Sponsor::query()->active()->with('media')->orderBy('sort_order')->orderBy('id')->get(),
-            ),
         ]);
-    }
-
-    /**
-     * @return EloquentCollection<int, Banner>
-     */
-    private function liveBanners(BannerPlacement $placement): EloquentCollection
-    {
-        return Banner::query()
-            ->live()
-            ->where('placement', $placement->value)
-            ->with('media')
-            ->orderBy('sort_order')
-            ->get();
     }
 
     public function category(Request $request, Category $category): Response

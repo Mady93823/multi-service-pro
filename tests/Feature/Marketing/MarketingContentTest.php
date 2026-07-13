@@ -40,12 +40,17 @@ it('shows active testimonials and sponsors on the storefront', function () {
     Sponsor::factory()->create(['name' => 'Acme Corp']);
     Sponsor::factory()->create(['name' => 'Dormant Ltd', 'is_active' => false]);
 
-    $this->get(route('home'))
-        ->assertInertia(fn (AssertableInertia $inertia) => $inertia
-            ->has('testimonials', 1)
-            ->where('testimonials.0.name', 'Ananya')
-            ->has('sponsors', 1)
-            ->where('sponsors.0.name', 'Acme Corp'));
+    // Since M20 the home page is blocks; the testimonial and sponsor sections
+    // are two of them (seeded on the reserved `home` page).
+    /** @var array{props: array{blocks: list<array<string, mixed>>}} $page */
+    $page = $this->get(route('home'))->viewData('page');
+    $blocks = collect($page['props']['blocks']);
+
+    expect($blocks->firstWhere('type', 'testimonials')['props']['testimonials'])
+        ->toHaveCount(1)
+        ->and($blocks->firstWhere('type', 'testimonials')['props']['testimonials'][0]['name'])->toBe('Ananya')
+        ->and($blocks->firstWhere('type', 'sponsors')['props']['sponsors'])->toHaveCount(1)
+        ->and($blocks->firstWhere('type', 'sponsors')['props']['sponsors'][0]['name'])->toBe('Acme Corp');
 });
 
 it('promotes a review to a testimonial once, copying the quote', function () {

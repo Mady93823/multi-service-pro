@@ -7,7 +7,7 @@ import AdminLayout from '@/layouts/admin-layout';
 import { useTrans } from '@/lib/i18n';
 import { type BreadcrumbItem, type CmsPage, type Paginated } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { ExternalLink, Pencil, Plus } from 'lucide-react';
+import { Blocks, ExternalLink, Pencil, Plus } from 'lucide-react';
 
 interface AdminPagesIndexProps {
     pages: Paginated<CmsPage>;
@@ -42,6 +42,7 @@ export default function AdminPagesIndex({ pages }: AdminPagesIndexProps) {
                                 <TableHead>{t('Title')}</TableHead>
                                 <TableHead>{t('Slug')}</TableHead>
                                 <TableHead>{t('Status')}</TableHead>
+                                <TableHead>{t('Blocks')}</TableHead>
                                 <TableHead>{t('Footer')}</TableHead>
                                 <TableHead />
                             </TableRow>
@@ -49,15 +50,24 @@ export default function AdminPagesIndex({ pages }: AdminPagesIndexProps) {
                         <TableBody>
                             {pages.data.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-muted-foreground py-8 text-center">
+                                    <TableCell colSpan={6} className="text-muted-foreground py-8 text-center">
                                         {t('No pages yet.')}
                                     </TableCell>
                                 </TableRow>
                             )}
                             {pages.data.map((page) => (
                                 <TableRow key={page.id}>
-                                    <TableCell className="font-medium">{page.title}</TableCell>
-                                    <TableCell className="text-muted-foreground font-mono text-xs">/p/{page.slug}</TableCell>
+                                    <TableCell className="font-medium">
+                                        {page.title}
+                                        {page.is_home && (
+                                            <Badge variant="secondary" className="ml-2">
+                                                {t('Home')}
+                                            </Badge>
+                                        )}
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground font-mono text-xs">
+                                        {page.is_home ? '/' : `/p/${page.slug}`}
+                                    </TableCell>
                                     <TableCell>
                                         {page.is_published ? (
                                             <Badge className="bg-emerald-600 text-white">{t('Published')}</Badge>
@@ -65,12 +75,20 @@ export default function AdminPagesIndex({ pages }: AdminPagesIndexProps) {
                                             <Badge variant="outline">{t('Draft')}</Badge>
                                         )}
                                     </TableCell>
+                                    <TableCell>
+                                        <Button asChild variant="outline" size="sm">
+                                            <Link href={route('admin.pages.blocks.index', page.id)}>
+                                                <Blocks className="h-4 w-4" />
+                                                {t(':count block(s)', { count: String(page.blocks_count ?? 0) })}
+                                            </Link>
+                                        </Button>
+                                    </TableCell>
                                     <TableCell>{page.show_in_footer ? t('Yes') : '—'}</TableCell>
                                     <TableCell>
                                         <div className="flex justify-end gap-1">
                                             {page.is_published && (
                                                 <Button asChild variant="ghost" size="icon" aria-label={t('View page')}>
-                                                    <a href={`/p/${page.slug}`} target="_blank" rel="noreferrer">
+                                                    <a href={page.is_home ? '/' : `/p/${page.slug}`} target="_blank" rel="noreferrer">
                                                         <ExternalLink className="h-4 w-4" />
                                                     </a>
                                                 </Button>
@@ -80,11 +98,14 @@ export default function AdminPagesIndex({ pages }: AdminPagesIndexProps) {
                                                     <Pencil className="h-4 w-4" />
                                                 </Link>
                                             </Button>
-                                            <ConfirmDelete
-                                                title={t('Delete page?')}
-                                                description={t('“:title” and its public URL will be removed.', { title: page.title })}
-                                                deleteUrl={route('admin.pages.destroy', page.id)}
-                                            />
+                                            {/* The home page is the storefront's front door — it has no delete. */}
+                                            {!page.is_home && (
+                                                <ConfirmDelete
+                                                    title={t('Delete page?')}
+                                                    description={t('“:title” and its public URL will be removed.', { title: page.title })}
+                                                    deleteUrl={route('admin.pages.destroy', page.id)}
+                                                />
+                                            )}
                                         </div>
                                     </TableCell>
                                 </TableRow>

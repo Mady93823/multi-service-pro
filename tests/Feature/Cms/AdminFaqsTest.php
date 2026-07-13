@@ -2,7 +2,6 @@
 
 use App\Models\Faq;
 use App\Models\User;
-use Inertia\Testing\AssertableInertia;
 
 function faqAdmin(): User
 {
@@ -13,15 +12,14 @@ it('shows active faqs on the storefront home, sorted, hiding inactive ones', fun
     $first = Faq::factory()->create(['question' => 'Zero-order question?', 'sort_order' => 0]);
     $hidden = Faq::factory()->inactive()->create();
 
-    $this->get('/')
-        ->assertOk()
-        ->assertInertia(fn (AssertableInertia $inertia) => $inertia
-            ->where('faqs', function ($faqs) use ($first, $hidden): bool {
-                $questions = collect($faqs)->pluck('question');
+    // The FAQ section is a block on the home page since M20.
+    /** @var array{props: array{blocks: list<array<string, mixed>>}} $page */
+    $page = $this->get('/')->assertOk()->viewData('page');
 
-                return $questions->first() === $first->question
-                    && ! $questions->contains($hidden->question);
-            }));
+    $questions = collect(collect($page['props']['blocks'])->firstWhere('type', 'faq')['props']['faqs'])->pluck('question');
+
+    expect($questions->first())->toBe($first->question)
+        ->and($questions)->not->toContain($hidden->question);
 });
 
 it('creates a faq', function () {

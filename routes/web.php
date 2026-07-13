@@ -19,7 +19,9 @@ use App\Http\Controllers\TrackingController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [Customer\CatalogController::class, 'index'])->name('home');
+// The home page is a CMS page built from blocks (M20) — nothing on it is
+// hardcoded; the search box and the grids are blocks an admin can move.
+Route::get('/', [Customer\HomeController::class, 'index'])->name('home');
 
 // CMS pages (M14) — reserved /p/ prefix so a page slug can never shadow a route.
 Route::get('p/{page:slug}', [Customer\PageController::class, 'show'])->name('pages.show');
@@ -214,8 +216,14 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('menus/{menu}/items/{item}', [Admin\MenuController::class, 'update'])->name('menus.items.update');
     Route::delete('menus/{menu}/items/{item}', [Admin\MenuController::class, 'destroy'])->name('menus.items.destroy');
     Route::post('menus/{menu}/reorder', [Admin\MenuController::class, 'reorder'])->name('menus.reorder');
-    // CMS + language manager (M14).
+    // CMS + language manager (M14) and the page builder (M20).
     Route::resource('pages', Admin\PageController::class)->except(['show']);
+    Route::get('pages/{page}/blocks', [Admin\PageBlockController::class, 'index'])->name('pages.blocks.index');
+    Route::post('pages/{page}/blocks', [Admin\PageBlockController::class, 'store'])->name('pages.blocks.store');
+    Route::post('pages/{page}/blocks/reorder', [Admin\PageBlockController::class, 'reorder'])->name('pages.blocks.reorder');
+    Route::put('pages/{page}/blocks/{block}', [Admin\PageBlockController::class, 'update'])->name('pages.blocks.update');
+    Route::post('pages/{page}/blocks/{block}/duplicate', [Admin\PageBlockController::class, 'duplicate'])->name('pages.blocks.duplicate');
+    Route::delete('pages/{page}/blocks/{block}', [Admin\PageBlockController::class, 'destroy'])->name('pages.blocks.destroy');
     Route::resource('faqs', Admin\FaqController::class)->except(['show']);
     Route::get('languages', [Admin\LanguageController::class, 'index'])->name('languages.index');
     Route::post('languages', [Admin\LanguageController::class, 'store'])->name('languages.store');

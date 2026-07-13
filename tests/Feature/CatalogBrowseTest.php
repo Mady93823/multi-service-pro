@@ -5,7 +5,12 @@ use App\Models\Service;
 use Inertia\Testing\AssertableInertia;
 
 test('guests can browse the storefront home page', function () {
+    // The home page is built from blocks since M20; the catalog lives at /services.
     $this->get('/')
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page->component('home')->has('blocks'));
+
+    $this->get(route('catalog.index'))
         ->assertOk()
         ->assertInertia(fn (AssertableInertia $page) => $page->component('catalog/index')->has('categories')->has('featured'));
 });

@@ -8,7 +8,7 @@ import { Star } from 'lucide-react';
  * Both render nothing when the admin has added nothing — an empty section is
  * worse than no section.
  */
-export function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
+export function Testimonials({ testimonials, heading = null }: { testimonials: Testimonial[]; heading?: string | null }) {
     const t = useTrans();
 
     if (testimonials.length === 0) {
@@ -17,7 +17,7 @@ export function Testimonials({ testimonials }: { testimonials: Testimonial[] }) 
 
     return (
         <section className="space-y-4 py-4">
-            <h2 className="text-lg font-semibold">{t('What our customers say')}</h2>
+            <h2 className="text-lg font-semibold">{heading ?? t('What our customers say')}</h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {testimonials.map((testimonial) => (
                     <Card key={testimonial.id}>
@@ -47,7 +47,7 @@ export function Testimonials({ testimonials }: { testimonials: Testimonial[] }) 
     );
 }
 
-export function Sponsors({ sponsors }: { sponsors: Sponsor[] }) {
+export function Sponsors({ sponsors, heading = null }: { sponsors: Sponsor[]; heading?: string | null }) {
     const t = useTrans();
 
     if (sponsors.length === 0) {
@@ -56,7 +56,7 @@ export function Sponsors({ sponsors }: { sponsors: Sponsor[] }) {
 
     return (
         <section className="space-y-4 py-4">
-            <h2 className="text-muted-foreground text-sm font-medium">{t('Trusted by')}</h2>
+            <h2 className="text-muted-foreground text-sm font-medium">{heading ?? t('Trusted by')}</h2>
             <div className="flex flex-wrap items-center gap-6">
                 {sponsors.map((sponsor) =>
                     sponsor.logo_url === null ? null : sponsor.link_url === null ? (

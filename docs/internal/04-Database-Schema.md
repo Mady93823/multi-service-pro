@@ -254,6 +254,8 @@ activity_logs            ← M13; append-only admin audit (created_at only, no u
 
 **M18 shipped (2026-07-13):** `media_assets` (id, name, `uploaded_by` FK nullOnDelete, timestamps) + the medialibrary `library` collection on the **public** disk, one file per asset. Consumers do not reference the row — picking **copies** the file into the consumer's collection and stamps `custom_properties->library_asset_id` on the copy (ADR D29). Usage, deletability and pruning all read that stamp; there is no join table. Banners keep their own `image` collection (now filled from the library).
 
+**M20 shipped (2026-07-14):** `page_blocks` (id, `page_id` FK cascade, `type` (registry key), `payload` JSON, sort_order, is_active, starts_at, ends_at, idx(page_id, sort_order)) + a medialibrary `images` collection on the **public** disk, filled only through the library (D29 — a picked picture is copied into the block and stamped, so the manager still counts it). The payload is validated on write against the schema of *its own* block type, and **a row whose `type` is not in `BlockRegistry` renders nothing** (D22). The storefront home is a reserved page (`pages.slug = 'home'`, undeletable, served at `/` and 404 at `/p/home`) whose blocks are the front page; a CMS page carries **either** blocks **or** its markdown body, never both.
+
 **M19 part 2 shipped (2026-07-13):** `testimonials` (id, `review_id` FK nullOnDelete — set when promoted from a review, and the quote is a **copy**, name, role, quote, rating, sort_order, is_active) · `sponsors` (id, name, link_url, sort_order, is_active) · `popups` (id, title, body **markdown**, link_url, link_label, `audience` everyone|guests|customers|providers, `frequency_days`, starts_at, ends_at, is_active) · `subscribers` (id, `email` uniq, source, `unsubscribed_at` — an opt-out keeps the row). All three content tables carry a medialibrary collection on the **public** disk, filled only through the library (D29). **`support_tickets.user_id` is now nullable** and gains `guest_name` / `guest_email`: the public contact form opens a real support ticket even for a signed-out visitor (admin-only, because it belongs to no account). `support_ticket_messages.user_id` is nullable for the same reason.
 
 **M19 part 1 shipped (2026-07-13):** `menus` (id, `location` uniq — `header|footer_1|footer_2|footer_3`, name) + `menu_items` (id, `menu_id` FK cascade, `parent_id` FK self cascade, label, `type` `route|page|url`, `target`, `visibility` `everyone|guests|signed_in`, sort_order, is_active, idx(menu_id, parent_id, sort_order)). `target` means whatever `type` says: resolution and validation live in `SiteMenus` / `StoreMenuItemRequest`, and an item that cannot be resolved is **dropped from the storefront**, never rendered (ADR D30). The rest of M19's chrome (header/footer style, footer contact block, social links, cookie banner, custom CSS/JS, login-page look) is **settings keys, not tables** — four new groups in the existing `settings` table.
@@ -266,12 +268,6 @@ The rest below is not yet migrated. Shapes are indicative; the ADRs (D22–D27) 
 cities                   ← M25; zones gain city_id (FK restrict — a city with zones
   id, name, state, slug (uniq),  cannot vanish under live bookings)
   timezone, center_lat, center_lng, is_active, sort_order
-
-page_blocks              ← M20; ONE row per block, payload validated against the
-  id, page_id FK cascade,        BlockRegistry schema for `type` on write;
-  type (registry key), payload JSON,   an UNKNOWN type renders nothing (D22)
-  sort_order, is_visible, starts_at, ends_at
-  idx(page_id, sort_order)
 
 testimonials             ← M19; may be authored, or promoted from a real review
   id, author_name, author_role, quote, rating,

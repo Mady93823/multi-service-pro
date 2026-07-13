@@ -1,5 +1,7 @@
 <?php
 
+use App\Domain\Blocks\Block;
+use App\Domain\Blocks\BlockRegistry;
 use App\Domain\Settings\Groups\SettingsGroup;
 use App\Domain\Settings\SettingsGroupRegistry;
 
@@ -152,5 +154,28 @@ test('listeners are auto-discovered exactly once', function () {
             $source,
             basename($file).' registers a listener explicitly; app/Listeners is auto-discovered and it will fire twice.',
         );
+    }
+});
+
+test('every block type in the registry has a React renderer', function () {
+    // The two halves of the block registry (M20) must agree: a PHP block type
+    // with no renderer is a block an admin can add and a visitor never sees.
+    $index = (string) file_get_contents(resource_path('js/components/blocks/index.tsx'));
+
+    foreach (app(BlockRegistry::class)->types() as $type) {
+        $file = resource_path('js/components/blocks/'.str_replace('_', '-', $type).'.tsx');
+
+        $this->assertFileExists($file, "Block [{$type}] has no renderer.");
+        $this->assertStringContainsString("{$type}:", $index, "Block [{$type}] is not mapped in the renderer registry.");
+    }
+});
+
+test('every block class is registered', function () {
+    $registered = array_map(fn (Block $block): string => $block::class, array_values(app(BlockRegistry::class)->all()));
+
+    foreach (glob(app_path('Domain/Blocks/Types/*.php')) ?: [] as $file) {
+        $class = 'App\\Domain\\Blocks\\Types\\'.basename($file, '.php');
+
+        $this->assertContains($class, $registered, "{$class} is not in BlockRegistry — an admin can never add it.");
     }
 });

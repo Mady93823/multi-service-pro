@@ -6,6 +6,7 @@ use Database\Factories\PageFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -23,6 +24,12 @@ class Page extends Model
 {
     /** @use HasFactory<PageFactory> */
     use HasFactory;
+
+    /**
+     * The storefront home page (M20). It lives at `/`, not at `/p/home`, and
+     * its blocks are the home page — which is why it cannot be deleted.
+     */
+    public const HOME_SLUG = 'home';
 
     protected $fillable = [
         'title',
@@ -43,6 +50,19 @@ class Page extends Model
             'show_in_footer' => 'boolean',
             'sort_order' => 'integer',
         ];
+    }
+
+    /**
+     * @return HasMany<PageBlock, $this>
+     */
+    public function blocks(): HasMany
+    {
+        return $this->hasMany(PageBlock::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    public function isHome(): bool
+    {
+        return $this->slug === self::HOME_SLUG;
     }
 
     /**

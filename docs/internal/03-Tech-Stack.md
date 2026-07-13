@@ -229,6 +229,14 @@ The M19 spec listed "homepage sections" (hero copy, how-it-works, counters, CTA 
 
 They are dropped from M19 and built once, in M20, as blocks on a reserved `home` page (D22). M19 ships the site *chrome* — menus, header/footer style, footer content, social, cookie banner, custom code, login-page look — plus its marketing content (testimonials, sponsors, popups, contact, newsletter). The storefront home keeps its current hardcoded body until M20 replaces it wholesale.
 
+### D32 — Blocks resolve on the server and return models; the HTTP layer presents them (2026-07-14)
+
+A block's props are not its payload. A `services_grid` stores `{featured_only, limit}` and has to *fetch* services; a `faq` block has to fetch FAQs. That resolution belongs on the server — the browser must never be handed a query to run — and it lands in the block class, next to the schema and the rules that describe the same thing.
+
+Which raises a layering question, because the storefront already has wire shapes for those models (`ServiceResource`, `FaqResource`, …) and they live in `App\Http`, which the domain is forbidden to touch (arch rule). The two bad answers were: let blocks import resources (the arch rule exists precisely because that import is how business logic starts assuming a request), or let each block hand-map its models to arrays (fourteen quiet copies of a shape that already exists — and a service card that silently loses a field the day `ServiceResource` gains one).
+
+So `Block::data()` returns **models**, and a single `BlockPresenter` in the HTTP layer maps any model it meets — at any depth — through the resource registered for its class. The domain never names `App\Http`; the wire shape stays defined in exactly one place; the blocks stay about content. A block type that needs a model the presenter does not know is a one-line addition there, and the arch suite keeps the rest honest.
+
 ## UI sourcing workflow (shoogle.dev)
 
 1. Need a block (e.g., booking form, dashboard, pricing card) → search **shoogle.dev**

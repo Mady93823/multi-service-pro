@@ -74,15 +74,18 @@ test('the storefront home shows only live banners in their placement', function 
     Banner::factory()->scheduledOut()->create(['title' => 'Not yet scheduled']);
     Banner::factory()->strip()->create(['title' => 'Live strip now']);
 
-    $titles = fn ($items) => collect($items)->pluck('title');
+    // Since M20 the home page is blocks, and each banner placement is one of
+    // them (seeded on the reserved `home` page).
+    /** @var array{props: array{blocks: list<array<string, mixed>>}} $page */
+    $page = $this->get(route('home'))->viewData('page');
 
-    $this->get(route('home'))->assertInertia(
-        fn ($page) => $page
-            ->component('catalog/index')
-            ->where('banners.hero', fn ($hero) => $titles($hero)->contains('Live hero now')
-                && ! $titles($hero)->contains('Switched off')
-                && ! $titles($hero)->contains('Not yet scheduled')
-                && ! $titles($hero)->contains('Live strip now'))
-            ->where('banners.strip', fn ($strip) => $titles($strip)->contains('Live strip now'))
-    );
+    $placement = fn (string $placement) => collect($page['props']['blocks'])
+        ->firstWhere(fn (array $block): bool => $block['type'] === 'banners' && $block['props']['placement'] === $placement);
+
+    $hero = collect($placement('home_hero')['props']['banners'])->pluck('title');
+    $strip = collect($placement('home_strip')['props']['banners'])->pluck('title');
+
+    expect($hero)->toContain('Live hero now')
+        ->and($hero)->not->toContain('Switched off', 'Not yet scheduled', 'Live strip now')
+        ->and($strip)->toContain('Live strip now');
 });

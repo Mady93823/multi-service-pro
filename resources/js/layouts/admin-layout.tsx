@@ -76,6 +76,10 @@ export default function AdminLayout({ children, breadcrumbs }: AdminLayoutProps)
             children: [
                 { title: t('Coupons'), url: '/admin/coupons' },
                 { title: t('Banners'), url: '/admin/banners' },
+                { title: t('Testimonials'), url: '/admin/testimonials' },
+                { title: t('Sponsors'), url: '/admin/sponsors' },
+                { title: t('Popups'), url: '/admin/popups' },
+                { title: t('Subscribers'), url: '/admin/subscribers' },
             ],
         },
         {

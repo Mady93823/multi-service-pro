@@ -2,11 +2,13 @@
 
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\BookingPhotoController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\Customer;
 use App\Http\Controllers\DemoPingController;
 use App\Http\Controllers\FcmTokenController;
 use App\Http\Controllers\GeocodeController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Provider;
 use App\Http\Controllers\ProviderDocumentController;
@@ -21,6 +23,16 @@ Route::get('/', [Customer\CatalogController::class, 'index'])->name('home');
 
 // CMS pages (M14) — reserved /p/ prefix so a page slug can never shadow a route.
 Route::get('p/{page:slug}', [Customer\PageController::class, 'show'])->name('pages.show');
+
+// Contact form (M19) — a submission opens a support ticket (M16), guests
+// included. Throttled + honeypot: the form is public and bots find it.
+Route::get('contact', [ContactController::class, 'show'])->name('contact.show');
+Route::post('contact', [ContactController::class, 'store'])
+    ->middleware('throttle:5,1')->name('contact.store');
+
+// Newsletter signup from the footer.
+Route::post('newsletter', [NewsletterController::class, 'store'])
+    ->middleware('throttle:5,1')->name('newsletter.store');
 
 Route::get('services', [Customer\CatalogController::class, 'index'])->name('catalog.index');
 Route::get('services/{category:slug}', [Customer\CatalogController::class, 'category'])->name('catalog.category');
@@ -173,6 +185,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('reviews', [Admin\ReviewController::class, 'index'])->name('reviews.index');
     Route::post('reviews/{review}/hide', [Admin\ReviewController::class, 'hide'])->name('reviews.hide');
     Route::post('reviews/{review}/unhide', [Admin\ReviewController::class, 'unhide'])->name('reviews.unhide');
+    Route::post('reviews/{review}/promote', [Admin\ReviewController::class, 'promote'])->name('reviews.promote');
     Route::get('providers', [Admin\ProviderController::class, 'index'])->name('providers.index');
     Route::get('providers/{provider}', [Admin\ProviderController::class, 'show'])->name('providers.show');
     Route::post('providers/{provider}/review', [Admin\ProviderController::class, 'review'])->name('providers.review');
@@ -180,6 +193,21 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Coupons + banners (M12).
     Route::resource('coupons', Admin\CouponController::class)->except(['show']);
     Route::resource('banners', Admin\BannerController::class)->except(['show']);
+    // Marketing content (M19): testimonials, sponsors, popups, newsletter list.
+    Route::get('testimonials', [Admin\TestimonialController::class, 'index'])->name('testimonials.index');
+    Route::post('testimonials', [Admin\TestimonialController::class, 'store'])->name('testimonials.store');
+    Route::put('testimonials/{testimonial}', [Admin\TestimonialController::class, 'update'])->name('testimonials.update');
+    Route::delete('testimonials/{testimonial}', [Admin\TestimonialController::class, 'destroy'])->name('testimonials.destroy');
+    Route::get('sponsors', [Admin\SponsorController::class, 'index'])->name('sponsors.index');
+    Route::post('sponsors', [Admin\SponsorController::class, 'store'])->name('sponsors.store');
+    Route::put('sponsors/{sponsor}', [Admin\SponsorController::class, 'update'])->name('sponsors.update');
+    Route::delete('sponsors/{sponsor}', [Admin\SponsorController::class, 'destroy'])->name('sponsors.destroy');
+    Route::get('popups', [Admin\PopupController::class, 'index'])->name('popups.index');
+    Route::post('popups', [Admin\PopupController::class, 'store'])->name('popups.store');
+    Route::put('popups/{popup}', [Admin\PopupController::class, 'update'])->name('popups.update');
+    Route::delete('popups/{popup}', [Admin\PopupController::class, 'destroy'])->name('popups.destroy');
+    Route::get('subscribers', [Admin\SubscriberController::class, 'index'])->name('subscribers.index');
+    Route::delete('subscribers/{subscriber}', [Admin\SubscriberController::class, 'destroy'])->name('subscribers.destroy');
     // Menus (M19) — items belong to a location's menu, which always exists.
     Route::get('menus', [Admin\MenuController::class, 'index'])->name('menus.index');
     Route::post('menus/{menu}/items', [Admin\MenuController::class, 'store'])->name('menus.items.store');

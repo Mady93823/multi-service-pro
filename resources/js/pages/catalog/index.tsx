@@ -2,12 +2,13 @@ import { Pagination } from '@/components/catalog/pagination';
 import { ServiceCard } from '@/components/catalog/service-card';
 import { HeroBanners, StripBanners } from '@/components/marketing/banners';
 import { FaqSection } from '@/components/marketing/faq-section';
+import { Sponsors, Testimonials } from '@/components/marketing/social-proof';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import PublicLayout from '@/layouts/public-layout';
 import { useTrans } from '@/lib/i18n';
-import { type Banner, type Category, type Faq, type Paginated, type Service, type SharedData } from '@/types';
+import { type Banner, type Category, type Faq, type Paginated, type Service, type SharedData, type Sponsor, type Testimonial } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { FolderOpen, Search } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
@@ -19,9 +20,11 @@ interface CatalogIndexProps {
     results: Paginated<Service> | null;
     banners: { hero: Banner[]; strip: Banner[] };
     faqs: Faq[];
+    testimonials: Testimonial[];
+    sponsors: Sponsor[];
 }
 
-export default function CatalogIndex({ categories, featured, search, results, banners, faqs }: CatalogIndexProps) {
+export default function CatalogIndex({ categories, featured, search, results, banners, faqs, testimonials, sponsors }: CatalogIndexProps) {
     const { name } = usePage<SharedData>().props;
     const t = useTrans();
     const [term, setTerm] = useState(search);
@@ -109,6 +112,9 @@ export default function CatalogIndex({ categories, featured, search, results, ba
                             </div>
                         </section>
                     )}
+
+                    <Testimonials testimonials={testimonials} />
+                    <Sponsors sponsors={sponsors} />
 
                     <FaqSection faqs={faqs} />
                 </>

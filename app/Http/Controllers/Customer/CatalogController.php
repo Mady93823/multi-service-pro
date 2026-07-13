@@ -10,11 +10,15 @@ use App\Http\Resources\CategoryResource;
 use App\Http\Resources\FaqResource;
 use App\Http\Resources\ReviewResource;
 use App\Http\Resources\ServiceResource;
+use App\Http\Resources\SponsorResource;
+use App\Http\Resources\TestimonialResource;
 use App\Models\Banner;
 use App\Models\Category;
 use App\Models\Faq;
 use App\Models\Review;
 use App\Models\Service;
+use App\Models\Sponsor;
+use App\Models\Testimonial;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -71,6 +75,13 @@ class CatalogController extends Controller
             ],
             // M14: storefront FAQ section — active rows only, admin-sorted.
             'faqs' => FaqResource::collection(Faq::query()->active()->get()),
+            // M19: admin-owned social proof. Empty collections render nothing.
+            'testimonials' => TestimonialResource::collection(
+                Testimonial::query()->active()->with('media')->orderBy('sort_order')->orderBy('id')->get(),
+            ),
+            'sponsors' => SponsorResource::collection(
+                Sponsor::query()->active()->with('media')->orderBy('sort_order')->orderBy('id')->get(),
+            ),
         ]);
     }
 

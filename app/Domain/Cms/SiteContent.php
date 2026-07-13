@@ -4,7 +4,9 @@ namespace App\Domain\Cms;
 
 use App\Domain\Settings\Groups\SocialGroup;
 use App\Domain\Settings\SettingsRegistry;
+use App\Models\Popup;
 use App\Models\User;
+use Throwable;
 
 /**
  * Everything the storefront shell needs to draw itself (M19): menus, header and
@@ -17,6 +19,7 @@ class SiteContent
     public function __construct(
         private SettingsRegistry $settings,
         private SiteMenus $menus,
+        private MarkdownRenderer $markdown,
     ) {}
 
     /**
@@ -43,7 +46,46 @@ class SiteContent
             'social' => $this->social(),
             'cookie' => $this->cookie(),
             'custom_code' => $this->customCode($storefront),
+            'newsletter' => $this->settings->boolean('appearance.newsletter_enabled', true),
+            'popup' => $storefront ? $this->popup($user) : null,
         ];
+    }
+
+    /**
+     * The live popup for this visitor, if any (M19). Audience is decided on the
+     * server; the browser only decides *how often* it has already seen it.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function popup(?User $user): ?array
+    {
+        try {
+            $popups = Popup::query()->live()->with('media')->orderByDesc('id')->get();
+        } catch (Throwable) {
+            // Table missing (installer, early boot).
+            return null;
+        }
+
+        foreach ($popups as $popup) {
+            if (! $popup->audience->allows($user)) {
+                continue;
+            }
+
+            $image = $popup->getFirstMedia('image');
+
+            return [
+                'id' => $popup->id,
+                'title' => $popup->title,
+                // Markdown → sanitized HTML through the one renderer (D20).
+                'html' => $popup->body === null ? null : $this->markdown->render($popup->body),
+                'link_url' => $popup->link_url,
+                'link_label' => $popup->link_label,
+                'image_url' => $image?->getUrl('card'),
+                'frequency_days' => $popup->frequency_days,
+            ];
+        }
+
+        return null;
     }
 
     /**

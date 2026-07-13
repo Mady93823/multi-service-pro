@@ -30,11 +30,17 @@ class SupportTicketResource extends JsonResource
             'last_reply_at' => $this->last_reply_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
             'messages_count' => $this->whenCounted('messages'),
-            'user' => $this->whenLoaded('user', fn (): array => [
+            // A contact-form ticket from a signed-out visitor has no owner (M19):
+            // the name and email they typed stand in for one, so the admin queue
+            // never shows a nameless row. `whenLoaded` cannot express this — a
+            // loaded-but-null relation collapses the key to null before the
+            // closure runs — hence `when(relationLoaded(...))`.
+            'user' => $this->when($this->relationLoaded('user'), fn (): array => [
                 'id' => $this->user?->id,
-                'name' => $this->user?->name,
-                'email' => $this->user?->email,
+                'name' => $this->user->name ?? $this->guest_name,
+                'email' => $this->user->email ?? $this->guest_email,
             ]),
+            'is_guest' => $this->user_id === null,
             'booking' => $this->whenLoaded('booking', fn (): ?array => $this->booking === null ? null : [
                 'id' => $this->booking->id,
                 'code' => $this->booking->code,

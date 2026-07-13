@@ -106,6 +106,7 @@ class SettingsRegistry
             'appearance.login_headline' => ['group' => 'appearance', 'type' => SettingType::String, 'value' => null],
             'appearance.login_subcopy' => ['group' => 'appearance', 'type' => SettingType::String, 'value' => null],
             'appearance.login_image_url' => ['group' => 'appearance', 'type' => SettingType::String, 'value' => null],
+            'appearance.newsletter_enabled' => ['group' => 'appearance', 'type' => SettingType::Boolean, 'value' => true],
             'social.facebook' => ['group' => 'social', 'type' => SettingType::String, 'value' => null],
             'social.instagram' => ['group' => 'social', 'type' => SettingType::String, 'value' => null],
             'social.x' => ['group' => 'social', 'type' => SettingType::String, 'value' => null],

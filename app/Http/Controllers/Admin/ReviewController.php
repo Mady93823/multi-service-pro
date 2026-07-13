@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Marketing\Actions\PromoteReviewToTestimonial;
 use App\Domain\Reviews\Actions\ModerateReview;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\HideReviewRequest;
@@ -51,5 +52,20 @@ class ReviewController extends Controller
         $this->moderation->unhide($review);
 
         return back()->with('success', __('Review restored.'));
+    }
+
+    /**
+     * M19: one click from the moderation queue to the storefront. The quote is
+     * copied, not referenced — see PromoteReviewToTestimonial.
+     */
+    public function promote(Review $review, PromoteReviewToTestimonial $action): RedirectResponse
+    {
+        if ($review->is_hidden) {
+            return back()->with('error', __('A hidden review cannot be promoted.'));
+        }
+
+        $action->handle($review);
+
+        return back()->with('success', __('Review promoted to a testimonial.'));
     }
 }

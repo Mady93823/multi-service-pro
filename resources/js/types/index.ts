@@ -96,6 +96,17 @@ export interface SiteAppearance {
     login_image_url: string | null;
 }
 
+export interface SitePopup {
+    id: number;
+    title: string;
+    /** Sanitized HTML from the markdown source — the server is the only renderer (D20). */
+    html: string | null;
+    link_url: string | null;
+    link_label: string | null;
+    image_url: string | null;
+    frequency_days: number;
+}
+
 export interface SiteContent {
     menus: Record<string, SiteMenuLink[]>;
     appearance: SiteAppearance;
@@ -103,6 +114,45 @@ export interface SiteContent {
     cookie: { message: string; accept_label: string; decline_label: string | null; policy_slug: string | null } | null;
     /** Admin-authored snippets — storefront shells only, null everywhere else (D26). */
     custom_code: { css: string | null; js: string | null } | null;
+    newsletter: boolean;
+    /** The live popup for this visitor; the audience was decided on the server (M19). */
+    popup: SitePopup | null;
+}
+
+export interface Testimonial {
+    id: number;
+    name: string;
+    role: string | null;
+    quote: string;
+    rating: number | null;
+    sort_order: number;
+    is_active: boolean;
+    from_review: boolean;
+    avatar_url: string | null;
+}
+
+export interface Sponsor {
+    id: number;
+    name: string;
+    link_url: string | null;
+    sort_order: number;
+    is_active: boolean;
+    logo_url: string | null;
+}
+
+export interface Popup {
+    id: number;
+    title: string;
+    body: string | null;
+    link_url: string | null;
+    link_label: string | null;
+    audience: string;
+    audience_label: string;
+    frequency_days: number;
+    starts_at: string | null;
+    ends_at: string | null;
+    is_active: boolean;
+    image_url: string | null;
 }
 
 export interface CmsPage {

@@ -21,7 +21,10 @@ class SupportTicketMessageResource extends JsonResource
             'id' => $this->id,
             'body' => $this->body,
             'is_staff' => $this->is_staff,
-            'author_name' => $this->author?->name,
+            // A guest's contact-form message has no author row — fall back to the
+            // name they typed on the ticket (M19), when the caller loaded it.
+            'author_name' => $this->author->name
+                ?? ($this->relationLoaded('ticket') ? $this->ticket->guest_name : null),
             'created_at' => $this->created_at?->toIso8601String(),
             'attachments' => $this->getMedia('attachments')->map(fn (Media $media): array => [
                 'id' => $media->id,

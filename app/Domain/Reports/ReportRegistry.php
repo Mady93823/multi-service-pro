@@ -6,6 +6,7 @@ use App\Domain\Reports\Reports\BookingsReport;
 use App\Domain\Reports\Reports\EarningsReport;
 use App\Domain\Reports\Reports\ProvidersReport;
 use App\Domain\Reports\Reports\ServicesReport;
+use App\Domain\Reports\Reports\SubscribersReport;
 
 /**
  * Slug → report resolver. The route model-binds `{report}` through here so an
@@ -22,6 +23,9 @@ class ReportRegistry
         'earnings' => EarningsReport::class,
         'services' => ServicesReport::class,
         'providers' => ProvidersReport::class,
+        // M19: the newsletter list rides the export pipeline rather than growing
+        // a second one.
+        'subscribers' => SubscribersReport::class,
     ];
 
     public function find(string $slug): ?Report

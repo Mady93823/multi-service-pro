@@ -10,7 +10,7 @@ import AdminLayout from '@/layouts/admin-layout';
 import { useTrans } from '@/lib/i18n';
 import { type BreadcrumbItem, type Paginated, type Review } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Quote } from 'lucide-react';
 import { useState } from 'react';
 
 interface AdminReviewsProps {
@@ -179,47 +179,55 @@ function ReviewActions({ review }: { review: Review }) {
     }
 
     return (
-        <Dialog open={hideOpen} onOpenChange={setHideOpen}>
-            <DialogTrigger asChild>
-                <Button size="sm" variant="outline">
-                    <EyeOff className="mr-1 h-4 w-4" />
-                    {t('Hide')}
-                </Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>{t('Hide this review?')}</DialogTitle>
-                    <DialogDescription>
-                        {t('It disappears from the storefront and stops counting toward the professional’s rating. The customer keeps it.')}
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-2">
-                    <Label htmlFor={`hide-reason-${review.id}`}>{t('Reason')}</Label>
-                    <Textarea
-                        id={`hide-reason-${review.id}`}
-                        value={hide.data.reason}
-                        onChange={(event) => hide.setData('reason', event.target.value)}
-                    />
-                    <InputError message={hide.errors.reason} />
-                </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setHideOpen(false)} disabled={hide.processing}>
-                        {t('Cancel')}
+        <>
+            {/* M19: a good review becomes storefront copy in one click. */}
+            <Button size="sm" variant="ghost" onClick={() => router.post(route('admin.reviews.promote', review.id), {}, { preserveScroll: true })}>
+                <Quote className="mr-1 h-4 w-4" />
+                {t('Use as testimonial')}
+            </Button>
+
+            <Dialog open={hideOpen} onOpenChange={setHideOpen}>
+                <DialogTrigger asChild>
+                    <Button size="sm" variant="outline">
+                        <EyeOff className="mr-1 h-4 w-4" />
+                        {t('Hide')}
                     </Button>
-                    <Button
-                        variant="destructive"
-                        disabled={hide.processing}
-                        onClick={() =>
-                            hide.post(route('admin.reviews.hide', review.id), {
-                                preserveScroll: true,
-                                onSuccess: () => setHideOpen(false),
-                            })
-                        }
-                    >
-                        {t('Hide review')}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('Hide this review?')}</DialogTitle>
+                        <DialogDescription>
+                            {t('It disappears from the storefront and stops counting toward the professional’s rating. The customer keeps it.')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-2">
+                        <Label htmlFor={`hide-reason-${review.id}`}>{t('Reason')}</Label>
+                        <Textarea
+                            id={`hide-reason-${review.id}`}
+                            value={hide.data.reason}
+                            onChange={(event) => hide.setData('reason', event.target.value)}
+                        />
+                        <InputError message={hide.errors.reason} />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setHideOpen(false)} disabled={hide.processing}>
+                            {t('Cancel')}
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            disabled={hide.processing}
+                            onClick={() =>
+                                hide.post(route('admin.reviews.hide', review.id), {
+                                    preserveScroll: true,
+                                    onSuccess: () => setHideOpen(false),
+                                })
+                            }
+                        >
+                            {t('Hide review')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }

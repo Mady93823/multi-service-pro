@@ -66,7 +66,7 @@ class SupportTicketController extends Controller
         return Inertia::render('admin/tickets/show', [
             'ticket' => SupportTicketResource::make($ticket),
             'messages' => SupportTicketMessageResource::collection(
-                $ticket->messages()->with(['author:id,name', 'media'])->oldest()->get(),
+                $ticket->messages()->with(['author:id,name', 'ticket:id,guest_name', 'media'])->oldest()->get(),
             ),
             'canned_responses' => $canned,
             'admins' => User::query()

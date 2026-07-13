@@ -154,9 +154,7 @@ export default function AppearanceForm({ values }: { values: AppearanceValues })
                             {t('Remove image')}
                         </Button>
                     )}
-                    <p className="text-muted-foreground text-xs">
-                        {t('Leaving all three blank keeps the plain, centered login card.')}
-                    </p>
+                    <p className="text-muted-foreground text-xs">{t('Leaving all three blank keeps the plain, centered login card.')}</p>
                 </div>
             </div>
 

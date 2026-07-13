@@ -1,6 +1,7 @@
 import { ImpersonationBanner } from '@/components/impersonation-banner';
 import { CookieBanner } from '@/components/site/cookie-banner';
 import { CustomCode } from '@/components/site/custom-code';
+import { PopupModal } from '@/components/site/popup-modal';
 import SiteFooter from '@/components/site/site-footer';
 import SiteHeader from '@/components/site/site-header';
 import { useFlashToast } from '@/hooks/use-flash-toast';
@@ -27,6 +28,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
             <main className="mx-auto w-full flex-1 px-4 py-8 md:max-w-7xl">{children}</main>
 
             <SiteFooter />
+            <PopupModal />
             <CookieBanner />
             <CustomCode />
         </div>

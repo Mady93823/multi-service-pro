@@ -14,6 +14,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
+ * @property ?int $user_id
+ * @property ?string $guest_name
+ * @property ?string $guest_email
  * @property TicketStatus $status
  * @property TicketCategory $category
  * @property TicketPriority $priority
@@ -29,6 +32,10 @@ class SupportTicket extends Model
     protected $fillable = [
         'code',
         'user_id',
+        // Set instead of user_id when the ticket came from the public contact
+        // form (M19) — a visitor without an account still gets an answer.
+        'guest_name',
+        'guest_email',
         'booking_id',
         'subject',
         'category',

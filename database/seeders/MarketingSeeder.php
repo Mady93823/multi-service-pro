@@ -6,6 +6,7 @@ use App\Domain\Banners\Enums\BannerPlacement;
 use App\Domain\Coupons\Enums\CouponType;
 use App\Models\Banner;
 use App\Models\Coupon;
+use App\Models\Testimonial;
 use Illuminate\Database\Seeder;
 
 /**
@@ -48,5 +49,20 @@ class MarketingSeeder extends Seeder
             'sort_order' => 0,
             'is_active' => true,
         ]);
+
+        // M19 social proof. Testimonials ship without photos — the card renders
+        // the name alone until the admin picks one from the media library.
+        $testimonials = [
+            ['name' => 'Ananya Rao', 'role' => 'Customer, Bengaluru', 'quote' => 'Booked a deep clean on Friday, the team arrived on time and the flat has never looked better.'],
+            ['name' => 'Vikram Shetty', 'role' => 'Customer, Mumbai', 'quote' => 'Live tracking meant I knew exactly when to head home. No waiting around all afternoon.'],
+            ['name' => 'Priya Nair', 'role' => 'Customer, Kochi', 'quote' => 'Transparent pricing, GST invoice in the app, and the professional was genuinely skilled.'],
+        ];
+
+        foreach ($testimonials as $index => $data) {
+            Testimonial::query()->firstOrCreate(
+                ['name' => $data['name']],
+                [...$data, 'rating' => 5, 'sort_order' => $index + 1, 'is_active' => true],
+            );
+        }
     }
 }

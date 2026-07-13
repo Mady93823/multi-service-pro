@@ -1,3 +1,4 @@
+import { NewsletterForm } from '@/components/site/newsletter-form';
 import { useTrans } from '@/lib/i18n';
 import { type SharedData, type SiteMenuLink } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
@@ -43,6 +44,11 @@ export default function SiteFooter() {
                     </nav>
                 )}
                 {socials.length > 0 && <SocialRow socials={socials} className="mb-3 justify-center" />}
+                {site.newsletter && (
+                    <div className="mx-auto mb-4 max-w-sm text-left">
+                        <NewsletterForm />
+                    </div>
+                )}
                 {copyright}
             </footer>
         );
@@ -55,6 +61,7 @@ export default function SiteFooter() {
                     <p className="font-semibold">{name}</p>
                     {appearance.footer_about !== null && <p className="text-muted-foreground text-sm">{appearance.footer_about}</p>}
                     {socials.length > 0 && <SocialRow socials={socials} />}
+                    {site.newsletter && <NewsletterForm />}
                 </div>
 
                 {columns.map((column, index) =>

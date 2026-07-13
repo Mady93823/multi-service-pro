@@ -39,6 +39,7 @@ class AppearanceGroup extends SettingsGroup
             'appearance.login_headline',
             'appearance.login_subcopy',
             'appearance.login_image_url',
+            'appearance.newsletter_enabled',
         ];
     }
 
@@ -47,6 +48,7 @@ class AppearanceGroup extends SettingsGroup
         return [
             'header_variant' => ['required', 'string', 'in:'.implode(',', self::HEADER_VARIANTS)],
             'sticky_header' => ['boolean'],
+            'newsletter_enabled' => ['boolean'],
             'footer_variant' => ['required', 'string', 'in:'.implode(',', self::FOOTER_VARIANTS)],
             'footer_about' => ['nullable', 'string', 'max:500'],
             'copyright' => ['nullable', 'string', 'max:200'],
@@ -67,6 +69,7 @@ class AppearanceGroup extends SettingsGroup
         return [
             'header_variant' => $this->settings->string('appearance.header_variant', 'classic'),
             'sticky_header' => $this->settings->boolean('appearance.sticky_header', true),
+            'newsletter_enabled' => $this->settings->boolean('appearance.newsletter_enabled', true),
             'footer_variant' => $this->settings->string('appearance.footer_variant', 'columns'),
             'footer_about' => $this->settings->string('appearance.footer_about') ?: null,
             'copyright' => $this->settings->string('appearance.copyright') ?: null,
@@ -83,6 +86,7 @@ class AppearanceGroup extends SettingsGroup
     {
         $this->settings->set('appearance.header_variant', $data['header_variant']);
         $this->settings->set('appearance.sticky_header', $this->toggle($data, 'sticky_header'));
+        $this->settings->set('appearance.newsletter_enabled', $this->toggle($data, 'newsletter_enabled'));
         $this->settings->set('appearance.footer_variant', $data['footer_variant']);
 
         foreach (['footer_about', 'copyright', 'contact_email', 'contact_phone', 'contact_address', 'login_headline', 'login_subcopy', 'login_image_url'] as $field) {

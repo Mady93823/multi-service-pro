@@ -101,11 +101,7 @@ function MenuLink({ link }: { link: SiteMenuLink }) {
             <span className="text-muted-foreground group-hover:text-foreground cursor-default">{link.label}</span>
             <div className="bg-popover invisible absolute top-full left-0 z-50 min-w-40 rounded-md border p-1 opacity-0 shadow-md transition group-hover:visible group-hover:opacity-100">
                 {link.children.map((child) => (
-                    <Link
-                        key={`${child.label}-${child.url}`}
-                        href={child.url}
-                        className="hover:bg-accent block rounded px-2 py-1.5 text-sm"
-                    >
+                    <Link key={`${child.label}-${child.url}`} href={child.url} className="hover:bg-accent block rounded px-2 py-1.5 text-sm">
                         {child.label}
                     </Link>
                 ))}

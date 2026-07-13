@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Settings\SettingsGroupRegistry;
 use App\Domain\Settings\SettingsRegistry;
 use App\Models\ActivityLog;
 use App\Models\User;
@@ -64,8 +65,9 @@ test('each group renders its own screen with the group navigation', function () 
             ->where('group', 'localization')
             ->where('values.currency', 'INR')
             ->where('values.timezone', 'Asia/Kolkata')
-            // The nav lists every group, so no screen is unreachable.
-            ->has('groups', 12)
+            // The nav lists every group, so no screen is unreachable. Counted
+            // from the registry: a hardcoded number just breaks on the next one.
+            ->has('groups', count(app(SettingsGroupRegistry::class)->all()))
             // A group's screen carries its keys and nobody else's.
             ->missing('values.app_name'));
 });

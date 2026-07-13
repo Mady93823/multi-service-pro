@@ -1,5 +1,8 @@
+import AppearanceForm, { type AppearanceValues } from '@/components/admin/settings/appearance-form';
 import BookingForm, { type BookingValues } from '@/components/admin/settings/booking-form';
 import BrandingForm, { type BrandingValues } from '@/components/admin/settings/branding-form';
+import CookieForm, { type CookieValues } from '@/components/admin/settings/cookie-form';
+import CustomCodeForm, { type CustomCodeValues } from '@/components/admin/settings/custom-code-form';
 import DispatchForm, { type DispatchValues } from '@/components/admin/settings/dispatch-form';
 import FeaturesForm, { type FeaturesValues } from '@/components/admin/settings/features-form';
 import InvoiceForm, { type InvoiceValues } from '@/components/admin/settings/invoice-form';
@@ -8,6 +11,7 @@ import PaymentsForm, { type PaymentsValues } from '@/components/admin/settings/p
 import PayoutsForm, { type PayoutsValues } from '@/components/admin/settings/payouts-form';
 import ReferralsForm, { type ReferralsValues } from '@/components/admin/settings/referrals-form';
 import ReviewsForm, { type ReviewsValues } from '@/components/admin/settings/reviews-form';
+import SocialForm, { type SocialValues } from '@/components/admin/settings/social-form';
 import SupportForm, { type SupportValues } from '@/components/admin/settings/support-form';
 import TrackingForm, { type TrackingValues } from '@/components/admin/settings/tracking-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -75,6 +79,8 @@ export default function SettingsEdit({ group, title, description, groups, values
                         </CardHeader>
                         <CardContent>
                             {group === 'branding' && <BrandingForm values={values as unknown as BrandingValues} />}
+                            {group === 'appearance' && <AppearanceForm values={values as unknown as AppearanceValues} />}
+                            {group === 'social' && <SocialForm values={values as unknown as SocialValues} />}
                             {group === 'localization' && <LocalizationForm values={values as unknown as LocalizationValues} />}
                             {group === 'features' && <FeaturesForm values={values as unknown as FeaturesValues} />}
                             {group === 'booking' && <BookingForm values={values as unknown as BookingValues} />}
@@ -86,6 +92,8 @@ export default function SettingsEdit({ group, title, description, groups, values
                             {group === 'reviews' && <ReviewsForm values={values as unknown as ReviewsValues} />}
                             {group === 'referrals' && <ReferralsForm values={values as unknown as ReferralsValues} />}
                             {group === 'support' && <SupportForm values={values as unknown as SupportValues} />}
+                            {group === 'cookie' && <CookieForm values={values as unknown as CookieValues} />}
+                            {group === 'custom_code' && <CustomCodeForm values={values as unknown as CustomCodeValues} />}
                         </CardContent>
                     </Card>
                 </div>

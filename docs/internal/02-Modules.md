@@ -234,8 +234,8 @@ Rules: a group with one child is not a group; every leaf is a route, never a mod
 
 ## M19 Frontend CMS Pack
 The storefront becomes admin-editable end to end. All content markdown-or-plaintext, rendered through `MarkdownRenderer` (D20) — never raw HTML.
-- **Menu builder** — `menus` + `menu_items` (nested, sortable); locations `header` / `footer_col_1..3` / `mobile`; item targets: internal route, CMS page, blog post/category, custom URL; visibility per role/guest
-- **Homepage sections** — ordered, toggleable section content (hero copy + image, how-it-works steps, counters, categories strip, CTA band); the storefront home stops being hardcoded JSX
+- **Menu builder** — `menus` + `menu_items` (nested, sortable); locations `header` / `footer_1..3`; item targets: internal route, CMS page, blog post/category, custom URL; visibility per role/guest
+- ~~**Homepage sections**~~ — **moved to M20** (ADR D31): they were always going to become page-builder blocks, and building the model twice buys nothing. The storefront home keeps its current body until M20 replaces it with blocks
 - **Testimonials** — CRUD (name, role, avatar, quote, rating) **or** promote a real review to a testimonial (one click from M10's queue)
 - **Sponsors / partners** — logo strip (image + link + sort)
 - **Popup content** — scheduled promo modal (markdown + image + CTA), audience (guest / customer / provider), show-once cookie, frequency cap
@@ -249,6 +249,12 @@ The storefront becomes admin-editable end to end. All content markdown-or-plaint
 - **Contact form → inquiries** — public contact page; a submission **opens a support ticket** (M16) rather than a second inbox; honeypot + rate limit + optional reCaptcha (M24)
 - **Newsletter subscribers** — footer signup, list + CSV export (reuses M13's export pipeline), double-opt-in off by default
 - ✅ *Done when:* a fresh install can rebrand the entire storefront — menus, hero, sections, testimonials, footer, legal — without touching a `.tsx` file.
+
+> [!done] Shipped in two parts — part 1, site chrome (2026-07-13, ADR D30/D31)
+> **Menus.** `menus` (one row per location, `location` unique) + `menu_items` (self-referencing `parent_id`, `type` route/page/url, `target`, `visibility`, `sort_order`, `is_active`). `app/Domain/Cms`: `EnsureMenus` (locations create themselves), `SaveMenuItem` (re-parents defensively: a parent from another menu, itself, or a second nesting level is silently flattened to root), `ReorderMenu` (scoped to the menu — an id from another menu in the payload is ignored, not stolen), `DeleteMenuItem` (children cascade). **`SiteMenus` resolves the tree to plain links on the server and drops what it cannot resolve** (D30): route targets are allowlisted, page targets must be published, URLs must be `http(s)://` or `/`. Cached forever, flushed by the actions; **visibility is filtered per request, not cached**. Admin screen `/admin/menus`: one card per location, add/edit dialog (type-aware destination picker), up/down reorder, sub-links.
+> **Storefront chrome.** New `SiteContent` read model feeds one `site` shared prop (menus + appearance + social + cookie + custom code). `PublicLayout` is now assembled from `SiteHeader` (3 variants, optional sticky), `SiteFooter` (columns from the footer menus + about blurb + contact block + social; falls back to the M14 footer-page row when the menus are empty or the simple variant is chosen), `CookieBanner` (choice stored client-side only — recording a decline would *be* the tracking the visitor refused) and `CustomCode`. The login/registration page grows an admin-owned side panel (headline, sub-copy, image via `MediaPicker`) and stays the plain centered card when all three are blank.
+> **Custom CSS/JS (D26).** Off by default; injected **only** on storefront routes (`HandleInertiaRequests::isStorefront()`) — the admin panel never runs the snippet, so a broken one can always be removed from the screen that saved it. Injected as `textContent` on a real DOM node, never `dangerouslySetInnerHTML` (React does not execute a `<script>` it renders, and `innerHTML` would truncate a snippet containing `</script>`). Saves are audited by the existing settings logger, which records **keys only** — the code itself never lands in the activity log (asserted).
+> Four new settings groups: **Appearance**, **Social links**, **Cookie & GDPR**, **Custom CSS & JS** (16 groups now; `SettingsFixtures::payload()` and the coverage test carry them). 14 new tests (572 suite-wide, 2956 assertions).
 
 ## M20 Page Builder (block-based)
 - A page is an ordered list of **typed blocks** (`page_blocks`), each a validated JSON payload against a block schema — **not** a free-form drag canvas (ADR D22)

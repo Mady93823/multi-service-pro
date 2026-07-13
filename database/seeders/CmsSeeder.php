@@ -2,6 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Domain\Cms\Actions\EnsureMenus;
+use App\Domain\Cms\Enums\MenuItemType;
+use App\Domain\Cms\Enums\MenuLocation;
+use App\Domain\Cms\Enums\MenuVisibility;
+use App\Domain\Cms\SiteMenus;
 use App\Models\Faq;
 use App\Models\Language;
 use App\Models\Page;
@@ -68,5 +73,51 @@ class CmsSeeder extends Seeder
                 [...$data, 'is_active' => true, 'sort_order' => $index + 1],
             );
         }
+
+        $this->menus();
+    }
+
+    /**
+     * M19: the storefront's own navigation. Seeded so a fresh install has a
+     * header and a footer without the admin having to build one — every item
+     * here is editable or removable from /admin/menus.
+     */
+    private function menus(): void
+    {
+        $menus = app(EnsureMenus::class)->handle();
+
+        $items = [
+            MenuLocation::Header->value => [
+                ['label' => 'Services', 'type' => MenuItemType::Route, 'target' => 'catalog.index'],
+                ['label' => 'Help', 'type' => MenuItemType::Route, 'target' => 'support.tickets.index', 'visibility' => MenuVisibility::SignedIn],
+            ],
+            MenuLocation::FooterOne->value => [
+                ['label' => 'About Us', 'type' => MenuItemType::Page, 'target' => 'about-us'],
+                ['label' => 'All services', 'type' => MenuItemType::Route, 'target' => 'catalog.index'],
+            ],
+            MenuLocation::FooterTwo->value => [
+                ['label' => 'Terms & Conditions', 'type' => MenuItemType::Page, 'target' => 'terms-and-conditions'],
+                ['label' => 'Privacy Policy', 'type' => MenuItemType::Page, 'target' => 'privacy-policy'],
+            ],
+        ];
+
+        foreach ($items as $location => $links) {
+            $menu = $menus[$location];
+
+            foreach ($links as $index => $link) {
+                $menu->items()->firstOrCreate(
+                    ['label' => $link['label']],
+                    [
+                        'type' => $link['type']->value,
+                        'target' => $link['target'],
+                        'visibility' => ($link['visibility'] ?? MenuVisibility::Everyone)->value,
+                        'sort_order' => $index + 1,
+                        'is_active' => true,
+                    ],
+                );
+            }
+        }
+
+        app(SiteMenus::class)->flush();
     }
 }

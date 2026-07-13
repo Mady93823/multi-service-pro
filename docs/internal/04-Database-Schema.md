@@ -254,6 +254,8 @@ activity_logs            ← M13; append-only admin audit (created_at only, no u
 
 **M18 shipped (2026-07-13):** `media_assets` (id, name, `uploaded_by` FK nullOnDelete, timestamps) + the medialibrary `library` collection on the **public** disk, one file per asset. Consumers do not reference the row — picking **copies** the file into the consumer's collection and stamps `custom_properties->library_asset_id` on the copy (ADR D29). Usage, deletability and pruning all read that stamp; there is no join table. Banners keep their own `image` collection (now filled from the library).
 
+**M19 part 1 shipped (2026-07-13):** `menus` (id, `location` uniq — `header|footer_1|footer_2|footer_3`, name) + `menu_items` (id, `menu_id` FK cascade, `parent_id` FK self cascade, label, `type` `route|page|url`, `target`, `visibility` `everyone|guests|signed_in`, sort_order, is_active, idx(menu_id, parent_id, sort_order)). `target` means whatever `type` says: resolution and validation live in `SiteMenus` / `StoreMenuItemRequest`, and an item that cannot be resolved is **dropped from the storefront**, never rendered (ADR D30). The rest of M19's chrome (header/footer style, footer contact block, social links, cookie banner, custom CSS/JS, login-page look) is **settings keys, not tables** — four new groups in the existing `settings` table.
+
 **M17 shipped (2026-07-12):** no new table — `users.blocked_reason` (nullable string) joins `users.is_active`, which existed since M01 and was never enforced. `SetUserActive` is the only writer; `EnsureUserActive` (in the `web` group) signs a blocked account out on its next request; an admin can never be blocked (ADR D28). Settings gained no columns — the hub is a code-side regrouping of the existing `settings` table (D24).
 
 The rest below is not yet migrated. Shapes are indicative; the ADRs (D22–D27) are the binding part.
@@ -262,16 +264,6 @@ The rest below is not yet migrated. Shapes are indicative; the ADRs (D22–D27) 
 cities                   ← M25; zones gain city_id (FK restrict — a city with zones
   id, name, state, slug (uniq),  cannot vanish under live bookings)
   timezone, center_lat, center_lng, is_active, sort_order
-
-menus                    ← M19; location is the contract the theme renders against
-  id, name, location [header|footer_col_1|footer_col_2|footer_col_3|mobile] (uniq)
-
-menu_items               ← M19; self-nesting one level; target is a discriminated
-  id, menu_id FK cascade,        union, not a free URL string, so a page rename
-  parent_id FK self nullable,    cannot silently 404 a nav item
-  label, target_type [route|page|blog_post|blog_category|url],
-  target_value, is_external, visible_to [all|guest|customer|provider],
-  sort_order, is_active
 
 page_blocks              ← M20; ONE row per block, payload validated against the
   id, page_id FK cascade,        BlockRegistry schema for `type` on write;

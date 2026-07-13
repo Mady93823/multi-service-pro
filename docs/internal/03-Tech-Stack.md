@@ -215,6 +215,20 @@ A medialibrary row belongs to exactly one model. The obvious media-manager desig
 
 The library is also the *whole* inventory, not a parallel one: the banner form's own file input routes through `UploadMediaAsset` first, so an image uploaded on a consumer's form still shows up in the manager. Two other rules are load-bearing. The library lives on the **public** disk and lists **only** its own collection — KYC documents, booking photos, review photos and ticket attachments are customer data on the private disk, and a media *manager* that browsed them would be a data leak wearing a CRUD screen. And uploads are raster-only (jpg/png/webp): conversions are generated eagerly, and an SVG is a script container that the storefront renders inline. The picker talks JSON rather than Inertia because it opens on top of a half-filled form — an Inertia visit would replace the page and throw that form away.
 
+### D30 — Menus are resolved on the server, and an item that cannot be resolved is dropped (2026-07-13)
+
+A menu item points at *something*: a storefront route, a CMS page, or a URL. All three are admin-supplied strings, and all three can rot — a page gets unpublished, a route gets renamed, a URL gets pasted with a `javascript:` scheme.
+
+`SiteMenus` resolves the whole tree to plain `{label, url, children}` links **on the server**, caches it, and **drops** anything it cannot resolve. A route target must be in an explicit allowlist (`MenuItemType::allowedRoutes()`), because `route($name)` on user input throws for an unknown name — and a valid-but-wrong name (an admin route, a POST-only endpoint) would put a link in the header that no visitor can follow. A page target must currently be published. A URL must start with `http(s)://` or `/`, the same rule banner links already carry: an `href` is a script sink. The React side therefore receives links it can render blindly; it never resolves, never validates, and cannot 500 on a rotten item.
+
+Visibility (everyone / signed-out / signed-in) is **not** baked into the cached tree — one cache serves guests and signed-in users, and the filter runs per request. Locations are fixed (`header`, `footer_1..3`) and each owns exactly one menu, created on first sight by `EnsureMenus`: an admin can never create a menu that no location renders.
+
+### D31 — Homepage sections are not built twice; they are M20 blocks from the start (2026-07-13)
+
+The M19 spec listed "homepage sections" (hero copy, how-it-works, counters, CTA band) as its own content model, with a note that they would *become* page-builder blocks once M20 landed. That is two content models, two admin screens and a migration between them, for the same pixels.
+
+They are dropped from M19 and built once, in M20, as blocks on a reserved `home` page (D22). M19 ships the site *chrome* — menus, header/footer style, footer content, social, cookie banner, custom code, login-page look — plus its marketing content (testimonials, sponsors, popups, contact, newsletter). The storefront home keeps its current hardcoded body until M20 replaces it wholesale.
+
 ## UI sourcing workflow (shoogle.dev)
 
 1. Need a block (e.g., booking form, dashboard, pricing card) → search **shoogle.dev**

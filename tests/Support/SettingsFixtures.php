@@ -83,6 +83,20 @@ class SettingsFixtures
             'support' => [
                 'support_max_attachments' => 3,
             ],
+            'appearance' => [
+                'header_variant' => 'classic',
+                'sticky_header' => true,
+                'footer_variant' => 'columns',
+            ],
+            'social' => [
+                'facebook' => 'https://facebook.com/acme',
+            ],
+            'cookie' => [
+                'enabled' => false,
+            ],
+            'custom_code' => [
+                'enabled' => false,
+            ],
         ];
     }
 

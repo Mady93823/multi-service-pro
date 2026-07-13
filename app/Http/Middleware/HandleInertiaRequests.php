@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Domain\Admin\Actions\StartImpersonation;
 use App\Domain\Bookings\CartManager;
 use App\Domain\Cms\FooterPages;
+use App\Domain\Cms\SiteContent;
 use App\Domain\Localization\TranslationLoader;
 use App\Domain\Settings\SettingsRegistry;
 use App\Models\User;
@@ -73,7 +74,18 @@ class HandleInertiaRequests extends Middleware
             'impersonation' => $this->impersonation($request),
             // M14: white-label footer links — cached, flushed on page save.
             'footer_pages' => app(FooterPages::class)->all(),
+            // M19: menus, header/footer style, social, cookie banner, custom code.
+            'site' => app(SiteContent::class)->share($request->user(), $this->isStorefront($request)),
         ]);
+    }
+
+    /**
+     * The public site, as opposed to the admin / provider panels or the
+     * installer. Custom CSS/JS is shared with the storefront only (D26).
+     */
+    private function isStorefront(Request $request): bool
+    {
+        return ! $request->is('admin', 'admin/*', 'provider', 'provider/*', 'install', 'install/*');
     }
 
     /**

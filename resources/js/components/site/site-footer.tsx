@@ -1,0 +1,150 @@
+import { useTrans } from '@/lib/i18n';
+import { type SharedData, type SiteMenuLink } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
+import { Mail, MapPin, Phone } from 'lucide-react';
+
+const SOCIAL_LABELS: Record<string, string> = {
+    facebook: 'Facebook',
+    instagram: 'Instagram',
+    x: 'X',
+    youtube: 'YouTube',
+    linkedin: 'LinkedIn',
+    whatsapp: 'WhatsApp',
+};
+
+/**
+ * Storefront footer (M19): columns come from the footer menus, the about blurb
+ * and contact block from the Appearance settings, the icons from Social links.
+ * Nothing here is hardcoded copy — the white-label rule reaches the footer too.
+ */
+export default function SiteFooter() {
+    const { name, site, footer_pages } = usePage<SharedData>().props;
+    const t = useTrans();
+
+    const { appearance, social } = site;
+    const columns = [site.menus.footer_1 ?? [], site.menus.footer_2 ?? [], site.menus.footer_3 ?? []];
+    const hasColumns = columns.some((column) => column.length > 0);
+    const socials = Object.entries(social);
+
+    const copyright = appearance.copyright ?? `© ${new Date().getFullYear()} ${name}`;
+
+    // The simple variant (and an install whose footer menus are still empty)
+    // falls back to the M14 footer-page links, so the legal links never vanish.
+    if (appearance.footer_variant === 'simple' || !hasColumns) {
+        return (
+            <footer className="border-sidebar-border/80 text-muted-foreground border-t py-6 text-center text-sm">
+                {footer_pages.length > 0 && (
+                    <nav className="mb-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+                        {footer_pages.map((page) => (
+                            <Link key={page.slug} href={`/p/${page.slug}`} className="hover:text-foreground underline-offset-2 hover:underline">
+                                {page.title}
+                            </Link>
+                        ))}
+                    </nav>
+                )}
+                {socials.length > 0 && <SocialRow socials={socials} className="mb-3 justify-center" />}
+                {copyright}
+            </footer>
+        );
+    }
+
+    return (
+        <footer className="border-sidebar-border/80 border-t">
+            <div className="mx-auto grid w-full gap-8 px-4 py-10 md:max-w-7xl md:grid-cols-4">
+                <div className="space-y-3">
+                    <p className="font-semibold">{name}</p>
+                    {appearance.footer_about !== null && <p className="text-muted-foreground text-sm">{appearance.footer_about}</p>}
+                    {socials.length > 0 && <SocialRow socials={socials} />}
+                </div>
+
+                {columns.map((column, index) =>
+                    column.length === 0 ? null : (
+                        <div key={index} className="space-y-2">
+                            <FooterColumn links={column} />
+                        </div>
+                    ),
+                )}
+
+                {(appearance.contact_email !== null || appearance.contact_phone !== null || appearance.contact_address !== null) && (
+                    <div className="space-y-2">
+                        <p className="text-sm font-semibold">{t('Contact')}</p>
+                        <ul className="text-muted-foreground space-y-2 text-sm">
+                            {appearance.contact_email !== null && (
+                                <li className="flex items-start gap-2">
+                                    <Mail className="mt-0.5 h-4 w-4 shrink-0" />
+                                    <a href={`mailto:${appearance.contact_email}`} className="hover:text-foreground">
+                                        {appearance.contact_email}
+                                    </a>
+                                </li>
+                            )}
+                            {appearance.contact_phone !== null && (
+                                <li className="flex items-start gap-2">
+                                    <Phone className="mt-0.5 h-4 w-4 shrink-0" />
+                                    <a href={`tel:${appearance.contact_phone}`} className="hover:text-foreground">
+                                        {appearance.contact_phone}
+                                    </a>
+                                </li>
+                            )}
+                            {appearance.contact_address !== null && (
+                                <li className="flex items-start gap-2">
+                                    <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
+                                    <span>{appearance.contact_address}</span>
+                                </li>
+                            )}
+                        </ul>
+                    </div>
+                )}
+            </div>
+
+            <div className="border-sidebar-border/80 text-muted-foreground border-t py-4 text-center text-sm">{copyright}</div>
+        </footer>
+    );
+}
+
+function FooterColumn({ links }: { links: SiteMenuLink[] }) {
+    return (
+        <ul className="space-y-2 text-sm">
+            {links.map((link) => (
+                <li key={`${link.label}-${link.url}`}>
+                    <Link href={link.url} className="text-muted-foreground hover:text-foreground">
+                        {link.label}
+                    </Link>
+                    {link.children.length > 0 && (
+                        <ul className="mt-2 ml-3 space-y-2">
+                            {link.children.map((child) => (
+                                <li key={`${child.label}-${child.url}`}>
+                                    <Link href={child.url} className="text-muted-foreground hover:text-foreground">
+                                        {child.label}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </li>
+            ))}
+        </ul>
+    );
+}
+
+/**
+ * Names, not brand glyphs: lucide dropped its brand icons, and shipping other
+ * companies' marks in a white-label product is a licensing problem the buyer
+ * inherits.
+ */
+function SocialRow({ socials, className }: { socials: [string, string][]; className?: string }) {
+    return (
+        <div className={`flex flex-wrap items-center gap-2 ${className ?? ''}`}>
+            {socials.map(([network, url]) => (
+                <a
+                    key={network}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-foreground hover:border-foreground/40 rounded-full border px-3 py-1 text-xs"
+                >
+                    {SOCIAL_LABELS[network] ?? network}
+                </a>
+            ))}
+        </div>
+    );
+}

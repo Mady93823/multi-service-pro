@@ -180,6 +180,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Coupons + banners (M12).
     Route::resource('coupons', Admin\CouponController::class)->except(['show']);
     Route::resource('banners', Admin\BannerController::class)->except(['show']);
+    // Menus (M19) — items belong to a location's menu, which always exists.
+    Route::get('menus', [Admin\MenuController::class, 'index'])->name('menus.index');
+    Route::post('menus/{menu}/items', [Admin\MenuController::class, 'store'])->name('menus.items.store');
+    Route::put('menus/{menu}/items/{item}', [Admin\MenuController::class, 'update'])->name('menus.items.update');
+    Route::delete('menus/{menu}/items/{item}', [Admin\MenuController::class, 'destroy'])->name('menus.items.destroy');
+    Route::post('menus/{menu}/reorder', [Admin\MenuController::class, 'reorder'])->name('menus.reorder');
     // CMS + language manager (M14).
     Route::resource('pages', Admin\PageController::class)->except(['show']);
     Route::resource('faqs', Admin\FaqController::class)->except(['show']);

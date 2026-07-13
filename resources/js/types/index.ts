@@ -70,7 +70,39 @@ export interface SharedData {
     impersonation: { user_name: string } | null;
     /** Published pages flagged for the storefront footer (M14, white-label). */
     footer_pages: { title: string; slug: string }[];
+    /** Storefront chrome: menus, header/footer style, social, cookie, custom code (M19). */
+    site: SiteContent;
     [key: string]: unknown;
+}
+
+/** A resolved menu link — the server dropped anything it could not resolve (M19). */
+export interface SiteMenuLink {
+    label: string;
+    url: string;
+    children: SiteMenuLink[];
+}
+
+export interface SiteAppearance {
+    header_variant: 'classic' | 'centered' | 'minimal';
+    sticky_header: boolean;
+    footer_variant: 'columns' | 'simple';
+    footer_about: string | null;
+    copyright: string | null;
+    contact_email: string | null;
+    contact_phone: string | null;
+    contact_address: string | null;
+    login_headline: string | null;
+    login_subcopy: string | null;
+    login_image_url: string | null;
+}
+
+export interface SiteContent {
+    menus: Record<string, SiteMenuLink[]>;
+    appearance: SiteAppearance;
+    social: Record<string, string>;
+    cookie: { message: string; accept_label: string; decline_label: string | null; policy_slug: string | null } | null;
+    /** Admin-authored snippets — storefront shells only, null everywhere else (D26). */
+    custom_code: { css: string | null; js: string | null } | null;
 }
 
 export interface CmsPage {

@@ -93,6 +93,35 @@ class SettingsRegistry
             // a JSON list of {title, body} the admin reply box can insert.
             'support.max_attachments' => ['group' => 'support', 'type' => SettingType::Integer, 'value' => 3],
             'support.canned_responses' => ['group' => 'support', 'type' => SettingType::Json, 'value' => []],
+            // M19. Storefront chrome: header/footer look, footer contact block
+            // and the login page's side panel.
+            'appearance.header_variant' => ['group' => 'appearance', 'type' => SettingType::String, 'value' => 'classic'],
+            'appearance.sticky_header' => ['group' => 'appearance', 'type' => SettingType::Boolean, 'value' => true],
+            'appearance.footer_variant' => ['group' => 'appearance', 'type' => SettingType::String, 'value' => 'columns'],
+            'appearance.footer_about' => ['group' => 'appearance', 'type' => SettingType::String, 'value' => null],
+            'appearance.copyright' => ['group' => 'appearance', 'type' => SettingType::String, 'value' => null],
+            'appearance.contact_email' => ['group' => 'appearance', 'type' => SettingType::String, 'value' => null],
+            'appearance.contact_phone' => ['group' => 'appearance', 'type' => SettingType::String, 'value' => null],
+            'appearance.contact_address' => ['group' => 'appearance', 'type' => SettingType::String, 'value' => null],
+            'appearance.login_headline' => ['group' => 'appearance', 'type' => SettingType::String, 'value' => null],
+            'appearance.login_subcopy' => ['group' => 'appearance', 'type' => SettingType::String, 'value' => null],
+            'appearance.login_image_url' => ['group' => 'appearance', 'type' => SettingType::String, 'value' => null],
+            'social.facebook' => ['group' => 'social', 'type' => SettingType::String, 'value' => null],
+            'social.instagram' => ['group' => 'social', 'type' => SettingType::String, 'value' => null],
+            'social.x' => ['group' => 'social', 'type' => SettingType::String, 'value' => null],
+            'social.youtube' => ['group' => 'social', 'type' => SettingType::String, 'value' => null],
+            'social.linkedin' => ['group' => 'social', 'type' => SettingType::String, 'value' => null],
+            'social.whatsapp' => ['group' => 'social', 'type' => SettingType::String, 'value' => null],
+            'cookie.enabled' => ['group' => 'cookie', 'type' => SettingType::Boolean, 'value' => false],
+            'cookie.message' => ['group' => 'cookie', 'type' => SettingType::String, 'value' => null],
+            'cookie.accept_label' => ['group' => 'cookie', 'type' => SettingType::String, 'value' => null],
+            'cookie.decline_label' => ['group' => 'cookie', 'type' => SettingType::String, 'value' => null],
+            'cookie.policy_slug' => ['group' => 'cookie', 'type' => SettingType::String, 'value' => null],
+            // Off by default and storefront-only: an admin snippet runs script on
+            // every visitor's page (D26).
+            'custom_code.enabled' => ['group' => 'custom_code', 'type' => SettingType::Boolean, 'value' => false],
+            'custom_code.css' => ['group' => 'custom_code', 'type' => SettingType::String, 'value' => null],
+            'custom_code.js' => ['group' => 'custom_code', 'type' => SettingType::String, 'value' => null],
         ];
     }
 

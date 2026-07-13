@@ -2,8 +2,11 @@
 
 namespace App\Domain\Settings;
 
+use App\Domain\Settings\Groups\AppearanceGroup;
 use App\Domain\Settings\Groups\BookingGroup;
 use App\Domain\Settings\Groups\BrandingGroup;
+use App\Domain\Settings\Groups\CookieGroup;
+use App\Domain\Settings\Groups\CustomCodeGroup;
 use App\Domain\Settings\Groups\DispatchGroup;
 use App\Domain\Settings\Groups\FeaturesGroup;
 use App\Domain\Settings\Groups\InvoiceGroup;
@@ -13,6 +16,7 @@ use App\Domain\Settings\Groups\PayoutsGroup;
 use App\Domain\Settings\Groups\ReferralsGroup;
 use App\Domain\Settings\Groups\ReviewsGroup;
 use App\Domain\Settings\Groups\SettingsGroup;
+use App\Domain\Settings\Groups\SocialGroup;
 use App\Domain\Settings\Groups\SupportGroup;
 use App\Domain\Settings\Groups\TrackingGroup;
 
@@ -28,6 +32,8 @@ class SettingsGroupRegistry
     /** @var list<class-string<SettingsGroup>> */
     private const GROUPS = [
         BrandingGroup::class,
+        AppearanceGroup::class,
+        SocialGroup::class,
         LocalizationGroup::class,
         FeaturesGroup::class,
         BookingGroup::class,
@@ -39,6 +45,8 @@ class SettingsGroupRegistry
         ReviewsGroup::class,
         ReferralsGroup::class,
         SupportGroup::class,
+        CookieGroup::class,
+        CustomCodeGroup::class,
     ];
 
     /** @var array<string, SettingsGroup>|null */

@@ -3,6 +3,7 @@
 namespace App\Domain\Settings;
 
 use App\Domain\Settings\Groups\AppearanceGroup;
+use App\Domain\Settings\Groups\BlogGroup;
 use App\Domain\Settings\Groups\BookingGroup;
 use App\Domain\Settings\Groups\BrandingGroup;
 use App\Domain\Settings\Groups\CookieGroup;
@@ -45,6 +46,7 @@ class SettingsGroupRegistry
         ReviewsGroup::class,
         ReferralsGroup::class,
         SupportGroup::class,
+        BlogGroup::class,
         CookieGroup::class,
         CustomCodeGroup::class,
     ];

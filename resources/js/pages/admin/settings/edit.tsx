@@ -1,4 +1,5 @@
 import AppearanceForm, { type AppearanceValues } from '@/components/admin/settings/appearance-form';
+import BlogForm, { type BlogValues } from '@/components/admin/settings/blog-form';
 import BookingForm, { type BookingValues } from '@/components/admin/settings/booking-form';
 import BrandingForm, { type BrandingValues } from '@/components/admin/settings/branding-form';
 import CookieForm, { type CookieValues } from '@/components/admin/settings/cookie-form';
@@ -92,6 +93,7 @@ export default function SettingsEdit({ group, title, description, groups, values
                             {group === 'reviews' && <ReviewsForm values={values as unknown as ReviewsValues} />}
                             {group === 'referrals' && <ReferralsForm values={values as unknown as ReferralsValues} />}
                             {group === 'support' && <SupportForm values={values as unknown as SupportValues} />}
+                            {group === 'blog' && <BlogForm values={values as unknown as BlogValues} />}
                             {group === 'cookie' && <CookieForm values={values as unknown as CookieValues} />}
                             {group === 'custom_code' && <CustomCodeForm values={values as unknown as CustomCodeValues} />}
                         </CardContent>

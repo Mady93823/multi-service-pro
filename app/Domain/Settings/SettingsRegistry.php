@@ -120,6 +120,11 @@ class SettingsRegistry
             'cookie.policy_slug' => ['group' => 'cookie', 'type' => SettingType::String, 'value' => null],
             // Off by default and storefront-only: an admin snippet runs script on
             // every visitor's page (D26).
+            // M21. The blog; `enabled` off 404s /blog and every post.
+            'blog.enabled' => ['group' => 'blog', 'type' => SettingType::Boolean, 'value' => true],
+            'blog.posts_per_page' => ['group' => 'blog', 'type' => SettingType::Integer, 'value' => 9],
+            'blog.show_author' => ['group' => 'blog', 'type' => SettingType::Boolean, 'value' => true],
+            'blog.related_count' => ['group' => 'blog', 'type' => SettingType::Integer, 'value' => 3],
             'custom_code.enabled' => ['group' => 'custom_code', 'type' => SettingType::Boolean, 'value' => false],
             'custom_code.css' => ['group' => 'custom_code', 'type' => SettingType::String, 'value' => null],
             'custom_code.js' => ['group' => 'custom_code', 'type' => SettingType::String, 'value' => null],

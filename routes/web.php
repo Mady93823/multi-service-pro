@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\BlogController;
 use App\Http\Controllers\BookingPhotoController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\Customer;
@@ -25,6 +26,12 @@ Route::get('/', [Customer\HomeController::class, 'index'])->name('home');
 
 // CMS pages (M14) — reserved /p/ prefix so a page slug can never shadow a route.
 Route::get('p/{page:slug}', [Customer\PageController::class, 'show'])->name('pages.show');
+
+// Blog (M21). `feed` is declared before `{post:slug}` — otherwise a post could
+// never be called "feed", and the slug route would swallow the RSS URL.
+Route::get('blog', [BlogController::class, 'index'])->name('blog.index');
+Route::get('blog/feed', [BlogController::class, 'feed'])->name('blog.feed');
+Route::get('blog/{post:slug}', [BlogController::class, 'show'])->name('blog.show');
 
 // Contact form (M19) — a submission opens a support ticket (M16), guests
 // included. Throttled + honeypot: the form is public and bots find it.
@@ -225,6 +232,18 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('pages/{page}/blocks/{block}/duplicate', [Admin\PageBlockController::class, 'duplicate'])->name('pages.blocks.duplicate');
     Route::delete('pages/{page}/blocks/{block}', [Admin\PageBlockController::class, 'destroy'])->name('pages.blocks.destroy');
     Route::resource('faqs', Admin\FaqController::class)->except(['show']);
+    // Blog (M21). Categories sit under the posts prefix but are their own
+    // screen — `blog/categories` is declared before `blog/{post}`.
+    Route::get('blog/categories', [Admin\BlogCategoryController::class, 'index'])->name('blog.categories.index');
+    Route::post('blog/categories', [Admin\BlogCategoryController::class, 'store'])->name('blog.categories.store');
+    Route::put('blog/categories/{category}', [Admin\BlogCategoryController::class, 'update'])->name('blog.categories.update');
+    Route::delete('blog/categories/{category}', [Admin\BlogCategoryController::class, 'destroy'])->name('blog.categories.destroy');
+    Route::get('blog', [Admin\BlogPostController::class, 'index'])->name('blog.index');
+    Route::get('blog/create', [Admin\BlogPostController::class, 'create'])->name('blog.create');
+    Route::post('blog', [Admin\BlogPostController::class, 'store'])->name('blog.store');
+    Route::get('blog/{post}/edit', [Admin\BlogPostController::class, 'edit'])->name('blog.edit');
+    Route::put('blog/{post}', [Admin\BlogPostController::class, 'update'])->name('blog.update');
+    Route::delete('blog/{post}', [Admin\BlogPostController::class, 'destroy'])->name('blog.destroy');
     Route::get('languages', [Admin\LanguageController::class, 'index'])->name('languages.index');
     Route::post('languages', [Admin\LanguageController::class, 'store'])->name('languages.store');
     Route::put('languages/{language}', [Admin\LanguageController::class, 'update'])->name('languages.update');

@@ -902,3 +902,33 @@ export interface EditableBlock {
     ends_at: string | null;
     image_urls: Record<number, string>;
 }
+
+/** A blog category (M21). */
+export interface BlogCategory {
+    id: number;
+    name: string;
+    slug: string;
+    description: string | null;
+    sort_order: number;
+    is_active: boolean;
+    posts_count?: number;
+}
+
+/** A blog post (M21). `body` is the markdown source — admin screens only. */
+export interface BlogPost {
+    id: number;
+    title: string;
+    slug: string;
+    excerpt: string | null;
+    body?: string;
+    tags: string[];
+    is_featured: boolean;
+    is_published: boolean;
+    published_at: string | null;
+    meta_title: string | null;
+    meta_description: string | null;
+    cover_url: string | null;
+    cover_hero_url: string | null;
+    category?: BlogCategory | null;
+    author?: string | null;
+}

@@ -99,6 +99,8 @@ export default function AdminLayout({ children, breadcrumbs }: AdminLayoutProps)
             children: [
                 { title: t('Menus'), url: '/admin/menus' },
                 { title: t('Pages'), url: '/admin/pages' },
+                { title: t('Blog'), url: '/admin/blog' },
+                { title: t('Blog categories'), url: '/admin/blog/categories' },
                 { title: t('FAQs'), url: '/admin/faqs' },
                 { title: t('Languages'), url: '/admin/languages' },
             ],

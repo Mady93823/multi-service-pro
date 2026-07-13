@@ -97,6 +97,12 @@ class SettingsFixtures
             'custom_code' => [
                 'enabled' => false,
             ],
+            'blog' => [
+                'blog_enabled' => true,
+                'blog_posts_per_page' => 9,
+                'blog_show_author' => true,
+                'blog_related_count' => 3,
+            ],
         ];
     }
 

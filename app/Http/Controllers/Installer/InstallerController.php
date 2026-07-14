@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Installer;
 
+use App\Domain\Installer\DeploymentGuide;
 use App\Domain\Installer\EnvWriter;
 use App\Domain\Installer\InstallLock;
 use App\Domain\Installer\RequirementsChecker;
@@ -10,6 +11,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Installer\StoreAdminRequest;
 use App\Http\Requests\Installer\StoreDatabaseRequest;
 use App\Models\User;
+use Database\Seeders\CatalogSeeder;
+use Database\Seeders\CitySeeder;
+use Database\Seeders\CmsSeeder;
+use Database\Seeders\DemoAccountSeeder;
+use Database\Seeders\RoleSeeder;
+use Database\Seeders\SettingsSeeder;
+use Database\Seeders\ZoneSeeder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -24,6 +32,27 @@ use PDOException;
 
 class InstallerController extends Controller
 {
+    /**
+     * Seeded on every install. `InstallerSeedTest` asserts this list stays in
+     * step with what a working site actually needs — a module that adds a
+     * load-bearing row and forgets the wizard is a bug only a fresh VPS finds.
+     *
+     * @var list<class-string>
+     */
+    private const BASE_SEEDERS = [
+        RoleSeeder::class,
+        SettingsSeeder::class,
+        CmsSeeder::class,
+    ];
+
+    /** @var list<class-string> */
+    private const DEMO_SEEDERS = [
+        DemoAccountSeeder::class,
+        CatalogSeeder::class,
+        CitySeeder::class,
+        ZoneSeeder::class,
+    ];
+
     public function requirements(RequirementsChecker $checker): Response
     {
         return Inertia::render('installer/requirements', [
@@ -62,6 +91,8 @@ class InstallerController extends Controller
             ]);
         }
 
+        $secure = str_starts_with(Str::lower($data['app_url']), 'https://');
+
         EnvWriter::forApp()->write([
             'APP_NAME' => $data['app_name'],
             'APP_URL' => $data['app_url'],
@@ -73,9 +104,33 @@ class InstallerController extends Controller
             'DB_DATABASE' => $data['database'],
             'DB_USERNAME' => $data['username'],
             'DB_PASSWORD' => $password,
+
+            // A session cookie that can travel over plain HTTP on an HTTPS site
+            // is a session cookie an attacker can strip. The wizard knows the
+            // scheme — the buyer should not have to know this rule exists (P7.3).
+            'SESSION_SECURE_COOKIE' => $secure ? 'true' : 'false',
+
+            // The install is a real deployment, not a demo: durable session,
+            // cache and queue, so a restart does not log everyone out and a
+            // notification is not sent inside the customer's own request.
+            'SESSION_DRIVER' => 'database',
+            'CACHE_STORE' => 'database',
+            'QUEUE_CONNECTION' => 'database',
+
+            // Realtime. The app id/key/secret are minted per install — which is
+            // exactly why the browser reads the key from the response and not
+            // from the prebuilt bundle (P7.3, ReverbConfig).
+            'BROADCAST_CONNECTION' => 'reverb',
             'REVERB_APP_ID' => random_int(100000, 999999),
             'REVERB_APP_KEY' => Str::lower(Str::random(20)),
             'REVERB_APP_SECRET' => Str::lower(Str::random(24)),
+            // What the *browser* dials: the site's own host, through the proxy.
+            'REVERB_HOST' => (string) parse_url($data['app_url'], PHP_URL_HOST),
+            'REVERB_PORT' => $secure ? 443 : 8080,
+            'REVERB_SCHEME' => $secure ? 'https' : 'http',
+            // What the reverb:start process binds to, behind that proxy.
+            'REVERB_SERVER_HOST' => '0.0.0.0',
+            'REVERB_SERVER_PORT' => 8080,
         ]);
 
         Artisan::call('config:clear');
@@ -97,12 +152,21 @@ class InstallerController extends Controller
 
         try {
             Artisan::call('migrate', ['--force' => true]);
-            Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\RoleSeeder', '--force' => true]);
-            Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\SettingsSeeder', '--force' => true]);
+
+            // The floor of a working install, not a demo of one: the roles, the
+            // settings defaults — and the CMS, because `lang/en.json` needs its
+            // `languages` row, the footer needs its legal pages, and the home
+            // page IS a page (M20). A site with no `home` row still renders (the
+            // block reader falls back), but the buyer would then have nothing to
+            // edit and no way to discover that the home page is editable at all.
+            foreach (self::BASE_SEEDERS as $seeder) {
+                Artisan::call('db:seed', ['--class' => $seeder, '--force' => true]);
+            }
 
             if ($data['demo'] ?? false) {
-                Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\DemoAccountSeeder', '--force' => true]);
-                Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\CatalogSeeder', '--force' => true]);
+                foreach (self::DEMO_SEEDERS as $seeder) {
+                    Artisan::call('db:seed', ['--class' => $seeder, '--force' => true]);
+                }
             }
         } catch (\Throwable $e) {
             throw ValidationException::withMessages([
@@ -161,8 +225,13 @@ class InstallerController extends Controller
         return redirect()->route('install.finish');
     }
 
-    public function finish(): Response
+    public function finish(DeploymentGuide $guide): Response
     {
-        return Inertia::render('installer/finish');
+        // The wizard's last screen is the one that decides whether the install is
+        // actually alive: cron, a queue worker and Reverb are all invisible when
+        // missing — every page still loads, and only the things that matter stop.
+        return Inertia::render('installer/finish', [
+            'deployment' => $guide->handle(),
+        ]);
     }
 }

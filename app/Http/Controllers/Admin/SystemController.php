@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Domain\Activity\ActivityLogger;
+use App\Domain\Installer\DeploymentGuide;
 use App\Domain\System\Actions\RunUpdate;
 use App\Domain\System\ScheduleStatus;
 use App\Domain\System\SystemHealth;
@@ -17,7 +18,7 @@ use Inertia\Response;
  */
 class SystemController extends Controller
 {
-    public function index(SystemHealth $health, ScheduleStatus $schedule): Response
+    public function index(SystemHealth $health, ScheduleStatus $schedule, DeploymentGuide $guide): Response
     {
         return Inertia::render('admin/system/index', [
             'about' => $health->about(),
@@ -28,6 +29,15 @@ class SystemController extends Controller
                 'cron_line' => $schedule->cronLine(),
                 'tasks' => $schedule->tasks(),
             ],
+            // The queue is the quieter of the two dead processes: no worker means
+            // every notification is written and none is sent (P7.3).
+            'queue' => [
+                'last_run' => $schedule->queueLastRun()?->toIso8601String(),
+                'is_stale' => $schedule->queueIsStale(),
+            ],
+            // The same copy-paste blocks the installer's last screen shows — for
+            // the operator who clicked past it.
+            'deployment' => $guide->handle(),
         ]);
     }
 

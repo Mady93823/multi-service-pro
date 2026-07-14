@@ -1,6 +1,7 @@
+import { ProcessGuide, type Deployment } from '@/components/system/process-guide';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AdminLayout from '@/layouts/admin-layout';
 import { useTrans } from '@/lib/i18n';
@@ -31,9 +32,11 @@ interface SystemIndexProps {
         cron_line: string;
         tasks: ScheduledTask[];
     };
+    queue: { last_run: string | null; is_stale: boolean };
+    deployment: Deployment;
 }
 
-export default function SystemIndex({ about, checks, scheduler }: SystemIndexProps) {
+export default function SystemIndex({ about, checks, scheduler, queue, deployment }: SystemIndexProps) {
     const t = useTrans();
     const [updating, setUpdating] = useState(false);
     const { flash } = usePage<SharedData>().props;
@@ -79,6 +82,20 @@ export default function SystemIndex({ about, checks, scheduler }: SystemIndexPro
                                 )}
                             </p>
                             <code className="bg-muted mt-2 block overflow-x-auto rounded p-2 text-xs">{scheduler.cron_line}</code>
+                        </div>
+                    </div>
+                )}
+
+                {queue.is_stale && (
+                    <div className="border-destructive/50 flex items-start gap-3 rounded-lg border px-4 py-3 text-sm">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                        <div>
+                            <p className="font-medium">{t('No queue worker is running.')}</p>
+                            <p className="text-muted-foreground">
+                                {t(
+                                    'Bookings are placed and notifications are written, but none of them are ever sent. Start the worker — the exact command is below.',
+                                )}
+                            </p>
                         </div>
                     </div>
                 )}
@@ -177,9 +194,23 @@ export default function SystemIndex({ about, checks, scheduler }: SystemIndexPro
                         </div>
 
                         <div>
-                            <p className="text-muted-foreground text-xs">{t('Cron line')}</p>
-                            <code className="bg-muted mt-1 block overflow-x-auto rounded p-2 text-xs">{scheduler.cron_line}</code>
+                            <p className="text-muted-foreground text-xs">{t('Queue worker last seen')}</p>
+                            <p className="text-sm font-medium">{queue.last_run === null ? t('Never') : new Date(queue.last_run).toLocaleString()}</p>
                         </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-base">{t('Processes')}</CardTitle>
+                        <CardDescription>
+                            {t(
+                                'Cron, the queue worker and the WebSocket server. Each one fails silently — the site keeps loading and quietly does less.',
+                            )}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ProcessGuide deployment={deployment} />
                     </CardContent>
                 </Card>
             </div>

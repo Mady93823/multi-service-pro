@@ -11,6 +11,7 @@ use App\Domain\Localization\TranslationLoader;
 use App\Domain\Security\Recaptcha;
 use App\Domain\Settings\SettingsRegistry;
 use App\Models\User;
+use App\Support\ReverbConfig;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Storage;
@@ -52,6 +53,11 @@ class HandleInertiaRequests extends Middleware
         return array_merge(parent::share($request), [
             'name' => $settings->string('branding.app_name', (string) config('app.name')),
             'translations' => app(TranslationLoader::class)->forLocale(app()->getLocale()),
+            // The browser's Echo config travels with the response, never with the
+            // bundle: the installer mints a fresh REVERB_APP_KEY per install and
+            // `public/build` ships prebuilt, so a VITE_ constant would hand every
+            // buyer *our* key and kill realtime silently (P7.3). Public half only.
+            'reverb' => ReverbConfig::forBrowser($request),
             'branding' => [
                 'logo_url' => $logoPath !== '' ? Storage::disk('public')->url($logoPath) : null,
                 'primary_color' => $settings->string('branding.primary_color') ?: null,

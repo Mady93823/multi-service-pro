@@ -3,13 +3,20 @@
 namespace App\Domain\Bookings;
 
 use App\Domain\Settings\SettingsRegistry;
+use App\Models\City;
 use Carbon\CarbonImmutable;
 
 /**
  * Settings-driven slot grid (booking.* group): fixed-length slots between
  * day_starts and day_ends, offered from lead_time_hours ahead up to
- * max_days_ahead days out. All math runs in the platform timezone; slot
- * values travel as UTC ISO strings.
+ * max_days_ahead days out. Slot values travel as UTC ISO strings.
+ *
+ * The grid is drawn in *local* time (M25): "we work 8 AM to 8 PM" is a claim
+ * about the town the visit happens in, so the city's timezone decides what
+ * 8 AM is — the platform timezone only steps in when there is no city (a
+ * single-city install, a guest with no address, every install before M25).
+ * The instant stored on the booking is absolute either way; this is the one
+ * place a wall clock is read.
  */
 class SlotGenerator
 {
@@ -21,9 +28,9 @@ class SlotGenerator
      *
      * @return list<array{date: string, label: string, slots: list<array{value: string, label: string}>}>
      */
-    public function days(): array
+    public function days(?City $city = null): array
     {
-        $now = CarbonImmutable::now($this->timezone());
+        $now = CarbonImmutable::now($this->timezone($city));
         $earliest = $now->addHours($this->settings->integer('booking.lead_time_hours', 2));
 
         $days = [];
@@ -59,10 +66,10 @@ class SlotGenerator
      * Server-side validation of a submitted slot: on the grid, inside the
      * day window, past the lead time, within the booking horizon.
      */
-    public function isBookable(CarbonImmutable $scheduledAtUtc): bool
+    public function isBookable(CarbonImmutable $scheduledAtUtc, ?City $city = null): bool
     {
-        $local = $scheduledAtUtc->setTimezone($this->timezone());
-        $now = CarbonImmutable::now($this->timezone());
+        $local = $scheduledAtUtc->setTimezone($this->timezone($city));
+        $now = CarbonImmutable::now($this->timezone($city));
 
         if ($local->lessThan($now->addHours($this->settings->integer('booking.lead_time_hours', 2)))) {
             return false;
@@ -108,8 +115,10 @@ class SlotGenerator
         return $starts;
     }
 
-    private function timezone(): string
+    private function timezone(?City $city = null): string
     {
-        return $this->settings->string('localization.timezone', 'Asia/Kolkata');
+        return $city instanceof City
+            ? $city->timezone
+            : $this->settings->string('localization.timezone', 'Asia/Kolkata');
     }
 }

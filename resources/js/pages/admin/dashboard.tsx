@@ -14,12 +14,22 @@ import {
 import { Head, Link } from '@inertiajs/react';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
+interface CityRow {
+    id: number;
+    name: string;
+    is_active: boolean;
+    zones: number;
+    bookings: number;
+    gmv: number;
+}
+
 interface Props {
     tiles: DashboardTiles;
     bookings_per_day: BookingsDayPoint[];
     revenue_per_day: RevenueDayPoint[];
     top_services: TopServiceRow[];
     leaderboard: LeaderboardRow[];
+    by_city: CityRow[];
 }
 
 const shortDate = (value: string) => {
@@ -101,7 +111,7 @@ function ChartCard({ title, reportHref, children }: { title: string; reportHref?
     );
 }
 
-export default function AdminDashboard({ tiles, bookings_per_day, revenue_per_day, top_services, leaderboard }: Props) {
+export default function AdminDashboard({ tiles, bookings_per_day, revenue_per_day, top_services, leaderboard, by_city }: Props) {
     const t = useTrans();
     const money = useMoney();
 
@@ -261,6 +271,38 @@ export default function AdminDashboard({ tiles, bookings_per_day, revenue_per_da
                                             </TableCell>
                                             <TableCell className="text-right tabular-nums">{money(row.gross)}</TableCell>
                                             <TableCell className="text-right tabular-nums">{money(row.net)}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        )}
+                    </ChartCard>
+
+                    {/* M25: how each town is trading. A city with no bookings is a row of
+                        zeroes, not a missing row — that is the answer to "how is the launch going". */}
+                    <ChartCard title={t('Cities (last 30 days)')} reportHref="/admin/cities">
+                        {by_city.length === 0 ? (
+                            <p className="text-muted-foreground py-10 text-center text-sm">{t('No cities yet.')}</p>
+                        ) : (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>{t('City')}</TableHead>
+                                        <TableHead className="text-right">{t('Zones')}</TableHead>
+                                        <TableHead className="text-right">{t('Bookings')}</TableHead>
+                                        <TableHead className="text-right">{t('Completed value')}</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {by_city.map((row) => (
+                                        <TableRow key={row.id}>
+                                            <TableCell className="font-medium">
+                                                {row.name}
+                                                {!row.is_active && <span className="text-muted-foreground ml-2 text-xs">{t('Hidden')}</span>}
+                                            </TableCell>
+                                            <TableCell className="text-right tabular-nums">{row.zones}</TableCell>
+                                            <TableCell className="text-right tabular-nums">{row.bookings}</TableCell>
+                                            <TableCell className="text-right tabular-nums">{money(row.gmv)}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>

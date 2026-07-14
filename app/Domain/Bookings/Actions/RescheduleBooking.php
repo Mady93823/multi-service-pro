@@ -38,7 +38,9 @@ class RescheduleBooking
             ]);
         }
 
-        if (! $this->slots->isBookable($newSlot)) {
+        // Same grid, same clock as the original placement — the booking's zone
+        // still names its city (M25).
+        if (! $this->slots->isBookable($newSlot, $booking->zone?->city)) {
             throw ValidationException::withMessages([
                 'scheduled_at' => __('That time slot is no longer available. Please pick another.'),
             ]);

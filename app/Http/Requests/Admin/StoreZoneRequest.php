@@ -19,8 +19,10 @@ class StoreZoneRequest extends FormRequest
     public function rules(): array
     {
         return [
+            // M25: a zone belongs to a city row, not to a typed-in name — two
+            // spellings of the same town used to be two cities.
+            'city_id' => ['required', 'integer', 'exists:cities,id'],
             'name' => ['required', 'string', 'max:120'],
-            'city' => ['required', 'string', 'max:120'],
             'geojson' => ['required', 'array', new GeoJsonPolygon],
             'is_active' => ['boolean'],
         ];

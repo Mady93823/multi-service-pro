@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Customer;
 
+use App\Domain\Cities\ActiveCity;
 use App\Domain\Seo\SchemaBuilder;
 use App\Domain\Seo\SeoMeta;
 use App\Domain\Settings\SettingsRegistry;
+use App\Http\Concerns\ResolvesActiveCity;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CategoryResource;
 use App\Http\Resources\ReviewResource;
@@ -18,6 +20,8 @@ use Inertia\Response;
 
 class CatalogController extends Controller
 {
+    use ResolvesActiveCity;
+
     /**
      * The services page: category grid + featured services, doubling as the
      * search results page when ?search= is present.
@@ -29,6 +33,7 @@ class CatalogController extends Controller
     public function index(Request $request): Response
     {
         $search = (string) $request->string('search');
+        $cityId = $this->activeCity($request)?->id;
         $zoneId = $this->customerZoneId($request);
 
         $results = null;
@@ -36,6 +41,7 @@ class CatalogController extends Controller
         if ($search !== '') {
             $results = Service::query()
                 ->active()
+                ->inCity($cityId)
                 ->inZone($zoneId)
                 ->search($search)
                 ->whereHas('category', fn ($query) => $query->where('is_active', true))
@@ -55,6 +61,7 @@ class CatalogController extends Controller
             'featured' => ServiceResource::collection(
                 Service::query()
                     ->active()
+                    ->inCity($cityId)
                     ->inZone($zoneId)
                     ->where('is_featured', true)
                     ->whereHas('category', fn ($query) => $query->where('is_active', true))
@@ -78,6 +85,7 @@ class CatalogController extends Controller
 
         $services = Service::query()
             ->active()
+            ->inCity($this->activeCity($request)?->id)
             ->inZone($this->customerZoneId($request))
             ->whereIn('category_id', $categoryIds)
             ->with(['category', 'media'])
@@ -108,13 +116,17 @@ class CatalogController extends Controller
             'media',
         ]);
 
-        $zoneId = $this->customerZoneId($request);
+        // Bookable here? The same two scopes the listings are gated with, asked
+        // of one service — never a third rule that could disagree with them.
+        $available = Service::query()
+            ->whereKey($service->id)
+            ->inCity($this->activeCity($request)?->id)
+            ->inZone($this->customerZoneId($request))
+            ->exists();
 
         return Inertia::render('catalog/show', [
             'service' => new ServiceResource($service),
-            'available_in_zone' => $zoneId === null
-                || ! $service->zones()->exists()
-                || $service->zones()->whereKey($zoneId)->exists(),
+            'available_in_zone' => $available,
             // M24: the service's own overrides, then the site defaults.
             'meta' => $seo->resolve(
                 url: route('catalog.show', [$category->slug, $service->slug]),
@@ -178,13 +190,12 @@ class CatalogController extends Controller
     }
 
     /**
-     * Zone of the signed-in customer's default address; null for guests
-     * or when the default address is outside every zone (no filtering).
+     * Zone of the signed-in customer's default address; null for guests, for an
+     * address outside every zone, and (M25) while they are browsing a city that
+     * address does not sit in — there the city gate is the only honest filter.
      */
     protected function customerZoneId(Request $request): ?int
     {
-        $zoneId = $request->user()?->addresses()->where('is_default', true)->value('zone_id');
-
-        return $zoneId === null ? null : (int) $zoneId;
+        return app(ActiveCity::class)->zoneIdFor($request->user(), $this->activeCity($request));
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Domain\Admin\Actions\StartImpersonation;
 use App\Domain\Bookings\CartManager;
+use App\Domain\Cities\ActiveCity;
 use App\Domain\Cms\FooterPages;
 use App\Domain\Cms\SiteContent;
 use App\Domain\Localization\TranslationLoader;
@@ -85,12 +86,24 @@ class HandleInertiaRequests extends Middleware
             'footer_pages' => app(FooterPages::class)->all(),
             // M19: menus, header/footer style, social, cookie banner, custom code.
             // M24 adds analytics (storefront only, consent-gated).
-            'site' => app(SiteContent::class)->share($request->user(), $this->isStorefront($request)),
+            // M25 adds the city switcher — the session holds the visitor's choice.
+            'site' => app(SiteContent::class)->share(
+                $request->user(),
+                $this->isStorefront($request),
+                $request->hasSession() ? $this->sessionCityId($request) : null,
+            ),
             // M24: only the *site* key ever crosses to the browser — it is public
             // by design — and only when reCaptcha is configured AND a form uses it.
             // Null on a fresh install, so no script loads and no form waits on one.
             'recaptcha' => app(Recaptcha::class)->share(),
         ]);
+    }
+
+    private function sessionCityId(Request $request): ?int
+    {
+        $chosen = $request->session()->get(ActiveCity::SESSION_KEY);
+
+        return is_numeric($chosen) ? (int) $chosen : null;
     }
 
     /**

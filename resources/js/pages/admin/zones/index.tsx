@@ -4,15 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AdminLayout from '@/layouts/admin-layout';
 import { useTrans } from '@/lib/i18n';
-import { type BreadcrumbItem, type Zone } from '@/types';
+import { type BreadcrumbItem, type City, type Zone } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { Pencil, Plus } from 'lucide-react';
 
 interface ZonesIndexProps {
     zones: Zone[];
+    cities: City[];
 }
 
-export default function ZonesIndex({ zones }: ZonesIndexProps) {
+export default function ZonesIndex({ zones, cities }: ZonesIndexProps) {
     const t = useTrans();
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -50,14 +51,16 @@ export default function ZonesIndex({ zones }: ZonesIndexProps) {
                             {zones.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={6} className="text-muted-foreground py-8 text-center">
-                                        {t('No zones yet. Draw the first service area on the map.')}
+                                        {cities.length === 0
+                                            ? t('Add a city first — every zone belongs to one.')
+                                            : t('No zones yet. Draw the first service area on the map.')}
                                     </TableCell>
                                 </TableRow>
                             )}
                             {zones.map((zone) => (
                                 <TableRow key={zone.id}>
                                     <TableCell className="font-medium">{zone.name}</TableCell>
-                                    <TableCell className="text-muted-foreground">{zone.city}</TableCell>
+                                    <TableCell className="text-muted-foreground">{zone.city_name}</TableCell>
                                     <TableCell className="text-center">{zone.services_count ?? 0}</TableCell>
                                     <TableCell className="text-center">{zone.addresses_count ?? 0}</TableCell>
                                     <TableCell>

@@ -26,12 +26,16 @@ interface CheckoutLine {
 interface CheckoutAddress {
     address: Address;
     blocked_services: string[];
+    /** The city the address's zone belongs to (M25) — the slot grid follows it. */
+    city_id: number | null;
 }
 
 interface CheckoutPageProps {
     lines: CheckoutLine[];
     addresses: CheckoutAddress[];
     slot_days: SlotDay[];
+    /** The city the offered slots were drawn for; null when the address is outside every zone. */
+    slot_city: { id: number; name: string; timezone: string } | null;
     summary: CartSummary;
     payment_methods: string[];
     wallet_balance: string;
@@ -51,6 +55,7 @@ export default function CheckoutPage({
     lines,
     addresses,
     slot_days: slotDays,
+    slot_city: slotCity,
     summary,
     payment_methods: paymentMethods,
     wallet_balance: walletBalance,
@@ -87,6 +92,27 @@ export default function CheckoutPage({
         notes: '',
         photos: [],
     });
+
+    /**
+     * Slots are drawn in the city's own clock (M25), so picking an address in
+     * another city means asking the server for that city's grid — and dropping
+     * the chosen slot, which was a different wall-clock hour.
+     */
+    const chooseAddress = (addressId: number, cityId: number | null) => {
+        setData('address_id', addressId);
+
+        if (cityId === (slotCity?.id ?? null)) {
+            return;
+        }
+
+        setData('scheduled_at', null);
+
+        // A partial reload keeps the half-filled form; only the grid is refetched.
+        router.reload({
+            only: ['slot_days', 'slot_city'],
+            data: { address: addressId },
+        });
+    };
 
     const methodMeta: Record<string, { icon: ComponentType<{ className?: string }>; title: string; hint: string }> = {
         cash: {
@@ -169,7 +195,7 @@ export default function CheckoutPage({
                                     </Button>
                                 </div>
                             )}
-                            {addresses.map(({ address, blocked_services: blocked }) => {
+                            {addresses.map(({ address, blocked_services: blocked, city_id: cityId }) => {
                                 const isBlocked = blocked.length > 0;
                                 const selected = data.address_id === address.id;
 
@@ -178,7 +204,7 @@ export default function CheckoutPage({
                                         key={address.id}
                                         type="button"
                                         disabled={isBlocked}
-                                        onClick={() => setData('address_id', address.id)}
+                                        onClick={() => chooseAddress(address.id, cityId)}
                                         className={cn(
                                             'w-full rounded-lg border p-3 text-left text-sm transition-colors',
                                             selected && 'border-primary ring-primary ring-1',
@@ -218,6 +244,9 @@ export default function CheckoutPage({
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-base">{t('Pick a time')}</CardTitle>
+                            {slotCity && (
+                                <p className="text-muted-foreground text-sm">{t('Times are shown in :city local time.', { city: slotCity.name })}</p>
+                            )}
                         </CardHeader>
                         <CardContent>
                             <SlotPicker days={slotDays} value={data.scheduled_at} onChange={(value) => setData('scheduled_at', value)} />

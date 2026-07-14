@@ -58,8 +58,10 @@ class ServicesGridBlock extends Block
             'heading' => $this->nullableText($payload, 'heading'),
             'services' => Service::query()
                 ->active()
-                // The zone gate follows the visitor's default address (M03), so a
-                // block cannot advertise a service that cannot be booked there.
+                // The zone gate follows the visitor's default address (M03) and
+                // the city gate the town they are browsing (M25), so a block
+                // cannot advertise a service that cannot be booked there.
+                ->inCity($context->cityId)
                 ->inZone($context->zoneId)
                 ->when($this->flag($payload, 'featured_only', true), fn ($query) => $query->where('is_featured', true))
                 ->when($categoryId !== null, fn ($query) => $query->where('category_id', $categoryId))

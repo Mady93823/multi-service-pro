@@ -127,6 +127,11 @@ class ServiceController extends Controller
      */
     protected function zoneOptions(): Collection
     {
-        return Zone::query()->orderBy('city')->orderBy('name')->get(['id', 'name', 'city', 'geojson', 'is_active']);
+        return Zone::query()
+            ->with('city:id,name')
+            ->orderBy('name')
+            ->get(['id', 'city_id', 'name', 'geojson', 'is_active'])
+            ->sortBy(fn (Zone $zone): string => $zone->city->name.$zone->name)
+            ->values();
     }
 }

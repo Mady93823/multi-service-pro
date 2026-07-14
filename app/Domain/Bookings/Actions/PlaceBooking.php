@@ -76,7 +76,10 @@ class PlaceBooking
             ]);
         }
 
-        if (! $this->slots->isBookable($scheduledAt)) {
+        // The slot grid is read in the city's own clock (M25) — the address the
+        // visit happens at names the city, so a booking cannot be validated
+        // against a wall clock from another town.
+        if (! $this->slots->isBookable($scheduledAt, $address->zone?->city)) {
             throw ValidationException::withMessages([
                 'scheduled_at' => __('That time slot is no longer available. Please pick another.'),
             ]);

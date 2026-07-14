@@ -8,7 +8,9 @@ use App\Domain\Zones\Actions\UpdateZone;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreZoneRequest;
 use App\Http\Requests\Admin\UpdateZoneRequest;
+use App\Http\Resources\CityResource;
 use App\Http\Resources\ZoneResource;
+use App\Models\City;
 use App\Models\Zone;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -19,19 +21,24 @@ class ZoneController extends Controller
     public function index(): Response
     {
         $zones = Zone::query()
+            ->with('city')
             ->withCount(['services', 'addresses'])
-            ->orderBy('city')
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->sortBy(fn (Zone $zone): string => $zone->city->name.$zone->name)
+            ->values();
 
         return Inertia::render('admin/zones/index', [
             'zones' => ZoneResource::collection($zones),
+            'cities' => CityResource::collection(City::query()->ordered()->get()),
         ]);
     }
 
     public function create(): Response
     {
-        return Inertia::render('admin/zones/create');
+        return Inertia::render('admin/zones/create', [
+            'cities' => CityResource::collection(City::query()->ordered()->get()),
+        ]);
     }
 
     public function store(StoreZoneRequest $request, CreateZone $action): RedirectResponse
@@ -45,6 +52,7 @@ class ZoneController extends Controller
     {
         return Inertia::render('admin/zones/edit', [
             'zone' => new ZoneResource($zone),
+            'cities' => CityResource::collection(City::query()->ordered()->get()),
         ]);
     }
 

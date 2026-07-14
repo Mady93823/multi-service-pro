@@ -50,7 +50,7 @@ class BookingController extends Controller
     ): Response {
         Gate::authorize('view', $booking);
 
-        $booking->load(['items', 'provider', 'zone', 'statusHistory' => fn ($query) => $query->orderBy('created_at'), 'media']);
+        $booking->load(['items', 'provider', 'zone.city', 'statusHistory' => fn ($query) => $query->orderBy('created_at'), 'media']);
 
         $review = $booking->review()->with(['customer:id,name', 'media'])->first();
 
@@ -80,7 +80,7 @@ class BookingController extends Controller
             ],
             'review' => $review !== null ? new ReviewResource($review) : null,
             'review_max_photos' => $settings->integer('reviews.max_photos', 4),
-            'slot_days' => $canReschedule ? $slots->days() : [],
+            'slot_days' => $canReschedule ? $slots->days($booking->zone?->city) : [],
             'is_favorite_provider' => $booking->provider !== null && $request->user() !== null
                 ? $request->user()->hasFavorited($booking->provider)
                 : false,

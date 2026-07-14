@@ -7,10 +7,12 @@ use App\Domain\Earnings\Enums\PayoutStatus;
 use App\Domain\Providers\Enums\ProviderApprovalStatus;
 use App\Models\Booking;
 use App\Models\BookingItem;
+use App\Models\City;
 use App\Models\Earning;
 use App\Models\PayoutRequest;
 use App\Models\ProviderProfile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -156,6 +158,46 @@ class DashboardMetrics
             'bookings' => (int) $row->bookings,
             'revenue' => round((float) $row->revenue, 2),
         ], $rows);
+    }
+
+    /**
+     * Per-city trade (M25). A booking names its zone and a zone names its city,
+     * so no column has to be kept in step — the grouping follows the same path
+     * the zone gate walks.
+     *
+     * Every city is listed, including one that has sold nothing yet: a row of
+     * zeroes is the answer to "how is the new city doing", and dropping it would
+     * make a dead launch look like a missing one.
+     *
+     * @return list<array{id: int, name: string, is_active: bool, zones: int, bookings: int, gmv: float}>
+     */
+    public function byCity(int $days = 30): array
+    {
+        $cities = City::query()->withCount('zones')->ordered()->get();
+
+        /** @var Collection<int, object{city_id: int, bookings: int|string, gmv: float|string|null}> $rows */
+        $rows = Booking::query()
+            ->join('zones', 'zones.id', '=', 'bookings.zone_id')
+            ->where('bookings.created_at', '>=', Carbon::today()->subDays($days - 1))
+            ->groupBy('zones.city_id')
+            ->selectRaw(
+                'zones.city_id as city_id, count(*) as bookings,'
+                .' coalesce(sum(case when bookings.status = ? then bookings.total else 0 end), 0) as gmv',
+                [BookingStatus::Completed->value],
+            )
+            ->get()
+            ->keyBy('city_id');
+
+        return $cities
+            ->map(fn (City $city): array => [
+                'id' => $city->id,
+                'name' => $city->name,
+                'is_active' => $city->is_active,
+                'zones' => (int) $city->zones_count,
+                'bookings' => (int) ($rows[$city->id]->bookings ?? 0),
+                'gmv' => round((float) ($rows[$city->id]->gmv ?? 0), 2),
+            ])
+            ->all();
     }
 
     /**

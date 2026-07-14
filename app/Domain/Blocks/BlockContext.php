@@ -15,6 +15,7 @@ final class BlockContext
      */
     public function __construct(
         public readonly ?int $zoneId = null,
+        public readonly ?int $cityId = null,
         private readonly array $images = [],
     ) {}
 

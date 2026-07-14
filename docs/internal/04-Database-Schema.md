@@ -52,10 +52,19 @@ services (SD)
 service_addons
   id, service_id FK, name, price, is_active
 
+cities (M25)
+  id, name, slug (uniq), state nullable, timezone, center_lat, center_lng,
+  is_active, sort_order
+  ↳ the timezone is load-bearing: the booking slot grid is drawn in the city's
+    own clock (D36). center_* only opens the map.
+
 zones
-  id, name, city, geojson JSON (GeoJSON Polygon — source of truth; membership
-  via PHP point-in-polygon, D12: no GEOMETRY column, portable across
-  MySQL/MariaDB/sqlite), is_active
+  id, city_id FK (restrict — M25; the old free-text `city` string was
+  backfilled into rows and dropped), name, geojson JSON (GeoJSON Polygon —
+  source of truth; membership via PHP point-in-polygon, D12: no GEOMETRY
+  column, portable across MySQL/MariaDB/sqlite), is_active
+  ↳ a zone only serves while its city is active (Zone::scopeActive), which is
+    how one click closes a whole town without touching its bookings.
 
 service_zone
   service_id FK, zone_id FK  (pivot: availability per zone)
@@ -294,6 +303,8 @@ activity_logs            ← M13; append-only admin audit (created_at only, no u
 
 **M21 shipped (2026-07-14):** `blog_categories` (id, name, `slug` uniq, description, sort_order, is_active) · `blog_posts` (id, `blog_category_id` FK **nullOnDelete** — a deleted category leaves its posts uncategorised, `author_id` FK users nullOnDelete, title, `slug` uniq, excerpt, `body` **markdown**, tags JSON, is_featured, is_published, **`published_at`** nullable, `meta_title` / `meta_description` (M24's SEO layer reads these), idx(is_published, published_at)) + a medialibrary `cover` collection on the **public** disk, filled through the library (D29). **Published = `is_published` AND `published_at <= now`:** a scheduled post 404s until its moment, and unpublishing clears the date so the flag and the moment can never disagree.
 
+**M25 shipped (2026-07-15):** `cities` (id, name, `slug` uniq, state nullable, `timezone`, center_lat, center_lng, is_active, sort_order, idx(is_active, sort_order)) and `zones.city_id` (FK **restrict**). The migration **backfills** the old free-text `zones.city` string into one row per distinct spelling — centred on the mean of that city's polygon vertices, computed in PHP (D12) — and then **drops the column**: a town is a row, not a string two zones can disagree about. `Zone::scopeActive` now also requires an active city, so switching a city off closes the whole town while every booking keeps its `zone_id`. The city's **timezone is load-bearing** (D36): `SlotGenerator` draws the booking grid in it.
+
 **M20 shipped (2026-07-14):** `page_blocks` (id, `page_id` FK cascade, `type` (registry key), `payload` JSON, sort_order, is_active, starts_at, ends_at, idx(page_id, sort_order)) + a medialibrary `images` collection on the **public** disk, filled only through the library (D29 — a picked picture is copied into the block and stamped, so the manager still counts it). The payload is validated on write against the schema of *its own* block type, and **a row whose `type` is not in `BlockRegistry` renders nothing** (D22). The storefront home is a reserved page (`pages.slug = 'home'`, undeletable, served at `/` and 404 at `/p/home`) whose blocks are the front page; a CMS page carries **either** blocks **or** its markdown body, never both.
 
 **M19 part 2 shipped (2026-07-13):** `testimonials` (id, `review_id` FK nullOnDelete — set when promoted from a review, and the quote is a **copy**, name, role, quote, rating, sort_order, is_active) · `sponsors` (id, name, link_url, sort_order, is_active) · `popups` (id, title, body **markdown**, link_url, link_label, `audience` everyone|guests|customers|providers, `frequency_days`, starts_at, ends_at, is_active) · `subscribers` (id, `email` uniq, source, `unsubscribed_at` — an opt-out keeps the row). All three content tables carry a medialibrary collection on the **public** disk, filled only through the library (D29). **`support_tickets.user_id` is now nullable** and gains `guest_name` / `guest_email`: the public contact form opens a real support ticket even for a signed-out visitor (admin-only, because it belongs to no account). `support_ticket_messages.user_id` is nullable for the same reason.
@@ -305,10 +316,6 @@ activity_logs            ← M13; append-only admin audit (created_at only, no u
 The rest below is not yet migrated. Shapes are indicative; the ADRs (D22–D27) are the binding part.
 
 ```
-cities                   ← M25; zones gain city_id (FK restrict — a city with zones
-  id, name, state, slug (uniq),  cannot vanish under live bookings)
-  timezone, center_lat, center_lng, is_active, sort_order
-
 testimonials             ← M19; may be authored, or promoted from a real review
   id, author_name, author_role, quote, rating,
   review_id FK nullable nullOnDelete, is_active, sort_order
@@ -357,7 +364,7 @@ permissions / roles / model_has_* ← M26; spatie tables already migrated at M01
 - `wallet_transactions` and `earnings` are append-only; corrections = compensating entries (`adjustment`)
 - Every status change goes through the state machine + writes `booking_status_history`
 - Foreign keys ON DELETE: RESTRICT for money-bearing rows; CASCADE only for pure child rows (items, points)
-- Indexes: every FK; `bookings(status, scheduled_at)`, `bookings(provider_id, status)`, `services FULLTEXT(name, short_description)`, `zones(city, is_active)` (membership computed in PHP, D12), `tracking_points(tracking_session_id, recorded_at)`
+- Indexes: every FK; `bookings(status, scheduled_at)`, `bookings(provider_id, status)`, `services FULLTEXT(name, short_description)`, `zones(city_id, is_active)` (membership computed in PHP, D12), `tracking_points(tracking_session_id, recorded_at)`
 
 ## ERD (core)
 

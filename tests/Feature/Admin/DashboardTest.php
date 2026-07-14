@@ -1,7 +1,10 @@
 <?php
 
 use App\Domain\Reports\DashboardMetrics;
+use App\Models\Booking;
+use App\Models\City;
 use App\Models\User;
+use App\Models\Zone;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
@@ -131,4 +134,22 @@ it('blocks non-admins from the dashboard', function () {
     $customer = User::factory()->create();
 
     $this->actingAs($customer)->get(route('admin.dashboard'))->assertForbidden();
+});
+
+it('reports every city, including one that has sold nothing', function () {
+    // M25: a booking names its zone and a zone names its city, so the grouping
+    // needs no column of its own. A city with no trade is a row of zeroes —
+    // dropping it would make a dead launch look like a missing one.
+    $trading = City::factory()->create(['name' => 'Trading City']);
+    $zone = Zone::factory()->for($trading)->create();
+    $quiet = City::factory()->create(['name' => 'Quiet City']);
+
+    Booking::factory()->count(2)->create(['zone_id' => $zone->id]);
+
+    $rows = collect(app(DashboardMetrics::class)->byCity());
+
+    expect($rows->firstWhere('name', 'Trading City')['bookings'])->toBe(2)
+        ->and($rows->firstWhere('name', 'Trading City')['zones'])->toBe(1)
+        ->and($rows->firstWhere('name', 'Quiet City')['bookings'])->toBe(0)
+        ->and($rows->firstWhere('name', 'Quiet City')['gmv'])->toBe(0.0);
 });

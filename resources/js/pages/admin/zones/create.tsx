@@ -1,10 +1,14 @@
 import { ZoneForm } from '@/components/zones/zone-form';
 import AdminLayout from '@/layouts/admin-layout';
 import { useTrans } from '@/lib/i18n';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, type City } from '@/types';
 import { Head } from '@inertiajs/react';
 
-export default function ZoneCreate() {
+interface ZoneCreateProps {
+    cities: City[];
+}
+
+export default function ZoneCreate({ cities }: ZoneCreateProps) {
     const t = useTrans();
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -18,7 +22,7 @@ export default function ZoneCreate() {
             <Head title={t('New zone')} />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <h1 className="text-xl font-semibold">{t('New zone')}</h1>
-                <ZoneForm />
+                <ZoneForm cities={cities} />
             </div>
         </AdminLayout>
     );

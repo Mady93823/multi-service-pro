@@ -43,7 +43,13 @@ class CheckoutController extends Controller
         $user = $request->user();
         abort_if($user === null, 403);
 
-        $addresses = $user->addresses()->with('zone')->orderByDesc('is_default')->latest()->get();
+        $addresses = $user->addresses()->with('zone.city')->orderByDesc('is_default')->latest()->get();
+
+        // The slot grid belongs to the town the visit happens in (M25), so it is
+        // drawn for the address the customer has actually selected. The page
+        // asks for it again (partial reload) when they pick one in another city.
+        $selected = $addresses->firstWhere('id', (int) $request->integer('address')) ?? $addresses->first();
+        $slotCity = $selected?->zone?->city;
 
         // Preview leg of the coupon (M12): a session code that no longer
         // passes (window closed, cap reached, cart shrank under min_order)
@@ -86,8 +92,14 @@ class CheckoutController extends Controller
                 // Zone gate (M03 done-when): out-of-zone addresses are shown
                 // but politely blocked with the offending service names.
                 'blocked_services' => $this->cart->blockedServiceNames($lines, $address->zone_id),
+                'city_id' => $address->zone?->city_id,
             ])->all(),
-            'slot_days' => $this->slots->days(),
+            'slot_days' => $this->slots->days($slotCity),
+            'slot_city' => $slotCity === null ? null : [
+                'id' => $slotCity->id,
+                'name' => $slotCity->name,
+                'timezone' => $slotCity->timezone,
+            ],
             'summary' => [
                 'subtotal' => number_format($quote['subtotal'] + $quote['addon_total'], 2, '.', ''),
                 'discount' => number_format($quote['discount'], 2, '.', ''),

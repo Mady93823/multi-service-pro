@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Domain\Blocks\PageBlocks;
+use App\Domain\Cities\ActiveCity;
 use App\Domain\Seo\SchemaBuilder;
 use App\Domain\Seo\SeoMeta;
+use App\Http\Concerns\ResolvesActiveCity;
 use App\Http\Controllers\Controller;
 use App\Http\Presenters\BlockPresenter;
 use Illuminate\Http\Request;
@@ -18,17 +20,21 @@ use Inertia\Response;
  */
 class HomeController extends Controller
 {
+    use ResolvesActiveCity;
+
     public function index(
         Request $request,
         PageBlocks $blocks,
         BlockPresenter $presenter,
         SeoMeta $seo,
         SchemaBuilder $schema,
+        ActiveCity $cities,
     ): Response {
-        $zoneId = $request->user()?->addresses()->where('is_default', true)->value('zone_id');
+        $city = $this->activeCity($request);
+        $zoneId = $cities->zoneIdFor($request->user(), $city);
 
         return Inertia::render('home', [
-            'blocks' => $presenter->collection($blocks->forHome($zoneId === null ? null : (int) $zoneId)),
+            'blocks' => $presenter->collection($blocks->forHome($zoneId, $city?->id)),
             'meta' => $seo->resolve(url('/')),
             // LocalBusiness — the one schema a services marketplace must have (M24).
             'schema' => $schema->localBusiness(),

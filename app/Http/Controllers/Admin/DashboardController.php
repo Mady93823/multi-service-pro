@@ -17,6 +17,8 @@ class DashboardController extends Controller
             'revenue_per_day' => $metrics->revenuePerDay(),
             'top_services' => $metrics->topServices(),
             'leaderboard' => $metrics->providerLeaderboard(),
+            // M25: how each town is trading — zero-booking cities included.
+            'by_city' => $metrics->byCity(),
         ]);
     }
 }

@@ -131,6 +131,30 @@ class Service extends Model implements HasMedia
     }
 
     /**
+     * City gate (M25): the same rule one level up, for a visitor who has told
+     * us their town but not their street — a guest, or a customer browsing a
+     * city they have no address in. A service restricted to Bengaluru zones
+     * must not show up while someone is shopping Mysuru.
+     *
+     * Not a second geography: it reads the very zones the pin already resolved
+     * against (D12), grouped by their city row.
+     *
+     * @param  Builder<Service>  $query
+     * @return Builder<Service>
+     */
+    public function scopeInCity(Builder $query, ?int $cityId): Builder
+    {
+        if ($cityId === null) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $inner) use ($cityId) {
+            $inner->whereDoesntHave('zones')
+                ->orWhereHas('zones', fn (Builder $zones) => $zones->where('city_id', $cityId));
+        });
+    }
+
+    /**
      * Full-text search on MySQL/MariaDB, LIKE fallback elsewhere (sqlite tests).
      *
      * @param  Builder<Service>  $query

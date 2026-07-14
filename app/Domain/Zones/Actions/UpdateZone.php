@@ -9,7 +9,7 @@ class UpdateZone
     public function __construct(private ResolveAddressZones $resolveAddresses) {}
 
     /**
-     * @param  array{name: string, city: string, geojson: array<string, mixed>, is_active?: bool}  $data
+     * @param  array{city_id: int, name: string, geojson: array<string, mixed>, is_active?: bool}  $data
      */
     public function handle(Zone $zone, array $data): Zone
     {

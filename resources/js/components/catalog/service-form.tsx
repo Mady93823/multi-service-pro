@@ -302,7 +302,7 @@ export function ServiceForm({ categories, relatable, zones, service }: ServiceFo
                                     checked={data.zone_ids.includes(zone.id)}
                                     onCheckedChange={(checked) => toggleZone(zone.id, checked === true)}
                                 />
-                                {zone.name} <span className="text-muted-foreground">({zone.city})</span>
+                                {zone.name} <span className="text-muted-foreground">({zone.city_name})</span>
                             </label>
                         ))}
                     </div>

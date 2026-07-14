@@ -19,7 +19,8 @@ class ZoneResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'city' => $this->city,
+            'city_id' => $this->city_id,
+            'city_name' => $this->whenLoaded('city', fn (): string => $this->city->name),
             'geojson' => $this->geojson,
             'is_active' => $this->is_active,
             'services_count' => $this->whenCounted('services'),

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\BookingPhotoController;
+use App\Http\Controllers\CityController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\Customer;
 use App\Http\Controllers\DemoPingController;
@@ -49,6 +50,9 @@ Route::post('contact', [ContactController::class, 'store'])
 // Newsletter signup from the footer.
 Route::post('newsletter', [NewsletterController::class, 'store'])
     ->middleware('throttle:5,1')->name('newsletter.store');
+
+// City switcher (M25) — a browsing preference in the session, open to guests.
+Route::post('city/{city}', [CityController::class, 'switch'])->name('city.switch');
 
 Route::get('services', [Customer\CatalogController::class, 'index'])->name('catalog.index');
 Route::get('services/{category:slug}', [Customer\CatalogController::class, 'category'])->name('catalog.category');
@@ -198,6 +202,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('dashboard', Admin\DashboardController::class)->name('dashboard');
     Route::resource('categories', Admin\CategoryController::class)->except(['show']);
     Route::resource('services', Admin\ServiceController::class)->except(['show']);
+    // Locations (M25): zones belong to a city row, not to a typed-in name.
+    Route::resource('cities', Admin\CityController::class)->except(['show']);
     Route::resource('zones', Admin\ZoneController::class)->except(['show']);
     Route::get('bookings', [Admin\BookingController::class, 'index'])->name('bookings.index');
     Route::get('bookings/{booking}', [Admin\BookingController::class, 'show'])->name('bookings.show');

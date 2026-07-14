@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Domain\Zones\ZoneResolver;
+use App\Models\City;
 use App\Models\User;
 use App\Models\Zone;
 use Illuminate\Database\Seeder;
@@ -10,15 +11,23 @@ use Illuminate\Database\Seeder;
 class ZoneSeeder extends Seeder
 {
     /**
-     * Demo service zones plus a demo-customer address book: one address
-     * inside a zone, one outside every zone (shows the "outside service
-     * area" state). Idempotent.
+     * Demo service zones in two cities (M25) plus a demo-customer address book:
+     * one address in each city, and one outside every zone (which is what shows
+     * the "outside service area" state). Idempotent; runs after CitySeeder.
      */
     public function run(): void
     {
+        $cities = City::query()->pluck('id', 'slug');
+
         foreach ($this->zones() as $data) {
+            $cityId = $cities[$data['city']] ?? null;
+
+            if ($cityId === null) {
+                continue;
+            }
+
             Zone::query()->updateOrCreate(
-                ['name' => $data['name'], 'city' => $data['city']],
+                ['name' => $data['name'], 'city_id' => $cityId],
                 ['geojson' => $data['geojson'], 'is_active' => true],
             );
         }
@@ -52,6 +61,16 @@ class ZoneSeeder extends Seeder
                 'lng' => 76.6394,
                 'is_default' => false,
             ],
+            [
+                'label' => 'other',
+                'line1' => '7 Charing Cross',
+                'line2' => null,
+                'city' => 'Ooty',
+                'postal_code' => '643001',
+                'lat' => 11.4102,
+                'lng' => 76.6950,
+                'is_default' => false,
+            ],
         ];
 
         foreach ($addresses as $data) {
@@ -70,7 +89,7 @@ class ZoneSeeder extends Seeder
         return [
             [
                 'name' => 'Bengaluru Central',
-                'city' => 'Bengaluru',
+                'city' => 'bengaluru',
                 'geojson' => [
                     'type' => 'Polygon',
                     'coordinates' => [[
@@ -84,7 +103,7 @@ class ZoneSeeder extends Seeder
             ],
             [
                 'name' => 'Whitefield',
-                'city' => 'Bengaluru',
+                'city' => 'bengaluru',
                 'geojson' => [
                     'type' => 'Polygon',
                     'coordinates' => [[
@@ -93,6 +112,20 @@ class ZoneSeeder extends Seeder
                         [77.7900, 13.0100],
                         [77.7100, 13.0100],
                         [77.7100, 12.9300],
+                    ]],
+                ],
+            ],
+            [
+                'name' => 'Mysuru Central',
+                'city' => 'mysuru',
+                'geojson' => [
+                    'type' => 'Polygon',
+                    'coordinates' => [[
+                        [76.5900, 12.2500],
+                        [76.7000, 12.2500],
+                        [76.7000, 12.3400],
+                        [76.5900, 12.3400],
+                        [76.5900, 12.2500],
                     ]],
                 ],
             ],

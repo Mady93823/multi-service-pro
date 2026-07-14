@@ -1,4 +1,5 @@
 import AppLogoIcon from '@/components/app-logo-icon';
+import CitySwitcher from '@/components/site/city-switcher';
 import { Button } from '@/components/ui/button';
 import { useTrans } from '@/lib/i18n';
 import { homeUrl } from '@/lib/roles';
@@ -35,6 +36,7 @@ export default function SiteHeader() {
 
     const actions = (
         <div className="flex items-center gap-2">
+            <CitySwitcher />
             <Button asChild variant="ghost" size="sm" className="relative">
                 <Link href={route('cart.show')} aria-label={t('Your cart')}>
                     <ShoppingCart className="h-4 w-4" />

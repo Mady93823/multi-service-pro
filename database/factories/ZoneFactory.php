@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\City;
 use App\Models\Zone;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -16,8 +17,8 @@ class ZoneFactory extends Factory
     public function definition(): array
     {
         return [
+            'city_id' => City::factory(),
             'name' => fake()->unique()->streetName(),
-            'city' => fake()->city(),
             'geojson' => self::squareAround(12.9716, 77.5946),
             'is_active' => true,
         ];

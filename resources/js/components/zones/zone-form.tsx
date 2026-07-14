@@ -3,31 +3,33 @@ import { ZonePolygonEditor } from '@/components/maps/zone-polygon-editor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useTrans } from '@/lib/i18n';
-import { type GeoJsonPolygon, type Zone } from '@/types';
+import { type City, type GeoJsonPolygon, type Zone } from '@/types';
 import { Link, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
 type ZoneForm = {
+    city_id: string;
     name: string;
-    city: string;
     geojson: GeoJsonPolygon | null;
     is_active: boolean;
 };
 
 interface ZoneFormProps {
     zone?: Zone;
+    cities: City[];
 }
 
-export function ZoneForm({ zone }: ZoneFormProps) {
+export function ZoneForm({ zone, cities }: ZoneFormProps) {
     const isEdit = zone !== undefined;
     const t = useTrans();
 
     const { data, setData, post, put, processing, errors } = useForm<ZoneForm>({
+        city_id: zone?.city_id ? String(zone.city_id) : cities[0]?.id ? String(cities[0].id) : '',
         name: zone?.name ?? '',
-        city: zone?.city ?? '',
         geojson: zone?.geojson ?? null,
         is_active: zone?.is_active ?? true,
     });
@@ -42,6 +44,19 @@ export function ZoneForm({ zone }: ZoneFormProps) {
         }
     };
 
+    // A zone cannot exist without a city (M25) — say so instead of showing an
+    // empty picker that can only fail on submit.
+    if (cities.length === 0) {
+        return (
+            <div className="max-w-xl space-y-4">
+                <p className="text-muted-foreground text-sm">{t('Add a city first — every zone belongs to one.')}</p>
+                <Button asChild>
+                    <Link href={route('admin.cities.create')}>{t('Add city')}</Link>
+                </Button>
+            </div>
+        );
+    }
+
     return (
         <form onSubmit={submit} className="max-w-3xl space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -52,9 +67,21 @@ export function ZoneForm({ zone }: ZoneFormProps) {
                 </div>
 
                 <div className="grid gap-2">
-                    <Label htmlFor="city">{t('City')}</Label>
-                    <Input id="city" value={data.city} onChange={(e) => setData('city', e.target.value)} required />
-                    <InputError message={errors.city} />
+                    <Label htmlFor="city_id">{t('City')}</Label>
+                    <Select value={data.city_id} onValueChange={(value) => setData('city_id', value)}>
+                        <SelectTrigger id="city_id">
+                            <SelectValue placeholder={t('Select a city')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {cities.map((city) => (
+                                <SelectItem key={city.id} value={String(city.id)}>
+                                    {city.name}
+                                    {city.is_active ? '' : ` — ${t('inactive')}`}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <InputError message={errors.city_id} />
                 </div>
             </div>
 

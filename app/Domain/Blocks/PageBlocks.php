@@ -23,11 +23,11 @@ class PageBlocks
     /**
      * @return list<array{id: int, type: string, data: array<string, mixed>}>
      */
-    public function for(Page $page, ?int $zoneId = null): array
+    public function for(Page $page, ?int $zoneId = null, ?int $cityId = null): array
     {
         $blocks = $page->blocks()->live()->with('media')->get();
 
-        return $this->render($blocks, $zoneId);
+        return $this->render($blocks, $zoneId, $cityId);
     }
 
     /**
@@ -36,20 +36,20 @@ class PageBlocks
      *
      * @return list<array{id: int, type: string, data: array<string, mixed>}>
      */
-    public function forHome(?int $zoneId = null): array
+    public function forHome(?int $zoneId = null, ?int $cityId = null): array
     {
         $home = Page::query()->where('slug', Page::HOME_SLUG)->first();
 
-        $blocks = $home instanceof Page ? $this->for($home, $zoneId) : [];
+        $blocks = $home instanceof Page ? $this->for($home, $zoneId, $cityId) : [];
 
-        return $blocks !== [] ? $blocks : $this->fallback($zoneId);
+        return $blocks !== [] ? $blocks : $this->fallback($zoneId, $cityId);
     }
 
     /**
      * @param  Collection<int, PageBlock>  $blocks
      * @return list<array{id: int, type: string, data: array<string, mixed>}>
      */
-    private function render(Collection $blocks, ?int $zoneId): array
+    private function render(Collection $blocks, ?int $zoneId, ?int $cityId): array
     {
         $rendered = [];
 
@@ -60,7 +60,7 @@ class PageBlocks
                 continue;
             }
 
-            $data = $block->data($model->payload, new BlockContext($zoneId, $this->images($model)));
+            $data = $block->data($model->payload, new BlockContext($zoneId, $cityId, $this->images($model)));
 
             if ($data === null) {
                 continue;
@@ -103,7 +103,7 @@ class PageBlocks
     /**
      * @return list<array{id: int, type: string, data: array<string, mixed>}>
      */
-    private function fallback(?int $zoneId): array
+    private function fallback(?int $zoneId, ?int $cityId): array
     {
         $rendered = [];
         $id = -1;
@@ -115,7 +115,7 @@ class PageBlocks
                 continue;
             }
 
-            $data = $block->data($block->defaults(), new BlockContext($zoneId));
+            $data = $block->data($block->defaults(), new BlockContext($zoneId, $cityId));
 
             if ($data === null) {
                 continue;

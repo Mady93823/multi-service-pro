@@ -2,8 +2,11 @@
 
 namespace App\Domain\Cms;
 
+use App\Domain\Cities\ActiveCity;
+use App\Domain\Cities\CityDirectory;
 use App\Domain\Settings\Groups\SocialGroup;
 use App\Domain\Settings\SettingsRegistry;
+use App\Models\City;
 use App\Models\Popup;
 use App\Models\User;
 use Throwable;
@@ -20,16 +23,20 @@ class SiteContent
         private SettingsRegistry $settings,
         private SiteMenus $menus,
         private MarkdownRenderer $markdown,
+        private CityDirectory $cities,
+        private ActiveCity $activeCity,
     ) {}
 
     /**
      * @param  bool  $storefront  false inside the admin / provider panels
+     * @param  int|null  $sessionCityId  the visitor's explicit city choice (M25)
      * @return array<string, mixed>
      */
-    public function share(?User $user, bool $storefront): array
+    public function share(?User $user, bool $storefront, ?int $sessionCityId = null): array
     {
         return [
             'menus' => $this->menus->forUser($user),
+            ...$this->cityProps($user, $storefront, $sessionCityId),
             'appearance' => [
                 'header_variant' => $this->settings->string('appearance.header_variant', 'classic'),
                 'sticky_header' => $this->settings->boolean('appearance.sticky_header', true),
@@ -49,6 +56,41 @@ class SiteContent
             'analytics' => $this->analytics($storefront),
             'newsletter' => $this->settings->boolean('appearance.newsletter_enabled', true),
             'popup' => $storefront ? $this->popup($user) : null,
+        ];
+    }
+
+    /**
+     * The city switcher (M25): the towns on offer, and the one being browsed.
+     *
+     * A single-city install has one entry and the header simply names it; only
+     * a second city turns it into a control. Nothing is shown inside the admin
+     * or provider panels — they are never scoped to a town.
+     *
+     * @return array{cities: list<array{id: int, name: string, slug: string}>, active_city: array{id: int, name: string, slug: string, timezone: string}|null}
+     */
+    private function cityProps(?User $user, bool $storefront, ?int $sessionCityId): array
+    {
+        if (! $storefront) {
+            return ['cities' => [], 'active_city' => null];
+        }
+
+        $active = $this->activeCity->resolve($user, $sessionCityId);
+
+        return [
+            'cities' => $this->cities->active()
+                ->map(fn (City $city): array => [
+                    'id' => $city->id,
+                    'name' => $city->name,
+                    'slug' => $city->slug,
+                ])
+                ->values()
+                ->all(),
+            'active_city' => $active === null ? null : [
+                'id' => $active->id,
+                'name' => $active->name,
+                'slug' => $active->slug,
+                'timezone' => $active->timezone,
+            ],
         ];
     }
 

@@ -74,9 +74,13 @@ export default function AdminLayout({ children, breadcrumbs }: AdminLayoutProps)
             ],
         },
         {
-            title: t('Zones'),
-            url: '/admin/zones',
+            title: t('Locations'),
+            url: '/admin/cities',
             icon: Map,
+            children: [
+                { title: t('Cities'), url: '/admin/cities' },
+                { title: t('Zones'), url: '/admin/zones' },
+            ],
         },
         {
             title: t('Marketing'),

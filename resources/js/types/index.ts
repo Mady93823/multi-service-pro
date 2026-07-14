@@ -129,6 +129,10 @@ export interface SitePopup {
 
 export interface SiteContent {
     menus: Record<string, SiteMenuLink[]>;
+    /** Cities on offer (M25) — empty inside the admin and provider panels. */
+    cities: { id: number; name: string; slug: string }[];
+    /** The town being browsed: detected from the address pin, overridable. */
+    active_city: { id: number; name: string; slug: string; timezone: string } | null;
     appearance: SiteAppearance;
     social: Record<string, string>;
     cookie: { message: string; accept_label: string; decline_label: string | null; policy_slug: string | null } | null;
@@ -276,10 +280,25 @@ export type GeoJsonPolygon = {
     coordinates: number[][][];
 };
 
+export interface City {
+    id: number;
+    name: string;
+    slug: string;
+    state: string | null;
+    timezone: string;
+    center_lat: number;
+    center_lng: number;
+    is_active: boolean;
+    sort_order: number;
+    zones_count?: number;
+    bookings_count?: number;
+}
+
 export interface Zone {
     id: number;
     name: string;
-    city: string;
+    city_id: number;
+    city_name?: string;
     geojson: GeoJsonPolygon;
     is_active: boolean;
     services_count?: number;

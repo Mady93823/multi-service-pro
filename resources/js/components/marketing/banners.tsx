@@ -1,3 +1,4 @@
+import { Container } from '@/components/site/section';
 import { useTrans } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { type Banner } from '@/types';
@@ -14,8 +15,8 @@ function BannerFace({ banner, className }: { banner: Banner; className?: string 
         banner.image_url !== null ? (
             <img src={banner.image_url} alt={banner.title} className={cn('h-full w-full object-cover', className)} />
         ) : (
-            <div className={cn('from-primary/80 to-primary flex h-full w-full items-center justify-center bg-gradient-to-r px-6', className)}>
-                <span className="text-center text-lg font-semibold text-white sm:text-2xl">{banner.title}</span>
+            <div className={cn('from-primary to-primary/70 flex h-full w-full items-center justify-center bg-gradient-to-br px-6', className)}>
+                <span className="text-primary-foreground text-center text-lg font-semibold sm:text-2xl">{banner.title}</span>
             </div>
         );
 
@@ -51,24 +52,31 @@ export function HeroBanners({ banners }: { banners: Banner[] }) {
     const active = banners[Math.min(index, banners.length - 1)];
 
     return (
-        <section aria-label={t('Highlights')} className="pt-6">
-            <div className="h-44 overflow-hidden rounded-2xl sm:h-64">
-                <BannerFace banner={active} />
-            </div>
-            {banners.length > 1 && (
-                <div className="mt-2 flex justify-center gap-1.5">
-                    {banners.map((banner, i) => (
-                        <button
-                            key={banner.id}
-                            type="button"
-                            aria-label={t('Show banner :number', { number: i + 1 })}
-                            onClick={() => setIndex(i)}
-                            className={cn('h-1.5 w-4 rounded-full transition-colors', i === index ? 'bg-primary' : 'bg-muted')}
-                        />
-                    ))}
+        <Container className="py-8 sm:py-10">
+            <section aria-label={t('Highlights')}>
+                <div className="h-52 overflow-hidden rounded-2xl shadow-sm sm:h-72">
+                    <BannerFace banner={active} />
                 </div>
-            )}
-        </section>
+
+                {banners.length > 1 && (
+                    <div className="mt-4 flex justify-center gap-2">
+                        {banners.map((banner, i) => (
+                            <button
+                                key={banner.id}
+                                type="button"
+                                aria-label={t('Show banner :number', { number: i + 1 })}
+                                aria-current={i === index}
+                                onClick={() => setIndex(i)}
+                                className={cn(
+                                    'h-1.5 rounded-full transition-all duration-300',
+                                    i === index ? 'bg-primary w-8' : 'bg-muted-foreground/25 hover:bg-muted-foreground/50 w-4',
+                                )}
+                            />
+                        ))}
+                    </div>
+                )}
+            </section>
+        </Container>
     );
 }
 
@@ -80,14 +88,17 @@ export function StripBanners({ banners }: { banners: Banner[] }) {
     }
 
     return (
-        <section aria-label={t('Offers')} className="py-4">
-            <div className="flex gap-4 overflow-x-auto pb-1">
-                {banners.map((banner) => (
-                    <div key={banner.id} className="h-24 w-72 shrink-0 overflow-hidden rounded-xl sm:h-28 sm:w-96">
-                        <BannerFace banner={banner} className="text-sm sm:text-base" />
-                    </div>
-                ))}
-            </div>
-        </section>
+        <Container className="py-6">
+            <section aria-label={t('Offers')}>
+                {/* Snap scrolling: a strip that stops half-way between two offers looks broken on a phone. */}
+                <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+                    {banners.map((banner) => (
+                        <div key={banner.id} className="card-lift h-28 w-72 shrink-0 snap-start overflow-hidden rounded-2xl border sm:h-32 sm:w-96">
+                            <BannerFace banner={banner} className="text-sm sm:text-base" />
+                        </div>
+                    ))}
+                </div>
+            </section>
+        </Container>
     );
 }

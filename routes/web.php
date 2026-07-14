@@ -7,6 +7,7 @@ use App\Http\Controllers\CityController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\Customer;
 use App\Http\Controllers\DemoPingController;
+use App\Http\Controllers\FaviconController;
 use App\Http\Controllers\FcmTokenController;
 use App\Http\Controllers\GeocodeController;
 use App\Http\Controllers\InvoiceController;
@@ -29,6 +30,10 @@ Route::get('/', [Customer\HomeController::class, 'index'])->name('home');
 
 // CMS pages (M14) — reserved /p/ prefix so a page slug can never shadow a route.
 Route::get('p/{page:slug}', [Customer\PageController::class, 'show'])->name('pages.show');
+
+// Generated, for the same reason robots.txt is: a static icon would be *our*
+// mark on the buyer's tab. Overridden the moment they upload one (M14/D8).
+Route::get('favicon.svg', FaviconController::class)->name('favicon');
 
 // M24: both are generated, not static files (public/robots.txt was deleted) —
 // a white-label install's URLs depend on its own content.

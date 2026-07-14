@@ -1,7 +1,7 @@
 import { SlotPicker } from '@/components/booking/slot-picker';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -12,8 +12,8 @@ import { useTrans } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { type Address, type CartSummary, type SlotDay } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Banknote, CreditCard, ImagePlus, Landmark, LoaderCircle, MapPin, TicketPercent, Wallet, X } from 'lucide-react';
-import { FormEventHandler, type ComponentType } from 'react';
+import { Banknote, Check, CreditCard, ImagePlus, Landmark, LoaderCircle, MapPin, TicketPercent, Wallet, X } from 'lucide-react';
+import { FormEventHandler, type ComponentType, type ReactNode } from 'react';
 
 interface CheckoutLine {
     key: string;
@@ -50,6 +50,24 @@ type CheckoutForm = {
     notes: string;
     photos: File[];
 };
+
+/** A numbered step, so the page reads as a sequence rather than as four unrelated cards. */
+function Step({ number, title, hint, children }: { number: number; title: string; hint?: ReactNode; children: ReactNode }) {
+    return (
+        <Card className="gap-0 p-6">
+            <div className="mb-5 flex items-start gap-3">
+                <span className="bg-primary/10 text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold">
+                    {number}
+                </span>
+                <div>
+                    <h2 className="font-semibold">{title}</h2>
+                    {hint !== undefined && <p className="text-muted-foreground mt-0.5 text-sm">{hint}</p>}
+                </div>
+            </div>
+            {children}
+        </Card>
+    );
+}
 
 export default function CheckoutPage({
     lines,
@@ -175,15 +193,12 @@ export default function CheckoutPage({
         <PublicLayout>
             <Head title={t('Checkout')} />
 
-            <h1 className="text-xl font-semibold">{t('Checkout')}</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t('Checkout')}</h1>
 
-            <form onSubmit={submit} className="grid gap-8 py-6 lg:grid-cols-3">
-                <div className="space-y-6 lg:col-span-2">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">{t('Service address')}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
+            <form onSubmit={submit} className="grid gap-8 py-8 lg:grid-cols-3">
+                <div className="space-y-5 lg:col-span-2">
+                    <Step number={1} title={t('Service address')}>
+                        <div className="space-y-3">
                             {addresses.length === 0 && (
                                 <div className="space-y-3">
                                     <p className="text-muted-foreground text-sm">{t('Add an address to continue.')}</p>
@@ -195,6 +210,7 @@ export default function CheckoutPage({
                                     </Button>
                                 </div>
                             )}
+
                             {addresses.map(({ address, blocked_services: blocked, city_id: cityId }) => {
                                 const isBlocked = blocked.length > 0;
                                 const selected = data.address_id === address.id;
@@ -206,29 +222,39 @@ export default function CheckoutPage({
                                         disabled={isBlocked}
                                         onClick={() => chooseAddress(address.id, cityId)}
                                         className={cn(
-                                            'w-full rounded-lg border p-3 text-left text-sm transition-colors',
-                                            selected && 'border-primary ring-primary ring-1',
+                                            'relative w-full rounded-xl border p-4 text-left text-sm transition-all',
+                                            selected ? 'border-primary bg-primary/5 ring-primary/30 ring-2' : 'hover:border-primary/40',
                                             isBlocked && 'cursor-not-allowed opacity-60',
                                         )}
                                     >
-                                        <div className="flex items-center justify-between gap-2">
-                                            <span className="font-medium">
-                                                {addressLabels[address.label]}
-                                                {address.is_default && <span className="text-muted-foreground ml-2 text-xs">{t('Default')}</span>}
-                                            </span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-semibold">{addressLabels[address.label]}</span>
+                                            {address.is_default && (
+                                                <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[11px] font-medium">
+                                                    {t('Default')}
+                                                </span>
+                                            )}
+                                            {selected && (
+                                                <span className="bg-primary text-primary-foreground ml-auto flex h-5 w-5 items-center justify-center rounded-full">
+                                                    <Check className="h-3 w-3" />
+                                                </span>
+                                            )}
                                         </div>
-                                        <p className="text-muted-foreground mt-0.5">
+
+                                        <p className="text-muted-foreground mt-1">
                                             {address.line1}
                                             {address.line2 ? `, ${address.line2}` : ''} · {address.city} {address.postal_code}
                                         </p>
+
                                         {isBlocked && (
-                                            <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                                            <p className="text-highlight-foreground bg-highlight/15 dark:text-highlight mt-2 rounded-lg px-2 py-1 text-xs">
                                                 {t('Not available here: :services', { services: blocked.join(', ') })}
                                             </p>
                                         )}
                                     </button>
                                 );
                             })}
+
                             {addresses.length > 0 && (
                                 <Button asChild variant="ghost" size="sm">
                                     <Link href={route('addresses.create')}>
@@ -237,28 +263,22 @@ export default function CheckoutPage({
                                     </Link>
                                 </Button>
                             )}
+
                             <InputError message={errors.address_id} />
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </Step>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">{t('Pick a time')}</CardTitle>
-                            {slotCity && (
-                                <p className="text-muted-foreground text-sm">{t('Times are shown in :city local time.', { city: slotCity.name })}</p>
-                            )}
-                        </CardHeader>
-                        <CardContent>
-                            <SlotPicker days={slotDays} value={data.scheduled_at} onChange={(value) => setData('scheduled_at', value)} />
-                            <InputError message={errors.scheduled_at} className="mt-2" />
-                        </CardContent>
-                    </Card>
+                    <Step
+                        number={2}
+                        title={t('Pick a time')}
+                        hint={slotCity ? t('Times are shown in :city local time.', { city: slotCity.name }) : undefined}
+                    >
+                        <SlotPicker days={slotDays} value={data.scheduled_at} onChange={(value) => setData('scheduled_at', value)} />
+                        <InputError message={errors.scheduled_at} className="mt-2" />
+                    </Step>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">{t('Details for the professional')}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
+                    <Step number={3} title={t('Details for the professional')}>
+                        <div className="space-y-5">
                             <div className="grid gap-2">
                                 <Label htmlFor="notes">{t('Notes (optional)')}</Label>
                                 <Textarea
@@ -271,8 +291,9 @@ export default function CheckoutPage({
                                 />
                                 <InputError message={errors.notes} />
                             </div>
+
                             <div className="grid gap-2">
-                                <Label htmlFor="photos" className="flex items-center gap-1">
+                                <Label htmlFor="photos" className="flex items-center gap-1.5">
                                     <ImagePlus className="h-4 w-4" />
                                     {t('Problem photos (optional, up to 4)')}
                                 </Label>
@@ -281,7 +302,7 @@ export default function CheckoutPage({
                                     type="file"
                                     accept="image/png,image/jpeg,image/webp"
                                     multiple
-                                    className="text-sm"
+                                    className="file:bg-muted hover:file:bg-accent w-full cursor-pointer rounded-xl border p-2 text-sm file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:px-3 file:py-1.5 file:text-sm file:font-medium"
                                     onChange={(e) => setData('photos', Array.from(e.target.files ?? []).slice(0, 4))}
                                 />
                                 {data.photos.length > 0 && (
@@ -289,17 +310,15 @@ export default function CheckoutPage({
                                 )}
                                 <InputError message={errors.photos} />
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </Step>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">{t('Payment')}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
+                    <Step number={4} title={t('Payment')}>
+                        <div className="space-y-3">
                             {paymentMethods.length === 0 && (
                                 <p className="text-muted-foreground text-sm">{t('No payment method is available right now.')}</p>
                             )}
+
                             {paymentMethods.map((method) => {
                                 const meta = methodMeta[method];
 
@@ -318,123 +337,146 @@ export default function CheckoutPage({
                                         disabled={disabled}
                                         onClick={() => setData('payment_method', method)}
                                         className={cn(
-                                            'flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors',
-                                            selected && 'border-primary ring-primary ring-1',
+                                            'flex w-full items-center gap-3.5 rounded-xl border p-4 text-left transition-all',
+                                            selected ? 'border-primary bg-primary/5 ring-primary/30 ring-2' : 'hover:border-primary/40',
                                             disabled && 'cursor-not-allowed opacity-60',
                                         )}
                                     >
-                                        <Icon className="h-5 w-5 shrink-0" />
-                                        <div className="text-sm">
-                                            <p className="font-medium">{meta.title}</p>
+                                        <span
+                                            className={cn(
+                                                'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
+                                                selected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+                                            )}
+                                        >
+                                            <Icon className="h-5 w-5" />
+                                        </span>
+
+                                        <div className="min-w-0 text-sm">
+                                            <p className="font-semibold">{meta.title}</p>
                                             <p className="text-muted-foreground">{meta.hint}</p>
                                         </div>
+
+                                        {selected && (
+                                            <span className="bg-primary text-primary-foreground ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full">
+                                                <Check className="h-3 w-3" />
+                                            </span>
+                                        )}
                                     </button>
                                 );
                             })}
+
                             <InputError message={errors.payment_method} />
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </Step>
                 </div>
 
                 <div>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">{t('Order summary')}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-2 text-sm">
+                    <Card className="gap-0 p-6 shadow-lg lg:sticky lg:top-24">
+                        <h2 className="text-lg font-semibold">{t('Order summary')}</h2>
+
+                        <div className="mt-5 space-y-2.5 text-sm">
                             {lines.map((line) => (
-                                <div key={line.key} className="flex justify-between gap-2">
+                                <div key={line.key} className="flex justify-between gap-3">
                                     <span className="text-muted-foreground min-w-0">
                                         {line.name} × {line.qty}
                                         {line.addon_names.length > 0 && <span className="block text-xs">+ {line.addon_names.join(', ')}</span>}
                                     </span>
-                                    <span className="shrink-0">{money(line.line_total)}</span>
+                                    <span className="shrink-0 font-medium">{money(line.line_total)}</span>
                                 </div>
                             ))}
-                            <Separator />
+                        </div>
 
-                            {coupon === null ? (
-                                <div className="space-y-1 py-1">
-                                    <div className="flex gap-2">
-                                        <Input
-                                            value={couponForm.data.coupon}
-                                            onChange={(e) => couponForm.setData('coupon', e.target.value.toUpperCase())}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    e.preventDefault();
-                                                    applyCoupon();
-                                                }
-                                            }}
-                                            placeholder={t('Coupon code')}
-                                            className="h-9 font-mono uppercase"
-                                        />
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-9"
-                                            disabled={couponForm.processing || couponForm.data.coupon.trim() === ''}
-                                            onClick={applyCoupon}
-                                        >
-                                            {couponForm.processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                                            {t('Apply')}
-                                        </Button>
-                                    </div>
-                                    {/* Placement can also reject the coupon (raced cap) — that error
-                                        lands on the main form's bag, not the apply form's. */}
-                                    <InputError message={couponForm.errors.coupon ?? (errors as Record<string, string | undefined>).coupon} />
-                                    {couponError !== null && <p className="text-xs text-amber-700 dark:text-amber-400">{couponError}</p>}
-                                </div>
-                            ) : (
-                                <div className="flex items-center justify-between rounded-lg border border-dashed border-emerald-400 bg-emerald-50 px-3 py-2 dark:border-emerald-700 dark:bg-emerald-950/40">
-                                    <span className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
-                                        <TicketPercent className="h-4 w-4" />
-                                        {coupon.code}
-                                    </span>
-                                    <button
+                        <Separator className="my-4" />
+
+                        {coupon === null ? (
+                            <div className="space-y-2">
+                                <div className="flex gap-2">
+                                    <Input
+                                        value={couponForm.data.coupon}
+                                        onChange={(e) => couponForm.setData('coupon', e.target.value.toUpperCase())}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                applyCoupon();
+                                            }
+                                        }}
+                                        placeholder={t('Coupon code')}
+                                        className="h-10 font-mono uppercase"
+                                    />
+                                    <Button
                                         type="button"
-                                        onClick={removeCoupon}
-                                        aria-label={t('Remove coupon')}
-                                        className="text-muted-foreground hover:text-foreground"
+                                        variant="outline"
+                                        className="h-10"
+                                        disabled={couponForm.processing || couponForm.data.coupon.trim() === ''}
+                                        onClick={applyCoupon}
                                     >
-                                        <X className="h-4 w-4" />
-                                    </button>
+                                        {couponForm.processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                                        {t('Apply')}
+                                    </Button>
                                 </div>
-                            )}
+                                {/* Placement can also reject the coupon (raced cap) — that error
+                                    lands on the main form's bag, not the apply form's. */}
+                                <InputError message={couponForm.errors.coupon ?? (errors as Record<string, string | undefined>).coupon} />
+                                {couponError !== null && <p className="text-highlight text-xs">{couponError}</p>}
+                            </div>
+                        ) : (
+                            <div className="border-success/40 bg-success/10 flex items-center justify-between rounded-xl border border-dashed px-3 py-2.5">
+                                <span className="text-success flex items-center gap-2 text-sm font-semibold">
+                                    <TicketPercent className="h-4 w-4" />
+                                    {coupon.code}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={removeCoupon}
+                                    aria-label={t('Remove coupon')}
+                                    className="text-muted-foreground hover:text-foreground"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </div>
+                        )}
 
-                            <Separator />
+                        <Separator className="my-4" />
+
+                        <div className="space-y-2.5 text-sm">
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">{t('Items')}</span>
-                                <span>{money(summary.subtotal)}</span>
+                                <span className="font-medium">{money(summary.subtotal)}</span>
                             </div>
+
                             {summary.discount !== undefined && Number(summary.discount) > 0 && (
-                                <div className="flex justify-between text-emerald-700 dark:text-emerald-400">
+                                <div className="text-success flex justify-between font-medium">
                                     <span>{t('Coupon discount')}</span>
                                     <span>− {money(summary.discount)}</span>
                                 </div>
                             )}
+
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">
                                     {summary.tax_label} ({summary.tax_percent}%)
                                 </span>
-                                <span>{money(summary.tax)}</span>
+                                <span className="font-medium">{money(summary.tax)}</span>
                             </div>
+
                             <Separator />
-                            <div className="flex justify-between text-base font-semibold">
-                                <span>{t('Total')}</span>
-                                <span>{money(summary.total)}</span>
+
+                            <div className="flex items-center justify-between">
+                                <span className="font-semibold">{t('Total')}</span>
+                                <span className="text-2xl font-bold">{money(summary.total)}</span>
                             </div>
-                            <Button
-                                type="submit"
-                                className="mt-4 w-full"
-                                size="lg"
-                                disabled={processing || data.address_id === null || data.scheduled_at === null || paymentMethods.length === 0}
-                            >
-                                {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                                {submitLabel}
-                            </Button>
-                            <p className="text-muted-foreground text-center text-xs">{submitHint}</p>
-                        </CardContent>
+                        </div>
+
+                        <Button
+                            type="submit"
+                            className="mt-6 h-12 w-full rounded-xl text-base"
+                            size="lg"
+                            disabled={processing || data.address_id === null || data.scheduled_at === null || paymentMethods.length === 0}
+                        >
+                            {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                            {submitLabel}
+                        </Button>
+
+                        <p className="text-muted-foreground mt-3 text-center text-xs">{submitHint}</p>
                     </Card>
                 </div>
             </form>

@@ -24,9 +24,11 @@ export default function CmsPageShow({ page, blocks, meta }: Props) {
         ? new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(page.updated_at))
         : null;
 
+    // Blocks own their own bands and containers, so the shell hands them the
+    // full width; a markdown page keeps the padded reading column.
     if (blocks.length > 0) {
         return (
-            <PublicLayout>
+            <PublicLayout bleed>
                 <SeoHead meta={meta} />
                 <PageBlocks blocks={blocks} />
             </PublicLayout>
@@ -36,9 +38,9 @@ export default function CmsPageShow({ page, blocks, meta }: Props) {
     return (
         <PublicLayout>
             <SeoHead meta={meta} />
-            <article className="mx-auto w-full max-w-3xl">
-                <h1 className="text-3xl font-semibold tracking-tight">{page.title}</h1>
-                {updated ? <p className="text-muted-foreground mt-1 text-xs">{t('Last updated :date', { date: updated })}</p> : null}
+            <article className="mx-auto w-full max-w-3xl py-4">
+                <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{page.title}</h1>
+                {updated ? <p className="text-muted-foreground mt-2 text-xs">{t('Last updated :date', { date: updated })}</p> : null}
                 <div
                     className="prose prose-neutral dark:prose-invert mt-6 max-w-none"
                     // Safe: produced by the server-side sanitizing renderer, never from client input.

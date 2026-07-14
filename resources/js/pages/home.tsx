@@ -17,7 +17,9 @@ interface HomeProps {
  */
 export default function Home({ blocks, meta, schema }: HomeProps) {
     return (
-        <PublicLayout>
+        // Bleed: every block draws its own band and its own container (M20 +
+        // the storefront `Section` primitive), so the shell must not clamp them.
+        <PublicLayout bleed>
             <SeoHead meta={meta} schema={schema} />
             <PageBlocks blocks={blocks} />
         </PublicLayout>

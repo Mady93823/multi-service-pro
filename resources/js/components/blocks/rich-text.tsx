@@ -1,3 +1,4 @@
+import { Section } from '@/components/site/section';
 import { cn } from '@/lib/utils';
 
 export interface RichTextProps {
@@ -11,8 +12,14 @@ export interface RichTextProps {
  */
 export function RichTextBlock({ html, width }: RichTextProps) {
     return (
-        <section className={cn('py-6', width === 'narrow' && 'mx-auto max-w-3xl')}>
-            <div className="prose prose-neutral dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: html }} />
-        </section>
+        <Section spacing="md">
+            <div
+                className={cn(
+                    'prose prose-neutral dark:prose-invert prose-headings:tracking-tight max-w-none',
+                    width === 'narrow' && 'mx-auto max-w-3xl',
+                )}
+                dangerouslySetInnerHTML={{ __html: html }}
+            />
+        </Section>
     );
 }

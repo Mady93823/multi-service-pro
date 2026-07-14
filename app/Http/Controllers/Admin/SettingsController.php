@@ -46,11 +46,17 @@ class SettingsController extends Controller
     ): RedirectResponse {
         $settingsGroup = $request->group();
 
-        /** @var array<string, mixed> $data */
-        $data = $request->safe()->except(['logo']);
+        // Every upload the routed group declared, not a hardcoded 'logo': the
+        // branding group grew a favicon, and the next group will grow something
+        // else. The group itself decides what to do with each one.
+        /** @var array<string, UploadedFile> $files */
+        $files = array_filter(
+            $request->allFiles(),
+            static fn (mixed $file): bool => $file instanceof UploadedFile,
+        );
 
-        $logo = $request->file('logo');
-        $files = $logo instanceof UploadedFile ? ['logo' => $logo] : [];
+        /** @var array<string, mixed> $data */
+        $data = $request->safe()->except(array_keys($files));
 
         $action->handle($settingsGroup, $data, $files);
 

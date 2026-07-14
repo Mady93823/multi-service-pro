@@ -55,27 +55,27 @@ export default function SiteFooter() {
     }
 
     return (
-        <footer className="border-sidebar-border/80 border-t">
-            <div className="mx-auto grid w-full gap-8 px-4 py-10 md:max-w-7xl md:grid-cols-4">
-                <div className="space-y-3">
-                    <p className="font-semibold">{name}</p>
-                    {appearance.footer_about !== null && <p className="text-muted-foreground text-sm">{appearance.footer_about}</p>}
+        <footer className="bg-surface border-t">
+            <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-4 lg:px-8">
+                <div className="space-y-4">
+                    <p className="text-lg font-semibold tracking-tight">{name}</p>
+                    {appearance.footer_about !== null && <p className="text-muted-foreground text-sm leading-relaxed">{appearance.footer_about}</p>}
                     {socials.length > 0 && <SocialRow socials={socials} />}
                     {site.newsletter && <NewsletterForm />}
                 </div>
 
                 {columns.map((column, index) =>
                     column.length === 0 ? null : (
-                        <div key={index} className="space-y-2">
+                        <div key={index}>
                             <FooterColumn links={column} />
                         </div>
                     ),
                 )}
 
                 {(appearance.contact_email !== null || appearance.contact_phone !== null || appearance.contact_address !== null) && (
-                    <div className="space-y-2">
-                        <p className="text-sm font-semibold">{t('Contact')}</p>
-                        <ul className="text-muted-foreground space-y-2 text-sm">
+                    <div className="space-y-3">
+                        <p className="text-xs font-semibold tracking-[0.14em] uppercase">{t('Contact')}</p>
+                        <ul className="text-muted-foreground space-y-2.5 text-sm">
                             {appearance.contact_email !== null && (
                                 <li className="flex items-start gap-2">
                                     <Mail className="mt-0.5 h-4 w-4 shrink-0" />
@@ -103,24 +103,36 @@ export default function SiteFooter() {
                 )}
             </div>
 
-            <div className="border-sidebar-border/80 text-muted-foreground border-t py-4 text-center text-sm">{copyright}</div>
+            <div className="text-muted-foreground border-t py-6 text-center text-sm">{copyright}</div>
         </footer>
     );
 }
 
+/**
+ * The first link is the column's own heading when the admin nested the rest
+ * under it — which is how a menu builder expresses "Company: About, Careers".
+ */
 function FooterColumn({ links }: { links: SiteMenuLink[] }) {
     return (
-        <ul className="space-y-2 text-sm">
+        <ul className="space-y-3 text-sm">
             {links.map((link) => (
                 <li key={`${link.label}-${link.url}`}>
-                    <Link href={link.url} className="text-muted-foreground hover:text-foreground">
+                    <Link
+                        href={link.url}
+                        className={
+                            link.children.length > 0
+                                ? 'hover:text-primary text-xs font-semibold tracking-[0.14em] uppercase transition-colors'
+                                : 'text-muted-foreground hover:text-foreground transition-colors'
+                        }
+                    >
                         {link.label}
                     </Link>
+
                     {link.children.length > 0 && (
-                        <ul className="mt-2 ml-3 space-y-2">
+                        <ul className="mt-3 space-y-2.5">
                             {link.children.map((child) => (
                                 <li key={`${child.label}-${child.url}`}>
-                                    <Link href={child.url} className="text-muted-foreground hover:text-foreground">
+                                    <Link href={child.url} className="text-muted-foreground hover:text-foreground transition-colors">
                                         {child.label}
                                     </Link>
                                 </li>

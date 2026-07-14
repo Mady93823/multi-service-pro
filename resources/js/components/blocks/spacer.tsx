@@ -1,3 +1,4 @@
+import { Container } from '@/components/site/section';
 import { cn } from '@/lib/utils';
 
 export interface SpacerProps {
@@ -11,10 +12,17 @@ const HEIGHTS: Record<string, string> = {
     lg: 'h-24',
 };
 
+/**
+ * The divider is drawn inside the container, not across the viewport: a rule
+ * that runs edge to edge is a section boundary, and that is what `Section`'s
+ * tones are for.
+ */
 export function SpacerBlock({ size, divider }: SpacerProps) {
     return (
-        <div className={cn('flex items-center', HEIGHTS[size] ?? HEIGHTS.md)} aria-hidden>
-            {divider && <hr className="w-full" />}
-        </div>
+        <Container>
+            <div className={cn('flex items-center', HEIGHTS[size] ?? HEIGHTS.md)} aria-hidden>
+                {divider && <hr className="w-full" />}
+            </div>
+        </Container>
     );
 }

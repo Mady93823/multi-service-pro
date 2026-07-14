@@ -1,6 +1,7 @@
 import { AppContent } from '@/components/app-content';
 import { AppHeader } from '@/components/app-header';
 import { AppShell } from '@/components/app-shell';
+import { BrandTheme } from '@/components/brand-theme';
 import { ImpersonationBanner } from '@/components/impersonation-banner';
 import { useFlashToast } from '@/hooks/use-flash-toast';
 import { useNotifications } from '@/hooks/use-notifications';
@@ -19,6 +20,7 @@ export default function AppHeaderLayout({ children, breadcrumbs, navItems, homeH
 
     return (
         <AppShell>
+            <BrandTheme />
             <ImpersonationBanner />
             <AppHeader breadcrumbs={breadcrumbs} navItems={navItems} homeHref={homeHref} />
             <AppContent>{children}</AppContent>

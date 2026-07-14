@@ -31,6 +31,9 @@ class SettingsRegistry
         return [
             'branding.app_name' => ['group' => 'branding', 'type' => SettingType::String, 'value' => config('app.name')],
             'branding.logo_path' => ['group' => 'branding', 'type' => SettingType::String, 'value' => null],
+            // Null falls back to the mark generated at /favicon.svg from the app
+            // name and the brand colour — never a shipped icon of ours (D8).
+            'branding.favicon_path' => ['group' => 'branding', 'type' => SettingType::String, 'value' => null],
             'branding.primary_color' => ['group' => 'branding', 'type' => SettingType::String, 'value' => null],
             'localization.currency' => ['group' => 'localization', 'type' => SettingType::String, 'value' => 'INR'],
             'localization.timezone' => ['group' => 'localization', 'type' => SettingType::String, 'value' => 'Asia/Kolkata'],

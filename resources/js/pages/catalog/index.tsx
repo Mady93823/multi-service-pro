@@ -1,13 +1,13 @@
+import { CategoryCard } from '@/components/catalog/category-card';
 import { Pagination } from '@/components/catalog/pagination';
 import { ServiceCard } from '@/components/catalog/service-card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import PublicLayout from '@/layouts/public-layout';
 import { useTrans } from '@/lib/i18n';
 import { type Category, type Paginated, type Service } from '@/types';
-import { Head, Link, router } from '@inertiajs/react';
-import { FolderOpen, Search } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import { Search, SearchX } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
 interface CatalogIndexProps {
@@ -34,74 +34,84 @@ export default function CatalogIndex({ categories, featured, search, results }: 
         <PublicLayout>
             <Head title={t('All services')} />
 
-            <section className="mx-auto max-w-2xl py-8 text-center">
-                <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t('All services')}</h1>
-                <form onSubmit={submitSearch} className="mt-6 flex gap-2">
-                    <Input value={term} onChange={(e) => setTerm(e.target.value)} placeholder={t('What do you need help with?')} className="h-11" />
-                    <Button type="submit" className="h-11">
-                        <Search className="h-4 w-4" />
+            <section className="mx-auto max-w-2xl py-8 text-center sm:py-12">
+                <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{t('All services')}</h1>
+                <p className="text-muted-foreground mt-3">{t('Search for a job, or browse the categories below.')}</p>
+
+                <form
+                    onSubmit={submitSearch}
+                    className="bg-card focus-within:ring-ring/40 mt-8 flex items-center gap-2 rounded-2xl border p-2 shadow-sm focus-within:ring-2"
+                >
+                    <Search className="text-muted-foreground ml-2 h-5 w-5 shrink-0" aria-hidden />
+                    <Input
+                        value={term}
+                        onChange={(e) => setTerm(e.target.value)}
+                        placeholder={t('What do you need help with?')}
+                        aria-label={t('Search services')}
+                        className="h-11 border-0 bg-transparent px-1 shadow-none focus-visible:ring-0 dark:bg-transparent"
+                    />
+                    <Button type="submit" className="h-11 shrink-0 rounded-xl px-5">
                         {t('Search')}
                     </Button>
                 </form>
             </section>
 
             {results !== null ? (
-                <section className="space-y-4">
-                    <h2 className="text-lg font-semibold">
+                <section className="space-y-8 pb-12">
+                    <h2 className="text-xl font-semibold">
                         {results.meta.total === 0
                             ? t('No results for “:search”', { search })
                             : t(':total result(s) for “:search”', { total: results.meta.total, search })}
                     </h2>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        {results.data.map((service) => (
-                            <ServiceCard key={service.id} service={service} />
-                        ))}
-                    </div>
-                    <Pagination meta={results.meta} links={results.links} />
+
+                    {results.meta.total === 0 ? (
+                        <div className="flex flex-col items-center gap-4 py-16 text-center">
+                            <span className="bg-muted text-muted-foreground flex h-14 w-14 items-center justify-center rounded-2xl">
+                                <SearchX className="h-6 w-6" />
+                            </span>
+                            <p className="text-muted-foreground max-w-sm">{t('Try a different word, or browse the categories.')}</p>
+                            <Button variant="outline" onClick={() => router.get(route('catalog.index'))}>
+                                {t('Browse all')}
+                            </Button>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                                {results.data.map((service) => (
+                                    <ServiceCard key={service.id} service={service} />
+                                ))}
+                            </div>
+                            <Pagination meta={results.meta} links={results.links} />
+                        </>
+                    )}
                 </section>
             ) : (
-                <>
-                    <section className="space-y-4 py-4">
-                        <h2 className="text-lg font-semibold">{t('Browse by category')}</h2>
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            {categories.map((category) => (
-                                <Link key={category.id} href={route('catalog.category', category.slug)} prefetch className="group">
-                                    <Card className="h-full py-0 transition-shadow group-hover:shadow-md">
-                                        <CardContent className="flex items-center gap-4 p-4">
-                                            {category.icon_url ? (
-                                                <img src={category.icon_url} alt="" className="h-12 w-12 rounded-lg object-cover" />
-                                            ) : (
-                                                <div className="bg-muted flex h-12 w-12 items-center justify-center rounded-lg">
-                                                    <FolderOpen className="text-muted-foreground h-6 w-6" />
-                                                </div>
-                                            )}
-                                            <div>
-                                                <h3 className="font-medium">{category.name}</h3>
-                                                {category.children && category.children.length > 0 && (
-                                                    <p className="text-muted-foreground line-clamp-1 text-sm">
-                                                        {category.children.map((child) => child.name).join(' · ')}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </Link>
-                            ))}
-                        </div>
-                        {categories.length === 0 && <p className="text-muted-foreground">{t('The catalog is being set up. Check back soon.')}</p>}
+                <div className="space-y-14 pb-16">
+                    <section className="space-y-6">
+                        <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">{t('Browse by category')}</h2>
+
+                        {categories.length === 0 ? (
+                            <p className="text-muted-foreground">{t('The catalog is being set up. Check back soon.')}</p>
+                        ) : (
+                            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                                {categories.map((category) => (
+                                    <CategoryCard key={category.id} category={category} />
+                                ))}
+                            </div>
+                        )}
                     </section>
 
                     {featured.length > 0 && (
-                        <section className="space-y-4 py-4">
-                            <h2 className="text-lg font-semibold">{t('Popular services')}</h2>
-                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <section className="space-y-6">
+                            <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">{t('Popular services')}</h2>
+                            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                                 {featured.map((service) => (
                                     <ServiceCard key={service.id} service={service} />
                                 ))}
                             </div>
                         </section>
                     )}
-                </>
+                </div>
             )}
         </PublicLayout>
     );

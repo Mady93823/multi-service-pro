@@ -18,7 +18,7 @@ export function StarRating({ rating, size = 'sm', className }: { rating: number;
             {[1, 2, 3, 4, 5].map((star) => (
                 <Star
                     key={star}
-                    className={cn(sizeClasses[size], star <= rounded ? 'fill-amber-400 text-amber-400' : 'fill-muted text-muted-foreground/30')}
+                    className={cn(sizeClasses[size], star <= rounded ? 'fill-highlight text-highlight' : 'fill-muted text-muted-foreground/30')}
                 />
             ))}
         </span>
@@ -44,7 +44,7 @@ export function StarInput({ value, onChange }: { value: number; onChange: (value
                     onClick={() => onChange(star)}
                     className="focus-visible:ring-ring rounded-sm p-0.5 transition-transform hover:scale-110 focus-visible:ring-2 focus-visible:outline-none"
                 >
-                    <Star className={cn('size-7', star <= active ? 'fill-amber-400 text-amber-400' : 'fill-muted text-muted-foreground/30')} />
+                    <Star className={cn('size-7', star <= active ? 'fill-highlight text-highlight' : 'fill-muted text-muted-foreground/30')} />
                 </button>
             ))}
         </div>

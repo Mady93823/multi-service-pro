@@ -380,6 +380,15 @@ Not a module: a sweep across the sixteen that exist. Every item below is a hole 
 - **Webhook replay** is pinned for both gateways: a duplicated delivery is normal gateway traffic, and it settles the booking exactly once (one payment row, one `BookingPlaced`, one status-history row).
 - ✅ *Done when:* the sweeps pass and each one fails loudly on a fresh omission. **Met** — 17 new tests (762 suite-wide, 4338 assertions). Two live findings fixed on the way: the framework's private-disk routes, and the header middleware that never ran on a redirect.
 
+## P7.2 Performance & query budget — **shipped 2026-07-15**
+
+- **`Model::preventLazyLoading()` outside production.** A lazy load is now a **test failure**, not a slow page. It stays off in production: a violation in front of a customer must degrade to a slow response, never to a 500. The whole suite passed the moment it was switched on — the eager-loading discipline had held across sixteen modules.
+- **`QueryBudgetTest`: the query count must not grow when the data does.** Not "fewer than N queries" — a magic number nobody can justify and that rots on the next join. The property is data-independence, and it needs no constant: measure a page with 3 rows, add 20 more, measure again. (Going *down* is allowed: Eloquent skips an eager-load query entirely when no parent row has a key to load.)
+- **It immediately found one real N+1** that `preventLazyLoading` structurally *cannot* see: `/admin/payments` called `getFirstMedia('proof')` per row, and medialibrary answers that with **its own query** rather than by touching the relation — so no lazy-load violation, and one extra query per payment. Fixed by eager-loading `media`. Every other media-bearing list already did.
+- **`DB::prohibitDestructiveCommands()` in production.** `migrate:fresh`, `migrate:refresh` and `db:wipe` now refuse to run on a live install. The buyer's server is one mistyped command from an empty database, and M24's `app:update` runs artisan from a **browser button**.
+- **Fixed a flaky test that had nothing to do with the test that failed.** Roughly one parallel run in three died with an `ErrorException` in a random Zones test: `rename(bootstrap\cache\packages.php): Access is denied`. Cause: the System-screen test really ran `app:update` → `optimize:clear` → deleted `bootstrap/cache/packages.php`, and **bootstrap/cache is real, shared state across the parallel workers** (the `lang/` landmine again). Whichever worker was booting at that moment raced the others to rebuild the manifest and lost. `RunUpdate` is swapped in that test now.
+- ✅ *Done when:* the suite fails on a lazy load, and on a page whose query count scales with its rows. **Met** — 8 new tests (770 suite-wide, 4382 assertions), five consecutive clean parallel runs.
+
 ---
 
 ## Cross-cutting v1 features

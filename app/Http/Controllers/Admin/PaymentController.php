@@ -36,7 +36,12 @@ class PaymentController extends Controller
         ];
 
         $query = Payment::query()
-            ->with(['booking:id,code,customer_id', 'booking.customer:id,name,email', 'bankAccount:id,label'])
+            // `media` is not optional here: the proof badge calls getFirstMedia()
+            // on every row, and medialibrary answers that with its own query
+            // unless the relation is already loaded — an N+1 that
+            // preventLazyLoading cannot see, because it never touches the
+            // relation (P7.2). QueryBudgetTest is what caught it.
+            ->with(['booking:id,code,customer_id', 'booking.customer:id,name,email', 'bankAccount:id,label', 'media'])
             ->when(
                 PaymentProvider::tryFrom($filters['gateway']) !== null,
                 fn ($builder) => $builder->where('gateway', $filters['gateway']),

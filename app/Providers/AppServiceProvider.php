@@ -10,9 +10,11 @@ use App\Domain\Installer\InstallLock;
 use App\Domain\Settings\SettingsRegistry;
 use App\Support\Geocoder;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use RuntimeException;
@@ -39,6 +41,20 @@ class AppServiceProvider extends ServiceProvider
         // Inertia props: single resources and plain collections arrive
         // unwrapped; paginators keep their data/links/meta envelope.
         JsonResource::withoutWrapping();
+
+        // P7.2. An N+1 is invisible on seeded data and fatal on real data: the
+        // admin bookings list is fine with 12 rows and issues 300 queries with
+        // 100. So the *tests* are made to fail on a lazy load — a sweep beats a
+        // per-controller audit, because the query nobody looked at is the one
+        // that bites. Off in production: a violation there must degrade to a
+        // slow page, never to a 500 in front of a customer.
+        Model::preventLazyLoading(! $this->app->isProduction());
+
+        // The buyer's server is one mistyped command away from an empty
+        // database, and `app:update` (M24) runs artisan from a browser button.
+        // `migrate:fresh`, `migrate:refresh`, `db:wipe` now refuse to run in
+        // production at all — there is no legitimate reason to want one there.
+        DB::prohibitDestructiveCommands($this->app->isProduction());
 
         // Listeners in app/Listeners are auto-discovered from their handle()
         // type-hint — registering them here as well would fire each one twice.

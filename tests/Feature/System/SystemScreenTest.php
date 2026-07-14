@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Settings\SettingsRegistry;
+use App\Domain\System\Actions\RunUpdate;
 use App\Domain\System\ScheduleStatus;
 use App\Models\ActivityLog;
 use App\Models\User;
@@ -69,6 +70,21 @@ test('an unconfigured integration is reported as off, never as an error', functi
 });
 
 test('running the update from the browser is audited', function () {
+    // The real action runs `optimize:clear`, which deletes
+    // `bootstrap/cache/packages.php` — and bootstrap/cache is REAL, SHARED state
+    // across the parallel test workers, exactly like `lang/`. Whichever worker
+    // happened to be booting at that moment then raced the others to rebuild the
+    // manifest and died on Windows with
+    // `rename(...packages.php): Access is denied`. The failure surfaced on a
+    // random innocent test (usually one of the Zones ones) roughly one run in
+    // three, and read as a zone bug. Swapped: the route's contract is "run the
+    // update, then audit it", and that is what this proves. `RunUpdate` itself is
+    // a thin artisan sequence.
+    $this->mock(RunUpdate::class)
+        ->shouldReceive('handle')
+        ->once()
+        ->andReturn('Update complete.');
+
     $admin = User::factory()->admin()->create();
 
     $this->actingAs($admin)

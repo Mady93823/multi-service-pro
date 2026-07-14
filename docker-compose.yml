@@ -1,0 +1,51 @@
+# The demo stack: the app (nginx + php-fpm + queue + scheduler + Reverb) and a
+# database. Nothing else — no Redis, no separate websocket box. It is one VPS.
+#
+# Bring it up with ./deploy.sh, which writes the .env this file reads.
+
+services:
+    db:
+        image: mysql:8.0
+        restart: unless-stopped
+        environment:
+            MYSQL_DATABASE: ${DB_DATABASE:-urbanserve}
+            MYSQL_USER: ${DB_USERNAME:-urbanserve}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+            MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+        volumes:
+            - db-data:/var/lib/mysql
+        healthcheck:
+            # The app's entrypoint waits too, but this is what makes
+            # `depends_on: condition: service_healthy` mean anything.
+            test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-p${DB_ROOT_PASSWORD}']
+            interval: 5s
+            timeout: 5s
+            retries: 20
+            start_period: 30s
+
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        restart: unless-stopped
+        depends_on:
+            db:
+                condition: service_healthy
+        env_file:
+            - .env
+        ports:
+            - '${APP_PORT:-80}:80'
+        volumes:
+            # Uploads, media conversions and the demo-seeded marker. Everything
+            # else in the image is disposable; this is not.
+            - app-storage:/var/www/html/storage/app
+        healthcheck:
+            test: ['CMD', 'curl', '-fsS', 'http://127.0.0.1/up']
+            interval: 30s
+            timeout: 5s
+            retries: 5
+            start_period: 120s
+
+volumes:
+    db-data:
+    app-storage:

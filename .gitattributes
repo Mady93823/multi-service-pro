@@ -1,5 +1,11 @@
 * text=auto eol=lf
 
+# Non-negotiable: a shell script checked out with CRLF dies on Linux with
+# "bad interpreter: /bin/sh^M", and the container never starts.
+*.sh text eol=lf
+docker/* text eol=lf
+Dockerfile text eol=lf
+
 *.blade.php diff=html
 *.css diff=css
 *.html diff=html

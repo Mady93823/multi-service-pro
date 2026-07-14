@@ -17,6 +17,9 @@
 /public/storage
 /storage/*.key
 /storage/pail
+# Medialibrary's temporary working directory. Laravel ships a nested .gitignore
+# for storage/app, framework and logs, but this one is created by the package.
+/storage/media-library
 /vendor
 auth.json
 Homestead.json

@@ -74,6 +74,18 @@ Everything below is optional — the site runs with none of it — and everythin
 5. **Settings → Email**: SMTP. Until you set this, emails are simply not sent — nothing breaks, and the in-app notifications still arrive.
 6. **Admin → System**: check the scheduler and the queue worker are both showing as alive.
 
+## Showing the site to someone before it has any trade
+
+A brand-new install is correct and empty: no bookings, flat charts, no photographs. If you need to *demonstrate* the product — to a partner, an investor, your own staff — there is a fuller dataset than the wizard's demo tick:
+
+```
+php artisan demo:seed --fresh
+```
+
+It rebuilds the database as a company that has been trading for three months: photographs on every service, six providers with ratings, twelve customers, ninety days of bookings, payments, reviews, earnings and payouts. Every demo account signs in with the password `password`.
+
+**`--fresh` deletes everything in the database first.** Never point it at a live site: it refuses to run in production, and that refusal is the only thing between it and your real bookings.
+
 ## Updating to a new release
 
 Upload the new files over the old ones, keeping your `.env` and `storage/`. Then either run `php artisan app:update`, or press **Run update** on **Admin → System** — they are the same thing, and the button shows you the output.

@@ -1,8 +1,8 @@
 import { PageBlocks } from '@/components/blocks';
+import { SeoHead } from '@/components/seo/seo-head';
 import PublicLayout from '@/layouts/public-layout';
 import { useTrans } from '@/lib/i18n';
-import { type RenderedBlock } from '@/types';
-import { Head } from '@inertiajs/react';
+import { type RenderedBlock, type SeoMetaProps } from '@/types';
 
 interface Props {
     page: {
@@ -14,9 +14,10 @@ interface Props {
     };
     /** M20: a page carries either blocks or a markdown body, never both. */
     blocks: RenderedBlock[];
+    meta: SeoMetaProps;
 }
 
-export default function CmsPageShow({ page, blocks }: Props) {
+export default function CmsPageShow({ page, blocks, meta }: Props) {
     const t = useTrans();
 
     const updated = page.updated_at
@@ -26,7 +27,7 @@ export default function CmsPageShow({ page, blocks }: Props) {
     if (blocks.length > 0) {
         return (
             <PublicLayout>
-                <Head title={page.title} />
+                <SeoHead meta={meta} />
                 <PageBlocks blocks={blocks} />
             </PublicLayout>
         );
@@ -34,7 +35,7 @@ export default function CmsPageShow({ page, blocks }: Props) {
 
     return (
         <PublicLayout>
-            <Head title={page.title} />
+            <SeoHead meta={meta} />
             <article className="mx-auto w-full max-w-3xl">
                 <h1 className="text-3xl font-semibold tracking-tight">{page.title}</h1>
                 {updated ? <p className="text-muted-foreground mt-1 text-xs">{t('Last updated :date', { date: updated })}</p> : null}

@@ -96,10 +96,18 @@ test('a blank company name falls back to the branding app name', function () {
     expect(app(BookingInvoice::class)->data($booking)['seller']['name'])->toBe('Acme Services');
 });
 
-test('money is grouped the Indian way for rupees and the Western way otherwise', function () {
-    expect(Money::format('100000', 'INR'))->toBe('₹1,00,000.00')
-        ->and(Money::format('999.5', 'INR'))->toBe('₹999.50')
-        ->and(Money::format('-190', 'INR'))->toBe('-₹190.00')
-        ->and(Money::format('100000', 'USD'))->toBe('$100,000.00')
-        ->and(Money::format('1234.5', 'AED'))->toBe('AED 1,234.50');
+test('an invoice prints money in the platform currency, however it is configured', function () {
+    // M24 (D23): there is no currency argument to pass — one currency per
+    // install, and the format is a setting. The invoice cannot print in a
+    // currency the platform does not run on.
+    expect(Money::format('100000'))->toBe('₹1,00,000.00')
+        ->and(Money::format('999.5'))->toBe('₹999.50')
+        ->and(Money::format('-190'))->toBe('-₹190.00');
+
+    $settings = app(SettingsRegistry::class);
+    $settings->set('localization.currency', 'USD');
+    $settings->set('currency.symbol', '$');
+    $settings->set('currency.grouping', 'western');
+
+    expect(Money::format('100000'))->toBe('$100,000.00');
 });

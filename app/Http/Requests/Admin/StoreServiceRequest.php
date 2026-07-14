@@ -24,6 +24,9 @@ class StoreServiceRequest extends FormRequest
             'name' => ['required', 'string', 'max:150'],
             'short_description' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:10000'],
+            // M24: blank falls back to the site-wide SEO defaults.
+            'meta_title' => ['nullable', 'string', 'max:70'],
+            'meta_description' => ['nullable', 'string', 'max:200'],
             'pricing_type' => ['required', Rule::enum(PricingType::class)],
             'price' => ['required', 'numeric', 'min:0', 'max:9999999999.99'],
             'duration_minutes' => ['nullable', 'integer', 'min:5', 'max:1440'],

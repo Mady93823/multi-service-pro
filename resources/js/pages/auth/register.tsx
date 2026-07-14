@@ -7,6 +7,7 @@ import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useRecaptcha } from '@/hooks/use-recaptcha';
 import AuthLayout from '@/layouts/auth-layout';
 import { useTrans } from '@/lib/i18n';
 
@@ -26,7 +27,9 @@ interface RegisterProps {
 
 export default function Register({ referrals_enabled: referralsEnabled, referral_code: prefilledCode }: RegisterProps) {
     const t = useTrans();
-    const { data, setData, post, processing, errors, reset } = useForm<RegisterForm>({
+    const recaptcha = useRecaptcha('register');
+
+    const { data, setData, post, transform, processing, errors, reset } = useForm<RegisterForm>({
         name: '',
         email: '',
         password: '',
@@ -34,8 +37,12 @@ export default function Register({ referrals_enabled: referralsEnabled, referral
         referral_code: prefilledCode,
     });
 
-    const submit: FormEventHandler = (e) => {
+    const submit: FormEventHandler = async (e) => {
         e.preventDefault();
+
+        const token = await recaptcha();
+        transform((current) => ({ ...current, recaptcha_token: token }));
+
         post(route('register'), {
             onFinish: () => reset('password', 'password_confirmation'),
         });

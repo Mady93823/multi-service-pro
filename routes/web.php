@@ -15,6 +15,7 @@ use App\Http\Controllers\PaymentProofController;
 use App\Http\Controllers\Provider;
 use App\Http\Controllers\ProviderDocumentController;
 use App\Http\Controllers\ReviewPhotoController;
+use App\Http\Controllers\SeoController;
 use App\Http\Controllers\SupportTicketController;
 use App\Http\Controllers\TicketAttachmentController;
 use App\Http\Controllers\TrackingController;
@@ -27,6 +28,11 @@ Route::get('/', [Customer\HomeController::class, 'index'])->name('home');
 
 // CMS pages (M14) — reserved /p/ prefix so a page slug can never shadow a route.
 Route::get('p/{page:slug}', [Customer\PageController::class, 'show'])->name('pages.show');
+
+// M24: both are generated, not static files (public/robots.txt was deleted) —
+// a white-label install's URLs depend on its own content.
+Route::get('sitemap.xml', [SeoController::class, 'sitemap'])->name('seo.sitemap');
+Route::get('robots.txt', [SeoController::class, 'robots'])->name('seo.robots');
 
 // Blog (M21). `feed` is declared before `{post:slug}` — otherwise a post could
 // never be called "feed", and the slug route would swallow the RSS URL.
@@ -321,6 +327,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->middleware('throttle:10,1')->name('settings.mail.test');
     Route::get('settings/{group}', [Admin\SettingsController::class, 'edit'])->name('settings.edit');
     Route::put('settings/{group}', [Admin\SettingsController::class, 'update'])->name('settings.update');
+
+    // M24: install health, cron status and the browser's copy of `app:update`.
+    Route::get('system', [Admin\SystemController::class, 'index'])->name('system.index');
+    Route::post('system/update', [Admin\SystemController::class, 'update'])
+        ->middleware('throttle:3,1')->name('system.update');
 
     Route::get('reports/{report}', [Admin\ReportController::class, 'show'])->name('reports.show');
     // GET so the CSV can stream straight to the browser as a download —

@@ -23,6 +23,9 @@ class ServiceResource extends JsonResource
             'slug' => $this->slug,
             'short_description' => $this->short_description,
             'description' => $this->description,
+            // M24: null means the site-wide SEO defaults apply.
+            'meta_title' => $this->meta_title,
+            'meta_description' => $this->meta_description,
             'pricing_type' => $this->pricing_type,
             'price' => $this->price,
             'duration_minutes' => $this->duration_minutes,

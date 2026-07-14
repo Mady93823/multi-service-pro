@@ -22,6 +22,9 @@ class StorePageRequest extends FormRequest
             // URL-safe; uniqueness is handled by SavePage's suffix loop.
             'slug' => ['nullable', 'string', 'alpha_dash:ascii', 'max:150'],
             'body' => ['required', 'string', 'max:65535'],
+            // M24: blank falls back to the site-wide SEO defaults.
+            'meta_title' => ['nullable', 'string', 'max:70'],
+            'meta_description' => ['nullable', 'string', 'max:200'],
             'is_published' => ['boolean'],
             'show_in_footer' => ['boolean'],
             'sort_order' => ['integer', 'min:0', 'max:65535'],

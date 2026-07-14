@@ -21,6 +21,9 @@ class PageResource extends JsonResource
             'title' => $this->title,
             'slug' => $this->slug,
             'body' => $this->body,
+            // M24: null means the site-wide SEO defaults apply.
+            'meta_title' => $this->meta_title,
+            'meta_description' => $this->meta_description,
             'is_published' => $this->is_published,
             'show_in_footer' => $this->show_in_footer,
             'sort_order' => $this->sort_order,

@@ -7,6 +7,7 @@ use App\Domain\Bookings\CartManager;
 use App\Domain\Cms\FooterPages;
 use App\Domain\Cms\SiteContent;
 use App\Domain\Localization\TranslationLoader;
+use App\Domain\Security\Recaptcha;
 use App\Domain\Settings\SettingsRegistry;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -58,6 +59,12 @@ class HandleInertiaRequests extends Middleware
                 'currency' => $settings->string('localization.currency', 'INR'),
                 'locale' => $settings->string('localization.locale', 'en'),
                 'timezone' => $settings->string('localization.timezone', 'Asia/Kolkata'),
+                // M24 (D23): format only — one currency per install, no conversion.
+                // The browser prints money exactly the way App\Support\Money does.
+                'symbol' => $settings->string('currency.symbol', '₹'),
+                'position' => $settings->string('currency.position', 'before'),
+                'decimals' => $settings->integer('currency.decimals', 2),
+                'grouping' => $settings->string('currency.grouping', 'indian'),
             ],
             'auth' => [
                 'user' => $request->user(),
@@ -66,6 +73,8 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),
+                // M24: the `app:update` console output, read on the screen that started it.
+                'update_output' => $request->session()->get('update_output'),
             ],
             'cart' => [
                 'count' => $request->hasSession() ? app(CartManager::class)->count() : 0,
@@ -75,7 +84,12 @@ class HandleInertiaRequests extends Middleware
             // M14: white-label footer links — cached, flushed on page save.
             'footer_pages' => app(FooterPages::class)->all(),
             // M19: menus, header/footer style, social, cookie banner, custom code.
+            // M24 adds analytics (storefront only, consent-gated).
             'site' => app(SiteContent::class)->share($request->user(), $this->isStorefront($request)),
+            // M24: only the *site* key ever crosses to the browser — it is public
+            // by design — and only when reCaptcha is configured AND a form uses it.
+            // Null on a fresh install, so no script loads and no form waits on one.
+            'recaptcha' => app(Recaptcha::class)->share(),
         ]);
     }
 

@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useRecaptcha } from '@/hooks/use-recaptcha';
 import PublicLayout from '@/layouts/public-layout';
 import { useTrans } from '@/lib/i18n';
 import { Head, useForm } from '@inertiajs/react';
@@ -22,7 +23,9 @@ interface ContactProps {
 export default function Contact({ contact, prefill }: ContactProps) {
     const t = useTrans();
 
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const recaptcha = useRecaptcha('contact');
+
+    const { data, setData, post, transform, processing, errors, reset } = useForm({
         name: prefill.name,
         email: prefill.email,
         subject: '',
@@ -30,8 +33,12 @@ export default function Contact({ contact, prefill }: ContactProps) {
         website: '',
     });
 
-    const submit: FormEventHandler = (e) => {
+    const submit: FormEventHandler = async (e) => {
         e.preventDefault();
+
+        const token = await recaptcha();
+        transform((current) => ({ ...current, recaptcha_token: token }));
+
         post(route('contact.store'), {
             preserveScroll: true,
             onSuccess: () => reset('subject', 'message'),

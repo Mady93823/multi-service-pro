@@ -35,6 +35,9 @@ class Page extends Model
         'title',
         'slug',
         'body',
+        // M24: null means "use the site defaults" (SeoMeta), never an empty tag.
+        'meta_title',
+        'meta_description',
         'is_published',
         'show_in_footer',
         'sort_order',

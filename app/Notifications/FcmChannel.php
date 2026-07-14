@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Domain\Settings\SettingsRegistry;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
 
@@ -17,9 +18,16 @@ use Illuminate\Support\Facades\Log;
  */
 class FcmChannel
 {
+    /**
+     * Credentials come from the API-keys screen first (M24) and from the
+     * environment second, so a buyer can paste the Firebase service-account JSON
+     * into the browser without editing `.env` — and an install with neither
+     * simply never selects this channel (D14).
+     */
     public static function isConfigured(): bool
     {
-        return (string) config('services.fcm.credentials') !== '';
+        return app(SettingsRegistry::class)->string('integrations.fcm_credentials') !== ''
+            || (string) config('services.fcm.credentials') !== '';
     }
 
     public function send(object $notifiable, Notification $notification): void

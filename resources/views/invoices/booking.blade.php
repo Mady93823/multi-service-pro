@@ -29,7 +29,7 @@
 </head>
 <body>
 @php
-    $money = fn ($amount) => Money::format($amount, $currency);
+    $money = fn ($amount) => Money::format($amount);
     $half = $tax['percent'] / 2;
     $statusLabels = [
         'unpaid' => __('Unpaid'),

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useRecaptcha } from '@/hooks/use-recaptcha';
 import AuthLayout from '@/layouts/auth-layout';
 import { useTrans } from '@/lib/i18n';
 
@@ -24,14 +25,22 @@ interface LoginProps {
 
 export default function Login({ status, canResetPassword }: LoginProps) {
     const t = useTrans();
-    const { data, setData, post, processing, errors, reset } = useForm<LoginForm>({
+    const recaptcha = useRecaptcha('login');
+
+    const { data, setData, post, transform, processing, errors, reset } = useForm<LoginForm>({
         email: '',
         password: '',
         remember: false,
     });
 
-    const submit: FormEventHandler = (e) => {
+    const submit: FormEventHandler = async (e) => {
         e.preventDefault();
+
+        // Empty string unless an admin configured reCaptcha and ticked this form
+        // (M24) — the server's rule ignores it in exactly those cases.
+        const token = await recaptcha();
+        transform((current) => ({ ...current, recaptcha_token: token }));
+
         post(route('login'), {
             onFinish: () => reset('password'),
         });

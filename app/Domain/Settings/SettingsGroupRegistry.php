@@ -2,21 +2,26 @@
 
 namespace App\Domain\Settings;
 
+use App\Domain\Settings\Groups\AnalyticsGroup;
 use App\Domain\Settings\Groups\AppearanceGroup;
 use App\Domain\Settings\Groups\BlogGroup;
 use App\Domain\Settings\Groups\BookingGroup;
 use App\Domain\Settings\Groups\BrandingGroup;
 use App\Domain\Settings\Groups\CookieGroup;
+use App\Domain\Settings\Groups\CurrencyGroup;
 use App\Domain\Settings\Groups\CustomCodeGroup;
 use App\Domain\Settings\Groups\DispatchGroup;
 use App\Domain\Settings\Groups\FeaturesGroup;
+use App\Domain\Settings\Groups\IntegrationsGroup;
 use App\Domain\Settings\Groups\InvoiceGroup;
 use App\Domain\Settings\Groups\LocalizationGroup;
 use App\Domain\Settings\Groups\MailGroup;
 use App\Domain\Settings\Groups\PaymentsGroup;
 use App\Domain\Settings\Groups\PayoutsGroup;
+use App\Domain\Settings\Groups\RecaptchaGroup;
 use App\Domain\Settings\Groups\ReferralsGroup;
 use App\Domain\Settings\Groups\ReviewsGroup;
+use App\Domain\Settings\Groups\SeoGroup;
 use App\Domain\Settings\Groups\SettingsGroup;
 use App\Domain\Settings\Groups\SmsGroup;
 use App\Domain\Settings\Groups\SocialGroup;
@@ -38,6 +43,9 @@ class SettingsGroupRegistry
         AppearanceGroup::class,
         SocialGroup::class,
         LocalizationGroup::class,
+        CurrencyGroup::class,
+        SeoGroup::class,
+        AnalyticsGroup::class,
         FeaturesGroup::class,
         BookingGroup::class,
         DispatchGroup::class,
@@ -50,6 +58,8 @@ class SettingsGroupRegistry
         SupportGroup::class,
         MailGroup::class,
         SmsGroup::class,
+        IntegrationsGroup::class,
+        RecaptchaGroup::class,
         BlogGroup::class,
         CookieGroup::class,
         CustomCodeGroup::class,

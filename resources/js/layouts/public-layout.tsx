@@ -1,4 +1,5 @@
 import { ImpersonationBanner } from '@/components/impersonation-banner';
+import { Analytics } from '@/components/site/analytics';
 import { CookieBanner } from '@/components/site/cookie-banner';
 import { CustomCode } from '@/components/site/custom-code';
 import { PopupModal } from '@/components/site/popup-modal';
@@ -31,6 +32,8 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
             <PopupModal />
             <CookieBanner />
             <CustomCode />
+            {/* M24: measurement tags, and only once the banner (if any) allows it. */}
+            <Analytics />
         </div>
     );
 }

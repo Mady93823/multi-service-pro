@@ -78,7 +78,7 @@ class RequestPayout
             if ($amount < $minimum) {
                 throw ValidationException::withMessages([
                     'payout' => __('Payouts start at :amount.', [
-                        'amount' => Money::format($minimum, $this->currency()),
+                        'amount' => Money::format($minimum),
                     ]),
                 ]);
             }
@@ -97,10 +97,5 @@ class RequestPayout
 
             return $payout;
         });
-    }
-
-    private function currency(): string
-    {
-        return $this->settings->string('localization.currency', 'INR') ?: 'INR';
     }
 }

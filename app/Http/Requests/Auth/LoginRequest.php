@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Auth;
 
 use App\Models\User;
+use App\Rules\RecaptchaToken;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -31,6 +32,9 @@ class LoginRequest extends FormRequest
         return [
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
+            // M24: nullable until an admin configures reCaptcha and ticks this
+            // form; required — and verified — the moment they do.
+            'recaptcha_token' => RecaptchaToken::rules('login'),
         ];
     }
 

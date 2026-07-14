@@ -24,6 +24,8 @@ type ServiceForm = {
     name: string;
     short_description: string;
     description: string;
+    meta_title: string;
+    meta_description: string;
     pricing_type: PricingType;
     price: string;
     duration_minutes: string;
@@ -55,6 +57,9 @@ export function ServiceForm({ categories, relatable, zones, service }: ServiceFo
         name: service?.name ?? '',
         short_description: service?.short_description ?? '',
         description: service?.description ?? '',
+        // M24: blank falls back to the site-wide SEO defaults.
+        meta_title: service?.meta_title ?? '',
+        meta_description: service?.meta_description ?? '',
         pricing_type: service?.pricing_type ?? 'fixed',
         price: service?.price ?? '',
         duration_minutes: service?.duration_minutes?.toString() ?? '',
@@ -191,6 +196,33 @@ export function ServiceForm({ categories, relatable, zones, service }: ServiceFo
                 <Label htmlFor="description">{t('Description')}</Label>
                 <Textarea id="description" rows={5} value={data.description} onChange={(e) => setData('description', e.target.value)} />
                 <InputError message={errors.description} />
+            </div>
+
+            <div className="space-y-4 rounded-lg border p-4">
+                <h3 className="text-sm font-medium">{t('SEO')}</h3>
+                <div className="grid gap-2">
+                    <Label htmlFor="meta_title">{t('Meta title')}</Label>
+                    <Input
+                        id="meta_title"
+                        value={data.meta_title}
+                        onChange={(e) => setData('meta_title', e.target.value)}
+                        maxLength={70}
+                        placeholder={data.name || t('Falls back to the service name')}
+                    />
+                    <InputError message={errors.meta_title} />
+                </div>
+                <div className="grid gap-2">
+                    <Label htmlFor="meta_description">{t('Meta description')}</Label>
+                    <Textarea
+                        id="meta_description"
+                        rows={2}
+                        value={data.meta_description}
+                        onChange={(e) => setData('meta_description', e.target.value)}
+                        maxLength={200}
+                        placeholder={t('Falls back to the short description, then the site default')}
+                    />
+                    <InputError message={errors.meta_description} />
+                </div>
             </div>
 
             <div className="grid gap-2">

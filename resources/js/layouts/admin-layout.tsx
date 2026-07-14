@@ -12,6 +12,7 @@ import {
     Mail,
     Map,
     Megaphone,
+    ServerCog,
     Settings,
     ShoppingBag,
     Star,
@@ -143,6 +144,11 @@ export default function AdminLayout({ children, breadcrumbs }: AdminLayoutProps)
             title: t('Settings'),
             url: '/admin/settings',
             icon: Settings,
+        },
+        {
+            title: t('System'),
+            url: '/admin/system',
+            icon: ServerCog,
         },
     ];
 

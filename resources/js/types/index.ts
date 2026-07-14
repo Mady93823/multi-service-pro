@@ -31,6 +31,8 @@ export interface NavItem {
 export interface Flash {
     success?: string | null;
     error?: string | null;
+    /** Console output of `app:update`, shown on the admin System screen (M24). */
+    update_output?: string | null;
 }
 
 export interface Branding {
@@ -42,6 +44,21 @@ export interface Localization {
     currency: string;
     locale: string;
     timezone: string;
+    /** M24 (D23): how money is printed. Format only — one currency per install, never a conversion. */
+    symbol: string;
+    position: string;
+    decimals: number;
+    grouping: string;
+}
+
+/** M24: what a public page tells search engines and link previews. */
+export interface SeoMetaProps {
+    title: string;
+    description: string | null;
+    image: string | null;
+    url: string;
+    type: string;
+    site_name: string;
 }
 
 export interface AppNotification {
@@ -73,6 +90,8 @@ export interface SharedData {
     footer_pages: { title: string; slug: string }[];
     /** Storefront chrome: menus, header/footer style, social, cookie, custom code (M19). */
     site: SiteContent;
+    /** M24: only the public site key, and only when a form actually uses it. Null on a fresh install. */
+    recaptcha: { site_key: string; forms: Record<string, boolean> } | null;
     [key: string]: unknown;
 }
 
@@ -115,6 +134,8 @@ export interface SiteContent {
     cookie: { message: string; accept_label: string; decline_label: string | null; policy_slug: string | null } | null;
     /** Admin-authored snippets — storefront shells only, null everywhere else (D26). */
     custom_code: { css: string | null; js: string | null } | null;
+    /** Measurement IDs (M24) — storefront only, and only loaded once consent allows it. */
+    analytics: { ga4_id: string | null; gtm_id: string | null; meta_pixel_id: string | null } | null;
     newsletter: boolean;
     /** The live popup for this visitor; the audience was decided on the server (M19). */
     popup: SitePopup | null;
@@ -161,6 +182,9 @@ export interface CmsPage {
     title: string;
     slug: string;
     body: string;
+    /** M24: null falls back to the site-wide SEO defaults. */
+    meta_title: string | null;
+    meta_description: string | null;
     is_published: boolean;
     show_in_footer: boolean;
     sort_order: number;
@@ -226,6 +250,9 @@ export interface Service {
     slug: string;
     short_description: string | null;
     description: string | null;
+    /** M24: null falls back to the site-wide SEO defaults. */
+    meta_title: string | null;
+    meta_description: string | null;
     pricing_type: PricingType;
     price: string;
     duration_minutes: number | null;

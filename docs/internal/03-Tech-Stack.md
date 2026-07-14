@@ -175,6 +175,20 @@ Multi-currency means live FX rates, a rate snapshot on every booking, refunds at
 
 `M24`'s Currency screen configures **presentation only**: symbol, ISO code, position, decimals, and digit grouping (Indian `1,00,000` vs Western `100,000`). `App\Support\Money` — which already does Indian grouping without `ext-intl` — reads those settings instead of hardcoding ₹. A buyer in another market sets their symbol and grouping and everything downstream (checkout, invoice, ledger, reports) follows. True multi-currency stays a v2 add-on module, where an FX snapshot column can be introduced deliberately rather than retrofitted through the money path.
 
+**Realised (2026-07-14, M24).** The decision was made *structural*: `Money::format()` no longer takes a currency argument at all. It used to accept a code (`format($amount, 'USD')`), which is a quiet invitation to print a booking in a currency the platform does not run on — the amounts in the database are snapshots in the platform currency, not values to convert. A caller cannot ask for another currency because there is none to give. The browser's `formatMoney()` implements the same four rules by hand rather than deferring to `Intl` — two locale databases agreeing is not something to rely on when the invoice PDF and the checkout total must match to the character. The currency **code** (`localization.currency`) is owned by the Currency group, not the Localization one: a screen group is not a storage group (D24), and the code and the way it prints belong on one screen.
+
+### D35 — Optional third parties degrade to *off*, and fail *open* (2026-07-14)
+
+`M24` adds reCaptcha, analytics, Google Maps and Firebase keys. Each is a place where a product that must install with **zero third-party keys** could quietly acquire a hard dependency — and reCaptcha is the sharpest, because the "safe" instinct (no token, no signup) turns a Google outage into a signup outage on an install that may not even use Google.
+
+Two rules, applied to every optional integration:
+
+**Unconfigured means off, never broken.** `RecaptchaToken::rules()` collapses to `nullable|string` when there are no keys or the form's switch is off; `NotificationChannels` never lists mail/SMS/push without a configured provider (D14/D34); the media library, the maps and the sitemap all work with nothing set. The System screen reflects this in its colours: "no SMTP" is *Not set up*, not an error — if an operator's install shows red for choices they made deliberately, they stop reading the page, and the one genuine failure (debug on in production, a missing storage link) goes unnoticed.
+
+**A configured third party that is *down* must not take the platform with it.** reCaptcha verification that cannot reach Google lets the visitor through and logs it. This is the same doctrine already load-bearing elsewhere: a dead Reverb never fails a tracking ping (M07), a dead SMS gateway never fails a booking (M23), a broken email template never eats a confirmation (D25). The exception is money, which fails *closed* by construction — an unverified payment never places a booking (M08/D27).
+
+One implementation note worth keeping: Laravel does not run a non-implicit rule on a missing key **or on an empty string**, so a bot that strips the token field would have sailed past a rule attached with `nullable`. The token is therefore `required` exactly when the form is protected — "no token" fails the same way "a bad token" does.
+
 ### D24 — Settings save per group, and each group owns its rules (2026-07-12)
 
 The settings registry (D8) scaled; the settings *screen* did not. One `UpdateSettingsRequest` validates **every** key on **every** save, so adding one required key 422s every unrelated form — this has bitten the suite repeatedly (the `SettingsFixtures::validPayload()` landmine). At ~20 groups it becomes unworkable.

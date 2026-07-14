@@ -8,6 +8,10 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+// M24: proof of life. A scheduler nobody wired up is the most common broken
+// install — the admin System screen reads this stamp and shouts when it is stale.
+Schedule::command('system:heartbeat')->everyFiveMinutes();
+
 // M07: keep tracking_points from growing without bound.
 Schedule::command('tracking:prune')->dailyAt('03:30');
 

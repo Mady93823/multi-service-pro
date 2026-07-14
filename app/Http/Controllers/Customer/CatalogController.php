@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Customer;
 
+use App\Domain\Seo\SchemaBuilder;
+use App\Domain\Seo\SeoMeta;
 use App\Domain\Settings\SettingsRegistry;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CategoryResource;
@@ -90,8 +92,13 @@ class CatalogController extends Controller
         ]);
     }
 
-    public function show(Request $request, Category $category, Service $service): Response
-    {
+    public function show(
+        Request $request,
+        Category $category,
+        Service $service,
+        SeoMeta $seo,
+        SchemaBuilder $schema,
+    ): Response {
         abort_unless($category->is_active && $service->is_active, 404);
 
         $service->load([
@@ -108,6 +115,15 @@ class CatalogController extends Controller
             'available_in_zone' => $zoneId === null
                 || ! $service->zones()->exists()
                 || $service->zones()->whereKey($zoneId)->exists(),
+            // M24: the service's own overrides, then the site defaults.
+            'meta' => $seo->resolve(
+                url: route('catalog.show', [$category->slug, $service->slug]),
+                title: $service->meta_title ?? $service->name,
+                description: $service->meta_description ?? $service->short_description,
+                image: $service->getFirstMediaUrl('images', 'card') ?: null,
+                type: 'product',
+            ),
+            'schema' => $schema->service($service),
             ...$this->reviewProps($service),
         ]);
     }

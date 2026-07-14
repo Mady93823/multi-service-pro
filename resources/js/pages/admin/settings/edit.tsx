@@ -1,18 +1,23 @@
+import AnalyticsForm, { type AnalyticsValues } from '@/components/admin/settings/analytics-form';
 import AppearanceForm, { type AppearanceValues } from '@/components/admin/settings/appearance-form';
 import BlogForm, { type BlogValues } from '@/components/admin/settings/blog-form';
 import BookingForm, { type BookingValues } from '@/components/admin/settings/booking-form';
 import BrandingForm, { type BrandingValues } from '@/components/admin/settings/branding-form';
 import CookieForm, { type CookieValues } from '@/components/admin/settings/cookie-form';
+import CurrencyForm, { type CurrencyValues } from '@/components/admin/settings/currency-form';
 import CustomCodeForm, { type CustomCodeValues } from '@/components/admin/settings/custom-code-form';
 import DispatchForm, { type DispatchValues } from '@/components/admin/settings/dispatch-form';
 import FeaturesForm, { type FeaturesValues } from '@/components/admin/settings/features-form';
+import IntegrationsForm, { type IntegrationsValues } from '@/components/admin/settings/integrations-form';
 import InvoiceForm, { type InvoiceValues } from '@/components/admin/settings/invoice-form';
 import LocalizationForm, { type LocalizationValues } from '@/components/admin/settings/localization-form';
 import MailForm, { type MailValues } from '@/components/admin/settings/mail-form';
 import PaymentsForm, { type PaymentsValues } from '@/components/admin/settings/payments-form';
 import PayoutsForm, { type PayoutsValues } from '@/components/admin/settings/payouts-form';
+import RecaptchaForm, { type RecaptchaValues } from '@/components/admin/settings/recaptcha-form';
 import ReferralsForm, { type ReferralsValues } from '@/components/admin/settings/referrals-form';
 import ReviewsForm, { type ReviewsValues } from '@/components/admin/settings/reviews-form';
+import SeoForm, { type SeoValues } from '@/components/admin/settings/seo-form';
 import SmsForm, { type SmsValues } from '@/components/admin/settings/sms-form';
 import SocialForm, { type SocialValues } from '@/components/admin/settings/social-form';
 import SupportForm, { type SupportValues } from '@/components/admin/settings/support-form';
@@ -85,6 +90,11 @@ export default function SettingsEdit({ group, title, description, groups, values
                             {group === 'appearance' && <AppearanceForm values={values as unknown as AppearanceValues} />}
                             {group === 'social' && <SocialForm values={values as unknown as SocialValues} />}
                             {group === 'localization' && <LocalizationForm values={values as unknown as LocalizationValues} />}
+                            {group === 'currency' && <CurrencyForm values={values as unknown as CurrencyValues} />}
+                            {group === 'seo' && <SeoForm values={values as unknown as SeoValues} />}
+                            {group === 'analytics' && <AnalyticsForm values={values as unknown as AnalyticsValues} />}
+                            {group === 'integrations' && <IntegrationsForm values={values as unknown as IntegrationsValues} />}
+                            {group === 'recaptcha' && <RecaptchaForm values={values as unknown as RecaptchaValues} />}
                             {group === 'features' && <FeaturesForm values={values as unknown as FeaturesValues} />}
                             {group === 'booking' && <BookingForm values={values as unknown as BookingValues} />}
                             {group === 'dispatch' && <DispatchForm values={values as unknown as DispatchValues} />}

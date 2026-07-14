@@ -23,10 +23,23 @@ class SettingsFixtures
                 'primary_color' => '#4f46e5',
             ],
             'localization' => [
-                'currency' => 'INR',
                 'timezone' => 'Asia/Kolkata',
                 'locale' => 'en',
             ],
+            'currency' => [
+                'code' => 'INR',
+                'symbol' => '₹',
+                'position' => 'before',
+                'decimals' => 2,
+                'grouping' => 'indian',
+            ],
+            'seo' => [
+                'sitemap_enabled' => true,
+                'schema_enabled' => true,
+            ],
+            'analytics' => [],
+            'integrations' => [],
+            'recaptcha' => [],
             'features' => [
                 'otp_required' => false,
             ],

@@ -2,6 +2,7 @@ import { PriceLabel } from '@/components/catalog/price-label';
 import { ServiceCard } from '@/components/catalog/service-card';
 import { ReviewCard } from '@/components/reviews/review-card';
 import { StarRating } from '@/components/reviews/star-rating';
+import { SeoHead } from '@/components/seo/seo-head';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,8 +10,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import PublicLayout from '@/layouts/public-layout';
 import { useMoney } from '@/lib/format';
 import { useTrans } from '@/lib/i18n';
-import { type Paginated, type Review, type ReviewSummary, type Service } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { type Paginated, type Review, type ReviewSummary, type SeoMetaProps, type Service } from '@/types';
+import { Link, useForm } from '@inertiajs/react';
 import { ChevronRight, Clock, ImageIcon, LoaderCircle, Minus, Plus, ShoppingCart } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
@@ -19,6 +20,9 @@ interface CatalogShowProps {
     available_in_zone: boolean;
     reviews: Paginated<Review> | null;
     review_summary: ReviewSummary | null;
+    meta: SeoMetaProps;
+    /** Service JSON-LD, or null when structured data is switched off (M24). */
+    schema: Record<string, unknown> | null;
 }
 
 type AddToCartForm = {
@@ -27,7 +31,14 @@ type AddToCartForm = {
     addon_ids: number[];
 };
 
-export default function CatalogShow({ service, available_in_zone: availableInZone, reviews, review_summary: reviewSummary }: CatalogShowProps) {
+export default function CatalogShow({
+    service,
+    available_in_zone: availableInZone,
+    reviews,
+    review_summary: reviewSummary,
+    meta,
+    schema,
+}: CatalogShowProps) {
     const money = useMoney();
     const t = useTrans();
 
@@ -53,7 +64,7 @@ export default function CatalogShow({ service, available_in_zone: availableInZon
 
     return (
         <PublicLayout>
-            <Head title={service.name} />
+            <SeoHead meta={meta} schema={schema} />
 
             <nav className="text-muted-foreground flex items-center gap-1 text-sm">
                 <Link href={route('catalog.index')} className="hover:text-foreground">

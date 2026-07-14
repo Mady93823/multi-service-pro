@@ -7,6 +7,7 @@ use App\Domain\Settings\SettingsRegistry;
 use App\Domain\Users\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Rules\RecaptchaToken;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -49,6 +50,9 @@ class RegisteredUserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            // Nullable until an admin configures reCaptcha and ticks this form;
+            // required — and verified — the moment they do (M24).
+            'recaptcha_token' => RecaptchaToken::rules('register'),
             ...($referralsEnabled ? [
                 'referral_code' => 'nullable|string|max:12|exists:users,referral_code',
             ] : []),

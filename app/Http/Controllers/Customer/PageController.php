@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Customer;
 
 use App\Domain\Blocks\PageBlocks;
 use App\Domain\Cms\MarkdownRenderer;
+use App\Domain\Seo\SeoMeta;
 use App\Http\Controllers\Controller;
 use App\Http\Presenters\BlockPresenter;
 use App\Models\Page;
@@ -20,8 +21,13 @@ class PageController extends Controller
      * has blocks they are the page, otherwise the body is. One page, one source
      * of truth — never both stacked on top of each other.
      */
-    public function show(Page $page, MarkdownRenderer $renderer, PageBlocks $pageBlocks, BlockPresenter $presenter): Response
-    {
+    public function show(
+        Page $page,
+        MarkdownRenderer $renderer,
+        PageBlocks $pageBlocks,
+        BlockPresenter $presenter,
+        SeoMeta $seo,
+    ): Response {
         abort_unless($page->is_published, 404);
         // The home page lives at `/`, not here.
         abort_if($page->isHome(), 404);
@@ -38,6 +44,12 @@ class PageController extends Controller
                 'updated_at' => $page->updated_at?->toIso8601String(),
             ],
             'blocks' => $blocks,
+            // M24: the page's own overrides, falling back to the site defaults.
+            'meta' => $seo->resolve(
+                url: route('pages.show', $page->slug),
+                title: $page->meta_title ?? $page->title,
+                description: $page->meta_description,
+            ),
         ]);
     }
 }

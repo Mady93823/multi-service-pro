@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\RecaptchaToken;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ContactRequest extends FormRequest
@@ -16,6 +17,9 @@ class ContactRequest extends FormRequest
             'email' => ['required', 'email', 'max:150'],
             'subject' => ['required', 'string', 'max:150'],
             'message' => ['required', 'string', 'max:2000'],
+            // Inert unless an admin configured reCaptcha AND ticked this form
+            // (M24) — a fresh install must never demand a token nobody can mint.
+            'recaptcha_token' => RecaptchaToken::rules('contact'),
             // Honeypot: a real visitor never sees this field, so anything in it
             // came from a bot. Validated as "must be empty" rather than dropped,
             // so a bot that fills every field gets an error, not a ticket.

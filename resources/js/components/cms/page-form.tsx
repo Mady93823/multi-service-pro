@@ -20,6 +20,9 @@ export function PageForm({ page }: PageFormProps) {
         title: page?.title ?? '',
         slug: page?.slug ?? '',
         body: page?.body ?? '',
+        // M24: blank falls back to the site-wide SEO defaults.
+        meta_title: page?.meta_title ?? '',
+        meta_description: page?.meta_description ?? '',
         is_published: page?.is_published ?? false,
         show_in_footer: page?.show_in_footer ?? false,
         sort_order: page?.sort_order ?? 0,
@@ -63,6 +66,33 @@ export function PageForm({ page }: PageFormProps) {
                 />
                 <p className="text-muted-foreground text-xs">{t('Headings, lists and links are supported. Raw HTML is stripped on display.')}</p>
                 <InputError message={errors.body} />
+            </div>
+
+            <div className="space-y-4 rounded-lg border p-4">
+                <h3 className="text-sm font-medium">{t('SEO')}</h3>
+                <div className="space-y-2">
+                    <Label htmlFor="meta_title">{t('Meta title')}</Label>
+                    <Input
+                        id="meta_title"
+                        value={data.meta_title}
+                        onChange={(e) => setData('meta_title', e.target.value)}
+                        maxLength={70}
+                        placeholder={data.title || t('Falls back to the page title')}
+                    />
+                    <InputError message={errors.meta_title} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="meta_description">{t('Meta description')}</Label>
+                    <Textarea
+                        id="meta_description"
+                        value={data.meta_description}
+                        onChange={(e) => setData('meta_description', e.target.value)}
+                        maxLength={200}
+                        rows={2}
+                        placeholder={t('Falls back to the site default')}
+                    />
+                    <InputError message={errors.meta_description} />
+                </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">

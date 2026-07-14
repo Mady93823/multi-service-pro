@@ -148,6 +148,33 @@ class SettingsRegistry
             'sms.twilio_sid' => ['group' => 'sms', 'type' => SettingType::String, 'value' => null],
             'sms.twilio_token' => ['group' => 'sms', 'type' => SettingType::String, 'value' => null],
             'sms.twilio_from' => ['group' => 'sms', 'type' => SettingType::String, 'value' => null],
+            // M24. Currency is FORMAT ONLY — one currency per install (D23).
+            // There is no FX layer and no per-booking currency: the code lives
+            // in localization.currency and these decide how it is printed.
+            'currency.symbol' => ['group' => 'currency', 'type' => SettingType::String, 'value' => '₹'],
+            'currency.position' => ['group' => 'currency', 'type' => SettingType::String, 'value' => 'before'],
+            'currency.decimals' => ['group' => 'currency', 'type' => SettingType::Integer, 'value' => 2],
+            'currency.grouping' => ['group' => 'currency', 'type' => SettingType::String, 'value' => 'indian'],
+            // M24. SEO defaults; a page/service/post may override title+description.
+            'seo.meta_title' => ['group' => 'seo', 'type' => SettingType::String, 'value' => null],
+            'seo.meta_description' => ['group' => 'seo', 'type' => SettingType::String, 'value' => null],
+            'seo.og_image_url' => ['group' => 'seo', 'type' => SettingType::String, 'value' => null],
+            'seo.sitemap_enabled' => ['group' => 'seo', 'type' => SettingType::Boolean, 'value' => true],
+            'seo.schema_enabled' => ['group' => 'seo', 'type' => SettingType::Boolean, 'value' => true],
+            'seo.robots_extra' => ['group' => 'seo', 'type' => SettingType::String, 'value' => null],
+            // M24. Third-party keys. Every one of them is optional: an install
+            // with none of them set must still boot, browse, book and pay cash.
+            'integrations.fcm_credentials' => ['group' => 'integrations', 'type' => SettingType::String, 'value' => null],
+            'integrations.google_maps_key' => ['group' => 'integrations', 'type' => SettingType::String, 'value' => null],
+            'recaptcha.site_key' => ['group' => 'recaptcha', 'type' => SettingType::String, 'value' => null],
+            'recaptcha.secret_key' => ['group' => 'recaptcha', 'type' => SettingType::String, 'value' => null],
+            'recaptcha.on_register' => ['group' => 'recaptcha', 'type' => SettingType::Boolean, 'value' => false],
+            'recaptcha.on_login' => ['group' => 'recaptcha', 'type' => SettingType::Boolean, 'value' => false],
+            'recaptcha.on_contact' => ['group' => 'recaptcha', 'type' => SettingType::Boolean, 'value' => false],
+            'recaptcha.on_ticket' => ['group' => 'recaptcha', 'type' => SettingType::Boolean, 'value' => false],
+            'analytics.ga4_id' => ['group' => 'analytics', 'type' => SettingType::String, 'value' => null],
+            'analytics.gtm_id' => ['group' => 'analytics', 'type' => SettingType::String, 'value' => null],
+            'analytics.meta_pixel_id' => ['group' => 'analytics', 'type' => SettingType::String, 'value' => null],
             'custom_code.enabled' => ['group' => 'custom_code', 'type' => SettingType::Boolean, 'value' => false],
             'custom_code.css' => ['group' => 'custom_code', 'type' => SettingType::String, 'value' => null],
             'custom_code.js' => ['group' => 'custom_code', 'type' => SettingType::String, 'value' => null],

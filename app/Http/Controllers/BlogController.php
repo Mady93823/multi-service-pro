@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Domain\Cms\MarkdownRenderer;
+use App\Domain\Seo\SchemaBuilder;
+use App\Domain\Seo\SeoMeta;
 use App\Domain\Settings\SettingsRegistry;
 use App\Http\Resources\BlogCategoryResource;
 use App\Http\Resources\BlogPostResource;
@@ -90,13 +92,15 @@ class BlogController extends Controller
             'html' => $renderer->render($post->body),
             'related' => BlogPostResource::collection($related),
             'show_author' => $this->settings->boolean('blog.show_author', true),
-            // Consumed by the <Head> tags today; M24's SEO layer reuses them.
-            'meta' => [
-                'title' => $post->meta_title ?? $post->title,
-                'description' => $post->meta_description ?? $post->excerpt,
-                'image' => $post->coverUrl('hero'),
-                'url' => route('blog.show', $post->slug),
-            ],
+            // M24: the post's own fields, falling back to the site defaults.
+            'meta' => app(SeoMeta::class)->resolve(
+                url: route('blog.show', $post->slug),
+                title: $post->meta_title ?? $post->title,
+                description: $post->meta_description ?? $post->excerpt,
+                image: $post->coverUrl('hero'),
+                type: 'article',
+            ),
+            'schema' => app(SchemaBuilder::class)->article($post),
         ]);
     }
 

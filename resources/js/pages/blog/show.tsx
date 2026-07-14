@@ -1,9 +1,9 @@
 import { formatPostDate, PostCard } from '@/components/blog/post-card';
+import { SeoHead } from '@/components/seo/seo-head';
 import { Badge } from '@/components/ui/badge';
 import PublicLayout from '@/layouts/public-layout';
 import { useTrans } from '@/lib/i18n';
-import { type BlogPost } from '@/types';
-import { Head } from '@inertiajs/react';
+import { type BlogPost, type SeoMetaProps } from '@/types';
 
 interface BlogShowProps {
     post: BlogPost;
@@ -11,25 +11,19 @@ interface BlogShowProps {
     html: string;
     related: BlogPost[];
     show_author: boolean;
-    meta: { title: string; description: string | null; image: string | null; url: string };
+    meta: SeoMetaProps;
+    /** Article JSON-LD, or null when structured data is switched off (M24). */
+    schema: Record<string, unknown> | null;
 }
 
-export default function BlogShow({ post, html, related, show_author, meta }: BlogShowProps) {
+export default function BlogShow({ post, html, related, show_author, meta, schema }: BlogShowProps) {
     const t = useTrans();
     const published = formatPostDate(post.published_at);
 
     return (
         <PublicLayout>
-            <Head title={meta.title}>
-                {/* Open Graph + Twitter cards; M24's SEO layer reuses the same fields. */}
-                {meta.description !== null && <meta name="description" content={meta.description} />}
-                <meta property="og:type" content="article" />
-                <meta property="og:title" content={meta.title} />
-                {meta.description !== null && <meta property="og:description" content={meta.description} />}
-                <meta property="og:url" content={meta.url} />
-                {meta.image !== null && <meta property="og:image" content={meta.image} />}
-                <meta name="twitter:card" content={meta.image !== null ? 'summary_large_image' : 'summary'} />
-            </Head>
+            {/* M24: one meta component for every public page — Open Graph, Twitter, canonical, JSON-LD. */}
+            <SeoHead meta={meta} schema={schema} />
 
             <article className="mx-auto w-full max-w-3xl py-8">
                 <div className="flex flex-wrap items-center gap-2">

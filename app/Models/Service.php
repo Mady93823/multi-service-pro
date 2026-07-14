@@ -27,6 +27,9 @@ class Service extends Model implements HasMedia
         'slug',
         'short_description',
         'description',
+        // M24: null means "use the site defaults" (SeoMeta), never an empty tag.
+        'meta_title',
+        'meta_description',
         'pricing_type',
         'price',
         'duration_minutes',

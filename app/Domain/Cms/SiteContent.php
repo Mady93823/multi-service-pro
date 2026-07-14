@@ -46,9 +46,35 @@ class SiteContent
             'social' => $this->social(),
             'cookie' => $this->cookie(),
             'custom_code' => $this->customCode($storefront),
+            'analytics' => $this->analytics($storefront),
             'newsletter' => $this->settings->boolean('appearance.newsletter_enabled', true),
             'popup' => $storefront ? $this->popup($user) : null,
         ];
+    }
+
+    /**
+     * Measurement IDs, storefront only (M24). They are *ids*, not snippets: the
+     * browser renders a known tag around them, so adding GA4 never requires the
+     * site-wide script-execution permission that custom JS does (D26).
+     *
+     * Whether they may load at all is a client-side decision — the cookie banner
+     * owns consent, and the server must not learn who declined (M19).
+     *
+     * @return array{ga4_id: ?string, gtm_id: ?string, meta_pixel_id: ?string}|null
+     */
+    private function analytics(bool $storefront): ?array
+    {
+        if (! $storefront) {
+            return null;
+        }
+
+        $ids = [
+            'ga4_id' => $this->settings->string('analytics.ga4_id') ?: null,
+            'gtm_id' => $this->settings->string('analytics.gtm_id') ?: null,
+            'meta_pixel_id' => $this->settings->string('analytics.meta_pixel_id') ?: null,
+        ];
+
+        return array_filter($ids) === [] ? null : $ids;
     }
 
     /**

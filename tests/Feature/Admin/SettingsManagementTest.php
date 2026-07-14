@@ -63,8 +63,10 @@ test('each group renders its own screen with the group navigation', function () 
         ->assertInertia(fn (AssertableInertia $page) => $page
             ->component('admin/settings/edit')
             ->where('group', 'localization')
-            ->where('values.currency', 'INR')
             ->where('values.timezone', 'Asia/Kolkata')
+            // M24 moved the currency onto its own screen — the code and the way
+            // it is printed are edited together, or not at all.
+            ->missing('values.currency')
             // The nav lists every group, so no screen is unreachable. Counted
             // from the registry: a hardcoded number just breaks on the next one.
             ->has('groups', count(app(SettingsGroupRegistry::class)->all()))
@@ -79,14 +81,13 @@ test('admin can update branding and localization settings', function () {
         ->assertRedirect()
         ->assertSessionHas('success');
 
-    saveSettings($admin, 'localization', ['currency' => 'USD', 'timezone' => 'America/New_York'])
+    saveSettings($admin, 'localization', ['timezone' => 'America/New_York'])
         ->assertSessionHasNoErrors();
 
     $settings = freshSettings();
 
     expect($settings->string('branding.app_name'))->toBe('Client Brand')
         ->and($settings->string('branding.primary_color'))->toBe('#4f46e5')
-        ->and($settings->string('localization.currency'))->toBe('USD')
         ->and($settings->string('localization.timezone'))->toBe('America/New_York');
 });
 
@@ -127,8 +128,9 @@ test('invalid color, currency and timezone are rejected', function () {
     $admin = User::factory()->admin()->create();
 
     saveSettings($admin, 'branding', ['primary_color' => 'red'])->assertSessionHasErrors('primary_color');
-    saveSettings($admin, 'localization', ['currency' => 'rupees', 'timezone' => 'Mars/Olympus'])
-        ->assertSessionHasErrors(['currency', 'timezone']);
+    saveSettings($admin, 'localization', ['timezone' => 'Mars/Olympus'])->assertSessionHasErrors('timezone');
+    // The currency now lives on its own screen (M24) — same rule, new home.
+    saveSettings($admin, 'currency', ['code' => 'rupees'])->assertSessionHasErrors('code');
 });
 
 test('booking settings are validated and saved', function () {

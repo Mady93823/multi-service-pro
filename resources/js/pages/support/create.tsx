@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useRecaptcha } from '@/hooks/use-recaptcha';
 import CustomerLayout from '@/layouts/customer-layout';
 import ProviderLayout from '@/layouts/provider-layout';
 import { useTrans } from '@/lib/i18n';
@@ -56,6 +57,8 @@ export default function SupportCreate({ booking_id, bookings }: SupportCreatePro
         { value: 'high', label: t('High') },
     ];
 
+    const recaptcha = useRecaptcha('ticket');
+
     const form = useForm<{
         subject: string;
         category: string;
@@ -74,11 +77,16 @@ export default function SupportCreate({ booking_id, bookings }: SupportCreatePro
 
     const attachmentError = form.errors.attachments ?? Object.entries(form.errors).find(([key]) => key.startsWith('attachments.'))?.[1];
 
-    const submit = (event: React.FormEvent) => {
+    const submit = async (event: React.FormEvent) => {
         event.preventDefault();
+
+        // '' unless reCaptcha is configured and this form is ticked (M24).
+        const token = await recaptcha();
+
         form.transform((data) => ({
             ...data,
             booking_id: data.booking_id === '' ? null : Number(data.booking_id),
+            recaptcha_token: token,
         }));
         form.post(route('support.tickets.store'), { forceFormData: true });
     };

@@ -3,18 +3,17 @@ import InputError from '@/components/input-error';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTrans } from '@/lib/i18n';
-import { useForm } from '@inertiajs/react';
+import { Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
 export interface LocalizationValues {
-    currency: string;
     timezone: string;
     locale: string;
 }
 
 const timezones: string[] = Intl.supportedValuesOf('timeZone');
-const currencies: string[] = Intl.supportedValuesOf('currency');
 
+/** Currency moved to its own screen in M24 — the code and its formatting are edited together. */
 export default function LocalizationForm({ values }: { values: LocalizationValues }) {
     const t = useTrans();
 
@@ -27,24 +26,6 @@ export default function LocalizationForm({ values }: { values: LocalizationValue
 
     return (
         <form onSubmit={submit} className="space-y-6">
-            <div className="grid gap-2">
-                <Label htmlFor="currency">{t('Currency')}</Label>
-                <Input
-                    id="currency"
-                    list="currency-options"
-                    value={data.currency}
-                    onChange={(e) => setData('currency', e.target.value.toUpperCase())}
-                    className="w-40"
-                    required
-                />
-                <datalist id="currency-options">
-                    {currencies.map((code) => (
-                        <option key={code} value={code} />
-                    ))}
-                </datalist>
-                <InputError message={errors.currency} />
-            </div>
-
             <div className="grid gap-2">
                 <Label htmlFor="timezone">{t('Timezone')}</Label>
                 <Input
@@ -61,6 +42,7 @@ export default function LocalizationForm({ values }: { values: LocalizationValue
                     ))}
                 </datalist>
                 <InputError message={errors.timezone} />
+                <p className="text-muted-foreground text-xs">{t('Every booking slot, report and invoice date is shown in this zone.')}</p>
             </div>
 
             <div className="grid gap-2">
@@ -75,6 +57,13 @@ export default function LocalizationForm({ values }: { values: LocalizationValue
                 />
                 <InputError message={errors.locale} />
             </div>
+
+            <p className="text-muted-foreground text-xs">
+                <Link href={route('admin.settings.edit', 'currency')} className="underline">
+                    {t('Currency')}
+                </Link>{' '}
+                {t('— the currency and the way amounts are printed live on their own screen.')}
+            </p>
 
             <SaveButton processing={processing} />
         </form>

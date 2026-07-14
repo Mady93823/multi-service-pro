@@ -338,6 +338,40 @@ test('a signed stripe checkout.session.completed webhook places the booking', fu
         ->and($booking->payment_status)->toBe(PaymentStatus::Paid);
 });
 
+test('a replayed stripe webhook settles the booking exactly once', function () {
+    // Stripe retries a 2xx-less delivery for days, and a duplicate delivery is
+    // normal traffic, not an attack. ConfirmPayment is row-locked and idempotent
+    // for both gateways — this pins the second one to the same promise.
+    configureStripe();
+    Event::fake([BookingPlaced::class]);
+    [, $booking] = pendingPaymentBooking();
+    capturedPayment($booking, PaymentProvider::Stripe, 'cs_test_1');
+
+    $body = (string) json_encode([
+        'type' => 'checkout.session.completed',
+        'data' => ['object' => ['id' => 'cs_test_1', 'payment_status' => 'paid']],
+    ]);
+
+    $deliver = fn () => $this->call('POST', route('webhooks.stripe'), [], [], [], [
+        'HTTP_Stripe-Signature' => stripeSignature($body),
+        'CONTENT_TYPE' => 'application/json',
+    ], $body);
+
+    $deliver()->assertOk();
+    $capturedAt = $booking->payments()->first()->captured_at;
+
+    $deliver()->assertOk();
+
+    $booking->refresh();
+
+    expect($booking->status)->toBe(BookingStatus::Placed)
+        ->and($booking->payments()->count())->toBe(1)
+        ->and($booking->payments()->first()->captured_at->eq($capturedAt))->toBeTrue()
+        ->and($booking->statusHistory()->where('to_status', BookingStatus::Placed->value)->count())->toBe(1);
+
+    Event::assertDispatchedTimes(BookingPlaced::class, 1);
+});
+
 test('money captured against an expired booking is kept for a support refund', function () {
     configureRazorpay();
     [, $booking] = pendingPaymentBooking();

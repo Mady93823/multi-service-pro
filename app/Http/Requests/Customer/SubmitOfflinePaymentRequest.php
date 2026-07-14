@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Customer;
 
 use App\Domain\Settings\SettingsRegistry;
+use App\Support\UploadRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -26,7 +27,7 @@ class SubmitOfflinePaymentRequest extends FormRequest
             // A PDF receipt is as common as a screenshot; both stay on the
             // private disk. Proof is required when the admin cannot otherwise
             // check the transfer — make it mandatory, it is the whole point.
-            'proof' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:4096'],
+            'proof' => ['required', ...UploadRules::document()],
         ];
     }
 

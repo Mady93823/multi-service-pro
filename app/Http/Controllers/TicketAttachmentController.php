@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Concerns\ServesPrivateFiles;
 use App\Models\SupportTicket;
 use App\Models\SupportTicketMessage;
 use Illuminate\Support\Facades\Gate;
@@ -15,6 +16,8 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  */
 class TicketAttachmentController extends Controller
 {
+    use ServesPrivateFiles;
+
     public function show(SupportTicket $ticket, Media $media): BinaryFileResponse
     {
         Gate::authorize('view', $ticket);
@@ -32,6 +35,6 @@ class TicketAttachmentController extends Controller
 
         abort_unless($belongsToTicket, 404);
 
-        return response()->file($media->getPath());
+        return $this->privateFile($media->getPath(), $media->mime_type, $media->file_name);
     }
 }

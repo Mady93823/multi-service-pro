@@ -77,16 +77,19 @@ The business logic is done; this is the product a buyer sees and the depth an op
 7. ~~**M23 Communications**~~ — **done 2026-07-14**: SMTP in settings + synchronous test send, email templates as an optional layer with the shipped default underneath (D25), `SmsGateway` contract (MSG91/Twilio, raw HTTP) that is inert until configured, one `PlatformNotification` base + a single `via()` resolver (D34), event × channel matrix + user opt-outs, announcement composer.
 8. ~~**M24 System settings hub**~~ — **done 2026-07-14**: generated `sitemap.xml` + `robots.txt` + schema.org JSON-LD + per-record meta overrides, currency as *format only* (D23 realised — `Money::format()` has no currency argument left to abuse), API keys / reCaptcha / analytics that stay inert until configured and fail open when they are (D35), `/admin/system` with a cron heartbeat and the `app:update` runner.
 9. ~~**M25 Cities**~~ — **done 2026-07-15**: `cities` table, `zones.city_id` (the free-text string backfilled into rows and dropped), storefront city switcher (detected from the address pin, overridable), a city gate that is the zone gate one level up and never a second geography, a city's **timezone deciding its slot grid** (D36), and a per-city dashboard card. Switching a city off closes the town without touching its bookings.
-10. **M26 Staff roles & permissions** — granular permissions gating routes + nav + actions; staff accounts
-11. **M27 Module manager** — one registry declaring nav/routes/settings per module; admin toggles; dependency guard. **Last, by construction.**
+10. ~~**M26 Staff roles & permissions**~~ — **deferred past launch** (client, 2026-07-15): the operator is one person at launch, and a permission system with nobody on the other side of it has no users. Revisit after some days in production.
+11. ~~**M27 Module manager**~~ — **deferred past launch** with M26: it is a CodeCanyon-buyer feature, and this install wants every module on.
 
-**Gate:** on a fresh install with **zero** third-party keys, an admin can rebrand the storefront (menus, home blocks, footer, legal, blog), take an offline payment end to end, send a templated email, create a staff account that sees only its own group, and disable a module without breaking a page — all from the browser, no code, no `.env` edit.
+**Gate (revised):** on a fresh install with **zero** third-party keys, an admin can rebrand the storefront (menus, home blocks, footer, legal, blog), take an offline payment end to end and send a templated email — all from the browser, no code, no `.env` edit. *(The staff-account and module-toggle halves of the original gate move with M26/M27.)*
 
 > [!warning] Deferred gates come due here
 > The Phase 1 gate (fresh-VPS wizard install) and the Phase 3 gate (two-device tracking checklist) are still open. Phase 6 adds ~15 tables and a dozen settings groups to the installer's surface area, so **run the installer gate before or during Phase 6, not after it**.
 
 ## Phase 7 — Hardening & handover
-1. Security pass: authz audit on every route, rate limits, file upload validation, webhook idempotency replay tests
+
+> Started 2026-07-15, with **M26 + M27 deferred past launch** (above). The remaining Phase 6 work was product depth; the road to a live server runs through here.
+
+1. ~~Security pass: authz audit on every route, rate limits, file upload validation, webhook idempotency replay tests~~ — **done 2026-07-15 (P7.1, ADR D37)**: one `UploadRules` allowlist, `ServesPrivateFiles` (inline images / downloaded documents / always `nosniff`), the framework's private-disk routes **closed** (`'serve' => false`), a **global** `SecurityHeaders` middleware (a `web`-group one never runs on a login redirect — `auth` is priority-sorted ahead of it), three named rate limiters plus a sweep that fails any unauthenticated write route without one, a secret-exposure sweep derived from the key names, and webhook replay pinned for both gateways. **Still open here: a CSP** (D26's custom JS and M24's analytics IDs make today's policy `unsafe-inline`-only), and `SESSION_SECURE_COOKIE` set by the installer when `APP_URL` is https.
 2. Performance: query audit (N+1), image conversions, Lighthouse ≥ 90 on key pages
 3. M15 installer finalized incl. Reverb env + supervisor/systemd templates (reverb + queue worker) + update command + Envato purchase-code toggle (D8)
 4. Product-ization pass (D8/D9): demo mode + nightly reset, PWA (vite-plugin-pwa), SEO pack (SSR, sitemap, schema.org), branding audit — zero hardcoded strings/colors/names

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Domain\Banners\Enums\BannerPlacement;
+use App\Support\UploadRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -31,7 +32,7 @@ class StoreBannerRequest extends FormRequest
             // M18: a banner takes its picture from the media library. Uploading
             // one here still works — it becomes a library asset first, so the
             // library is the whole inventory and not a second silo (D29).
-            'image' => ['required_without:media_asset_id', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'image' => ['required_without:media_asset_id', ...UploadRules::image()],
             'media_asset_id' => ['required_without:image', 'nullable', 'integer', 'exists:media_assets,id'],
         ];
     }

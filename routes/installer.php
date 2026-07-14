@@ -3,7 +3,10 @@
 use App\Http\Controllers\Installer\InstallerController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('install')->name('install.')->group(function () {
+// The wizard is unauthenticated by definition — there is no user table yet — and
+// it writes .env and runs migrations. EnsureInstalled closes it the moment the
+// lock file lands; until then the throttle is the only thing under it (P7.1).
+Route::middleware('throttle:public-write')->prefix('install')->name('install.')->group(function () {
     Route::get('/', [InstallerController::class, 'requirements'])->name('requirements');
     Route::get('database', [InstallerController::class, 'database'])->name('database');
     Route::post('database', [InstallerController::class, 'storeDatabase'])->name('database.store');

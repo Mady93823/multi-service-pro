@@ -4,6 +4,7 @@ use App\Domain\Blocks\Block;
 use App\Domain\Blocks\BlockRegistry;
 use App\Domain\Settings\Groups\SettingsGroup;
 use App\Domain\Settings\SettingsGroupRegistry;
+use Illuminate\Support\Facades\File;
 
 /**
  * Architecture rules (Pest arch). They hold for every module, forever, and they
@@ -177,5 +178,37 @@ test('every block class is registered', function () {
         $class = 'App\\Domain\\Blocks\\Types\\'.basename($file, '.php');
 
         $this->assertContains($class, $registered, "{$class} is not in BlockRegistry — an admin can never add it.");
+    }
+});
+
+test('upload allowlists come from UploadRules, never from a hand-typed mime list', function () {
+    // Ten form requests each carried their own copy of `mimes:jpg,jpeg,png,webp`
+    // (P7.1). They agreed — which is why nobody would have noticed the day one of
+    // them drifted, and the one that drifts is the one that admits the file the
+    // rest refuse. There is one allowlist now, and this is what keeps it one.
+    $offenders = [];
+
+    foreach (File::allFiles(app_path('Http/Requests')) as $file) {
+        $source = (string) file_get_contents($file->getPathname());
+
+        if (preg_match('/\bmimes:|\bmimetypes:/', $source) === 1) {
+            $offenders[] = $file->getFilename();
+        }
+    }
+
+    expect($offenders)->toBe([], 'These form requests spell out a mime allowlist instead of calling UploadRules.');
+});
+
+test('no model unguards mass assignment', function () {
+    // `$guarded = []` turns every column into a form field, and the columns that
+    // hurt are the ones added later: is_active, approval_status, commission_percent.
+    foreach (File::allFiles(app_path('Models')) as $file) {
+        $source = (string) file_get_contents($file->getPathname());
+
+        $this->assertStringNotContainsString(
+            '$guarded',
+            $source,
+            $file->getFilename().' unguards mass assignment — models list $fillable.',
+        );
     }
 });

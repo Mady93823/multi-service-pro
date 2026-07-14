@@ -4,6 +4,7 @@ namespace App\Http\Requests\Support;
 
 use App\Domain\Settings\SettingsRegistry;
 use App\Models\SupportTicket;
+use App\Support\UploadRules;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ReplyToTicketRequest extends FormRequest
@@ -27,7 +28,7 @@ class ReplyToTicketRequest extends FormRequest
         return [
             'body' => ['required', 'string', 'max:5000'],
             'attachments' => ['array', 'max:'.$maxAttachments],
-            'attachments.*' => ['file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:4096'],
+            'attachments.*' => UploadRules::document(),
         ];
     }
 

@@ -6,6 +6,7 @@ use App\Domain\Settings\SettingsRegistry;
 use App\Domain\Support\Enums\TicketCategory;
 use App\Domain\Support\Enums\TicketPriority;
 use App\Rules\RecaptchaToken;
+use App\Support\UploadRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -41,7 +42,7 @@ class OpenTicketRequest extends FormRequest
             // M24: inert unless reCaptcha is configured and this form is ticked.
             'recaptcha_token' => RecaptchaToken::rules('ticket'),
             'attachments' => ['array', 'max:'.$maxAttachments],
-            'attachments.*' => ['file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:4096'],
+            'attachments.*' => UploadRules::document(),
         ];
     }
 

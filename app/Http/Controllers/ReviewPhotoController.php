@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Concerns\ServesPrivateFiles;
 use App\Models\Review;
 use Illuminate\Support\Facades\Gate;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -15,6 +16,8 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  */
 class ReviewPhotoController extends Controller
 {
+    use ServesPrivateFiles;
+
     public function show(Review $review, Media $media): BinaryFileResponse
     {
         abort_unless(Gate::allows('view', $review), 404);
@@ -26,6 +29,6 @@ class ReviewPhotoController extends Controller
             404,
         );
 
-        return response()->file($media->getPath());
+        return $this->privateFile($media->getPath(), $media->mime_type, $media->file_name);
     }
 }

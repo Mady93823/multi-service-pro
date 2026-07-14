@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Domain\Users\Enums\Role;
+use App\Http\Concerns\ServesPrivateFiles;
 use App\Models\ProviderDocument;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * Serves KYC files from the private disk — only the owning provider
@@ -15,7 +16,9 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class ProviderDocumentController extends Controller
 {
-    public function show(Request $request, ProviderDocument $document): Response
+    use ServesPrivateFiles;
+
+    public function show(Request $request, ProviderDocument $document): BinaryFileResponse
     {
         /** @var User $user */
         $user = $request->user();
@@ -25,8 +28,14 @@ class ProviderDocumentController extends Controller
             403,
         );
 
-        abort_unless(Storage::disk('local')->exists($document->file_path), 404);
+        $disk = Storage::disk('local');
 
-        return Storage::disk('local')->response($document->file_path);
+        abort_unless($disk->exists($document->file_path), 404);
+
+        return $this->privateFile(
+            $disk->path($document->file_path),
+            $disk->mimeType($document->file_path) ?: null,
+            basename($document->file_path),
+        );
     }
 }

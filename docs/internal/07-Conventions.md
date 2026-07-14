@@ -131,12 +131,17 @@ php scratchpad/reconcile_catalog.php   # i18n catalog, then re-run Pest
 
 ## Security rules (recurring checklist)
 
-- Every route: auth middleware + Policy check (no "admin can't reach it via UI" excuses)
-- All uploads: validated mime+size, stored on private disk, served via signed temporary URLs (KYC docs especially)
+Enforced by `tests/Feature/Security/*` and `tests/Arch` — a rule here that no test sweeps is a rule that will rot.
+
+- Every route: auth middleware + Policy check (no "admin can't reach it via UI" excuses). `RouteGuardTest` sweeps the middleware; the policy is the module's own test.
+- **Uploads take their allowlist from `App\Support\UploadRules`** — never a hand-typed `mimes:` string (arch test). Raster only for anything rendered inline; an SVG is a script container.
+- **Private files leave through `ServesPrivateFiles` and nowhere else**: one authorizing controller per collection, images inline, everything else `Content-Disposition: attachment`, always `nosniff`. The `local` disk has **`'serve' => false`** — the framework's `/storage/{path}` GET *and* PUT would be a second door past every policy (D37).
 - Tracking channels: private/presence only, authorization policy in `routes/channels.php` (booking's customer/provider/admin) — never public channels for location data
-- Webhooks: signature verification + idempotency keys
-- Rate limiting: auth endpoints, OTP endpoints, tracking ping endpoint (1/s per booking)
-- No secrets in code — `.env` only; installer generates strong secrets (`REVERB_APP_SECRET` etc.)
+- Webhooks: signature verification over the **raw body** + idempotency (a duplicate delivery is normal traffic; replay is pinned per gateway)
+- **Rate limiting: every state-changing route reachable without a session carries a throttle** (swept). Named limiters live in `AppServiceProvider::defineRateLimiters()`: `auth` (per IP), `uploads` (per user), `public-write` (per IP).
+- **Credentials are write-only in the admin UI** — the screen gets a `*_set` boolean, never the value: Inertia serializes every prop into the page's HTML. `SecretExposureTest` derives the secret list from the key names, so a new settings group is covered without being told about.
+- Secrets are settings rows or `.env`, never code; activity-log rows for a settings save store **keys only**. The installer generates strong secrets (`REVERB_APP_SECRET` etc.)
+- Security headers are a **global** middleware, not a `web`-group one: `auth` is priority-sorted ahead of the group, so a group middleware never sees a login redirect or an error page (D37).
 
 ## Environment & running (dev)
 

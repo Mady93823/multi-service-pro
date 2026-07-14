@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Support\UploadRules;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreMediaAssetRequest extends FormRequest
@@ -20,7 +21,7 @@ class StoreMediaAssetRequest extends FormRequest
             'files' => ['required', 'array', 'max:10'],
             // Raster only: the library generates webp conversions, and an SVG is
             // a script container the storefront would serve inline.
-            'files.*' => ['file', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'files.*' => UploadRules::image(),
         ];
     }
 }

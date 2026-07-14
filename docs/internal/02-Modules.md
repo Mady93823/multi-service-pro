@@ -348,20 +348,37 @@ Fills the System-settings group with the remaining leaves. Each is small; togeth
 - Deleting a city with zones is refused (deactivate instead); the FK is `restrict` behind it.
 - ✅ *Done when:* two cities with distinct zones both work end to end; deactivating a city hides it from the storefront without touching its historical bookings. **Met** — seeded demo: Bengaluru (2 zones) + Mysuru (1 zone), plus a demo address outside every zone. 24 new tests (745 suite-wide, 4180 assertions).
 
-## M26 Staff Roles & Permissions
+## M26 Staff Roles & Permissions — **deferred past launch** (client decision, 2026-07-15)
+> The operator is one person at launch, and a permission system nobody is on the other side of is a system with no users. Deferred until the client's team grows — after some days in production. Nothing in Phase 7 depends on it; the three roles from M01 still gate every route (`RouteGuardTest` sweeps them).
 - `spatie/laravel-permission` has been installed since M01 but only three roles are used. Introduce **granular permissions** (`bookings.view`, `payouts.approve`, `settings.manage`, `cms.publish`, `custom_code.manage`, …) grouped by module
 - `staff` role + admin-managed staff accounts; custom roles (name + permission checkboxes); permissions gate **routes, nav items and actions** (one `can:` middleware + the M27 registry drive all three)
 - Admin (super) is un-deletable and always holds every permission; staff can never grant themselves a permission they lack
 - All staff actions already flow through `ActivityLogger` (M13) — actor is now a named staff member, not "admin"
 - ✅ *Done when:* a staff account with only `bookings.*` sees exactly the Bookings group, and every other route 403s (tested per permission, not per screen).
 
-## M27 Module Manager
+## M27 Module Manager — **deferred past launch** (client decision, 2026-07-15)
+> It was always "last, by construction". It is a CodeCanyon-buyer feature, not a launch feature: this install wants every module on. Deferred with M26.
 - One `ModuleRegistry`: each module declares **key, name, nav items, routes, settings groups, dependencies, default state**
 - Admin toggles a module off → its nav group disappears, its routes 404, its settings group hides, its scheduled commands stop registering. Data is never deleted
 - Dependency guard: cannot disable a module another enabled module depends on (Payments cannot go while Bookings is on)
 - Core modules (auth, bookings, settings) are **not toggleable** — the list is explicit, not "everything is optional"
 - **Built last on purpose** — every module must exist before it can register itself
 - ✅ *Done when:* disabling Blog removes it from nav, 404s `/blog`, hides its settings group, and re-enabling it restores everything with data intact.
+
+---
+
+## P7.1 Security & Hardening pass — **shipped 2026-07-15** (ADR D37)
+
+Not a module: a sweep across the sixteen that exist. Every item below is a hole that no policy check could have closed, because each one lives *outside* the request the policy guards.
+
+- **`UploadRules` is the one allowlist.** Ten form requests each carried their own `mimes:jpg,jpeg,png,webp`. They agreed — which is exactly why nobody would have noticed the day one drifted, and the one that drifts is the one that admits the file the rest refuse. An arch test fails any form request that spells a mime list by hand.
+- **`ServesPrivateFiles`: an image renders inline, everything else downloads, and nothing sniffs.** A policy decides *who* may read a private file; this decides *what the browser may do with it*, which is a different question. KYC docs, bank receipts and ticket attachments accept PDFs, and a PDF served inline from our own origin is a script host.
+- **The private disk is no longer served by the framework.** The starter's `'serve' => true` on the `local` disk registers `GET /storage/{path}` **and** `PUT /storage/{path}` straight into the folder holding KYC documents — signature-gated, but gated by a signature rather than by our policies, i.e. a second door no `BookingPolicy` has a say over. Closed; a test asserts the routes are gone.
+- **`SecurityHeaders` is a *global* middleware, and that is the whole point.** `auth` sits in Laravel's middleware priority list, so it is sorted ahead of anything appended to the `web` group: an unauthenticated request redirects out before a group middleware runs, and the login redirect — with every 403/404/500 the exception handler renders — would have shipped bare. `nosniff`, `X-Frame-Options: DENY` (an admin panel that can be framed is a Refund button that can be clicked), `Referrer-Policy`, and a `Permissions-Policy` that keeps **`geolocation=(self)`** because M07's journey screen reads GPS.
+- **Rate limits, swept not sampled.** Three named limiters (`auth` per IP, `uploads` per user, `public-write` per IP) plus a test that fails any state-changing route reachable **without a session** that has no throttle. That is the class that gets forgotten: the ordinary POST that happens to need no login, which an attacker can loop for free.
+- **Credentials cannot reach the browser, and the sweep derives that from the key names** — not from a declaration a new settings group could forget. Every `*secret*`/`*password*`/`*_token*` key gets a sentinel value; every one of the 24 settings screens is rendered; the sentinel must appear in none of them. The public halves (`razorpay_key_id`, `stripe_publishable_key`, `recaptcha.site_key`) must still render, or checkout has no key to open the gateway with.
+- **Webhook replay** is pinned for both gateways: a duplicated delivery is normal gateway traffic, and it settles the booking exactly once (one payment row, one `BookingPlaced`, one status-history row).
+- ✅ *Done when:* the sweeps pass and each one fails loudly on a fresh omission. **Met** — 17 new tests (762 suite-wide, 4338 assertions). Two live findings fixed on the way: the framework's private-disk routes, and the header middleware that never ran on a redirect.
 
 ---
 

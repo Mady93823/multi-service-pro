@@ -4,6 +4,7 @@ namespace App\Http\Requests\Customer;
 
 use App\Domain\Settings\SettingsRegistry;
 use App\Models\Booking;
+use App\Support\UploadRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -29,7 +30,7 @@ class SubmitReviewRequest extends FormRequest
             'rating' => ['required', 'integer', 'between:1,5'],
             'comment' => ['nullable', 'string', 'max:2000'],
             'photos' => ['array', 'max:'.$maxPhotos],
-            'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'photos.*' => UploadRules::image(),
         ];
     }
 

@@ -7,6 +7,7 @@ use App\Domain\Payments\Enums\PaymentProvider;
 use App\Domain\Payments\GatewayManager;
 use App\Domain\Settings\SettingsRegistry;
 use App\Models\BankAccount;
+use App\Support\UploadRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -34,7 +35,7 @@ class PlaceBookingRequest extends FormRequest
             'payment_method' => ['required', Rule::in(self::availableMethods())],
             'notes' => ['nullable', 'string', 'max:1000'],
             'photos' => ['array', 'max:4'],
-            'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'photos.*' => UploadRules::image(),
         ];
     }
 

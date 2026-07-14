@@ -9,7 +9,11 @@ use App\Domain\Installer\EnvWriter;
 use App\Domain\Installer\InstallLock;
 use App\Domain\Settings\SettingsRegistry;
 use App\Support\Geocoder;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use RuntimeException;
 
@@ -43,6 +47,8 @@ class AppServiceProvider extends ServiceProvider
         // SendBookingStatusNotification (M11); BookingOffered →
         // NotifyProvidersOfOffer (M11). Verify with `php artisan event:list`.
 
+        $this->defineRateLimiters();
+
         $this->bootstrapInstallerEnvironment();
 
         // SMTP is a settings row, not a .env line (M23): a buyer configures mail
@@ -51,6 +57,39 @@ class AppServiceProvider extends ServiceProvider
         // joins a notification's via() (D14). A long-running queue worker reads
         // this at boot, so restart workers after changing SMTP.
         app(MailConfigurator::class)->apply();
+    }
+
+    /**
+     * Named rate limiters (P7.1).
+     *
+     * Three of them, because there are three kinds of abuse and they are counted
+     * against different things:
+     *
+     * - `auth` is per IP. Account creation and password-reset mail are free for
+     *   an attacker and expensive for us — one is a spam-account faucet, the
+     *   other posts mail to an address the attacker does not own. Login keeps its
+     *   own per-email lockout in `LoginRequest`; this is the wider net under it,
+     *   loose enough that the lockout still fires first for a single account and
+     *   tight enough to cap a spray across many.
+     * - `uploads` is per user, because a file costs disk and image conversions,
+     *   and the routes that take one are all authenticated.
+     * - `public-write` is per IP: the guest-reachable POSTs (cart, city switch)
+     *   write only to a session, but nothing authenticates them, so the only
+     *   thing standing between them and a loop is this.
+     *
+     * `RouteRateLimitTest` sweeps for the routes that should carry one and don't.
+     */
+    private function defineRateLimiters(): void
+    {
+        RateLimiter::for('auth', fn (Request $request): Limit => Limit::perMinute(20)->by($request->ip() ?? 'unknown'));
+
+        RateLimiter::for(
+            'uploads',
+            fn (Request $request): Limit => Limit::perMinute(30)
+                ->by((string) (Auth::id() ?? $request->ip() ?? 'unknown')),
+        );
+
+        RateLimiter::for('public-write', fn (Request $request): Limit => Limit::perMinute(30)->by($request->ip() ?? 'unknown'));
     }
 
     /**

@@ -52,7 +52,8 @@ Route::post('newsletter', [NewsletterController::class, 'store'])
     ->middleware('throttle:5,1')->name('newsletter.store');
 
 // City switcher (M25) — a browsing preference in the session, open to guests.
-Route::post('city/{city}', [CityController::class, 'switch'])->name('city.switch');
+Route::post('city/{city}', [CityController::class, 'switch'])
+    ->middleware('throttle:public-write')->name('city.switch');
 
 Route::get('services', [Customer\CatalogController::class, 'index'])->name('catalog.index');
 Route::get('services/{category:slug}', [Customer\CatalogController::class, 'category'])->name('catalog.category');
@@ -60,11 +61,14 @@ Route::get('services/{category:slug}/{service:slug}', [Customer\CatalogControlle
     ->name('catalog.show')
     ->scopeBindings();
 
-// Session cart — guests can build one; login happens at checkout.
+// Session cart — guests can build one; login happens at checkout. The writes are
+// unauthenticated, so they carry the guest limiter: nothing else is under them.
 Route::get('cart', [Customer\CartController::class, 'show'])->name('cart.show');
-Route::post('cart/items', [Customer\CartController::class, 'add'])->name('cart.add');
-Route::patch('cart/items/{key}', [Customer\CartController::class, 'update'])->name('cart.update');
-Route::delete('cart/items/{key}', [Customer\CartController::class, 'remove'])->name('cart.remove');
+Route::middleware('throttle:public-write')->group(function () {
+    Route::post('cart/items', [Customer\CartController::class, 'add'])->name('cart.add');
+    Route::patch('cart/items/{key}', [Customer\CartController::class, 'update'])->name('cart.update');
+    Route::delete('cart/items/{key}', [Customer\CartController::class, 'remove'])->name('cart.remove');
+});
 
 Route::middleware(['auth', 'role:customer'])->group(function () {
     Route::get('dashboard', Customer\DashboardController::class)->name('dashboard');
@@ -73,7 +77,10 @@ Route::middleware(['auth', 'role:customer'])->group(function () {
         ->name('addresses.default');
 
     Route::get('checkout', [Customer\CheckoutController::class, 'show'])->name('checkout.show');
-    Route::post('checkout', [Customer\CheckoutController::class, 'store'])->name('checkout.store');
+    // Placing a booking can carry problem photos, so it counts against the
+    // upload budget rather than getting a limit of its own.
+    Route::post('checkout', [Customer\CheckoutController::class, 'store'])
+        ->middleware('throttle:uploads')->name('checkout.store');
 
     // Coupons (M12): session-scoped apply/remove; throttled — codes are guessable.
     Route::post('checkout/coupon', [Customer\CouponController::class, 'store'])
@@ -88,7 +95,8 @@ Route::middleware(['auth', 'role:customer'])->group(function () {
     Route::post('bookings/{booking}/pay/wallet', [Customer\PaymentController::class, 'payWithWallet'])->name('payments.wallet');
     // Offline / bank transfer (M22): declares a transfer + uploads the proof.
     // Settles nothing — an admin verifies it through ConfirmPayment (D27).
-    Route::post('bookings/{booking}/pay/offline', [Customer\PaymentController::class, 'offline'])->name('payments.offline');
+    Route::post('bookings/{booking}/pay/offline', [Customer\PaymentController::class, 'offline'])
+        ->middleware('throttle:uploads')->name('payments.offline');
     Route::post('bookings/{booking}/pay/razorpay/callback', [Customer\PaymentController::class, 'razorpayCallback'])->name('payments.razorpay.callback');
     Route::get('bookings/{booking}/pay/stripe/return', [Customer\PaymentController::class, 'stripeReturn'])->name('payments.stripe.return');
     Route::post('bookings/{booking}/pay/{provider}', [Customer\PaymentController::class, 'initiate'])
@@ -98,7 +106,8 @@ Route::middleware(['auth', 'role:customer'])->group(function () {
     Route::post('bookings/{booking}/cancel', [Customer\BookingController::class, 'cancel'])->name('bookings.cancel');
     Route::post('bookings/{booking}/reschedule', [Customer\BookingController::class, 'reschedule'])->name('bookings.reschedule');
     Route::post('bookings/{booking}/rebook', [Customer\BookingController::class, 'rebook'])->name('bookings.rebook');
-    Route::post('bookings/{booking}/review', [Customer\ReviewController::class, 'store'])->name('bookings.review.store');
+    Route::post('bookings/{booking}/review', [Customer\ReviewController::class, 'store'])
+        ->middleware('throttle:uploads')->name('bookings.review.store');
     Route::post('providers/{provider}/favorite', [Customer\FavoriteProviderController::class, 'toggle'])->name('providers.favorite');
 });
 
@@ -135,9 +144,11 @@ Route::middleware(['auth', 'throttle:30,1'])->group(function () {
 Route::middleware(['auth', 'role:customer|provider'])->prefix('support')->name('support.')->group(function () {
     Route::get('tickets', [SupportTicketController::class, 'index'])->name('tickets.index');
     Route::get('tickets/create', [SupportTicketController::class, 'create'])->name('tickets.create');
-    Route::post('tickets', [SupportTicketController::class, 'store'])->name('tickets.store');
+    Route::post('tickets', [SupportTicketController::class, 'store'])
+        ->middleware('throttle:uploads')->name('tickets.store');
     Route::get('tickets/{ticket}', [SupportTicketController::class, 'show'])->name('tickets.show');
-    Route::post('tickets/{ticket}/reply', [SupportTicketController::class, 'reply'])->name('tickets.reply');
+    Route::post('tickets/{ticket}/reply', [SupportTicketController::class, 'reply'])
+        ->middleware('throttle:uploads')->name('tickets.reply');
 });
 
 // Private-disk ticket attachments — SupportTicketPolicy decides (owner or
@@ -148,7 +159,10 @@ Route::get('support/tickets/{ticket}/attachments/{media}', [TicketAttachmentCont
 
 // Cross-role authenticated endpoints (M07 tracking fallback, M11 notifications).
 Route::middleware('auth')->group(function () {
-    Route::get('bookings/{booking}/tracking/last', [TrackingController::class, 'last'])->name('tracking.last');
+    // The customer map polls this whenever Echo drops (M07). One call per few
+    // seconds is the design; a tab left open for an hour must not be a load test.
+    Route::get('bookings/{booking}/tracking/last', [TrackingController::class, 'last'])
+        ->middleware('throttle:60,1')->name('tracking.last');
 
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
@@ -163,7 +177,8 @@ Route::middleware(['auth', 'role:provider'])->prefix('provider')->name('provider
     // (and later panel screens) sit behind provider.approved.
     Route::get('onboarding', [Provider\OnboardingController::class, 'show'])->name('onboarding');
     Route::put('profile', [Provider\ProfileController::class, 'update'])->name('profile.update');
-    Route::post('documents', [Provider\DocumentController::class, 'store'])->name('documents.store');
+    Route::post('documents', [Provider\DocumentController::class, 'store'])
+        ->middleware('throttle:uploads')->name('documents.store');
 
     Route::middleware('provider.approved')->group(function () {
         Route::get('dashboard', Provider\DashboardController::class)->name('dashboard');
@@ -296,10 +311,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Media library (M18). The picker endpoints answer JSON because the dialog
     // opens over a half-filled form — an Inertia visit would throw it away.
     Route::get('media', [Admin\MediaController::class, 'index'])->name('media.index');
-    Route::post('media', [Admin\MediaController::class, 'store'])->name('media.store');
+    Route::post('media', [Admin\MediaController::class, 'store'])
+        ->middleware('throttle:uploads')->name('media.store');
     Route::delete('media/{asset}', [Admin\MediaController::class, 'destroy'])->name('media.destroy');
     Route::get('media/picker', [Admin\MediaController::class, 'picker'])->name('media.picker');
-    Route::post('media/picker', [Admin\MediaController::class, 'pickerStore'])->name('media.picker.store');
+    Route::post('media/picker', [Admin\MediaController::class, 'pickerStore'])
+        ->middleware('throttle:uploads')->name('media.picker.store');
 
     Route::get('customers', [Admin\CustomerController::class, 'index'])->name('customers.index');
     Route::get('customers/{customer}', [Admin\CustomerController::class, 'show'])->name('customers.show');

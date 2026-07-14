@@ -4,6 +4,7 @@ use App\Http\Middleware\EnsureInstalled;
 use App\Http\Middleware\EnsureProviderApproved;
 use App\Http\Middleware\EnsureUserActive;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -21,6 +22,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Global, not in the `web` group, and that distinction is load-bearing:
+        // `auth` sits in Laravel's middleware *priority* list, so it is sorted
+        // ahead of anything we append to a group. An unauthenticated request is
+        // then redirected out before a group middleware ever runs, and the login
+        // redirect — along with every 403, 404 and 500 the exception handler
+        // renders — would ship with no security headers at all. A global
+        // middleware wraps the router itself, so it sees every response (P7.1).
+        $middleware->append(SecurityHeaders::class);
+
         $middleware->web(append: [
             EnsureInstalled::class,
             EnsureUserActive::class,

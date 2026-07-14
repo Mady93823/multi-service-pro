@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Concerns\ServesPrivateFiles;
 use App\Models\Payment;
 use Illuminate\Support\Facades\Gate;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -14,6 +15,8 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  */
 class PaymentProofController extends Controller
 {
+    use ServesPrivateFiles;
+
     public function show(Payment $payment, Media $media): BinaryFileResponse
     {
         Gate::authorize('view', $payment);
@@ -25,6 +28,6 @@ class PaymentProofController extends Controller
             404,
         );
 
-        return response()->file($media->getPath());
+        return $this->privateFile($media->getPath(), $media->mime_type, $media->file_name);
     }
 }

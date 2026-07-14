@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Concerns\ServesPrivateFiles;
 use App\Models\Booking;
 use Illuminate\Support\Facades\Gate;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -13,6 +14,8 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  */
 class BookingPhotoController extends Controller
 {
+    use ServesPrivateFiles;
+
     public function show(Booking $booking, Media $media): BinaryFileResponse
     {
         Gate::authorize('view', $booking);
@@ -24,6 +27,6 @@ class BookingPhotoController extends Controller
             404,
         );
 
-        return response()->file($media->getPath());
+        return $this->privateFile($media->getPath(), $media->mime_type, $media->file_name);
     }
 }

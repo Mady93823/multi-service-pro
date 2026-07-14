@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Provider;
 
 use App\Domain\Providers\Enums\ProviderDocumentType;
+use App\Support\UploadRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -20,7 +21,7 @@ class UploadProviderDocumentRequest extends FormRequest
     {
         return [
             'type' => ['required', Rule::enum(ProviderDocumentType::class)],
-            'file' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:4096'],
+            'file' => ['required', ...UploadRules::document()],
         ];
     }
 

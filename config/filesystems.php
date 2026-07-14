@@ -33,7 +33,19 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // The private disk is NOT served by the framework (P7.1). `serve` is
+            // the starter's default and it registers two routes on this disk:
+            // `GET /storage/{path}` and, since Laravel 11, `PUT /storage/{path}`
+            // — a signed write into the folder that holds KYC documents, bank
+            // receipts and ticket attachments. Both are guarded by a signature
+            // rather than by our policies, which means they are a second way in
+            // that no `BookingPolicy` or `SupportTicketPolicy` has any say over.
+            //
+            // Every private file already has a controller that authorizes it and
+            // sets its disposition (`ServesPrivateFiles`). Nothing in the app
+            // calls `Storage::disk('local')->url()` or `temporaryUrl()`, so this
+            // costs us nothing and deletes the whole alternate path.
+            'serve' => false,
             'throw' => false,
         ],
 

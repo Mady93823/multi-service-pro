@@ -33,7 +33,14 @@ COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-scripts --no-interaction --prefer-dist --ignore-platform-reqs
 
 COPY . .
-RUN composer dump-autoload --optimize --no-dev --classmap-authoritative
+
+# --no-scripts, deliberately. The post-autoload-dump script is `package:discover`,
+# which boots Laravel and needs a writable bootstrap/cache — a directory
+# .dockerignore keeps out of the build context, because it is per-install state.
+# The manifest it would write here is thrown away in any case: the final stage
+# copies `vendor/`, not this stage's bootstrap/cache. Laravel rebuilds the manifest
+# on first boot, where the directory exists and is writable.
+RUN composer dump-autoload --optimize --no-dev --classmap-authoritative --no-scripts
 
 # ── 3. The runtime ───────────────────────────────────────────────────────────
 FROM php:8.3-fpm-alpine AS app
@@ -60,7 +67,16 @@ COPY --chown=www-data:www-data . .
 COPY --from=vendor --chown=www-data:www-data /build/vendor ./vendor
 COPY --from=assets --chown=www-data:www-data /build/public/build ./public/build
 
-RUN mkdir -p storage/framework/{cache,sessions,views} storage/app/public storage/logs bootstrap/cache \
+# Spelled out, not brace-expanded: /bin/sh here is BusyBox ash, which does not do
+# brace expansion — `{cache,sessions,views}` would create one directory with braces
+# in its name and Laravel would fail to write a session.
+RUN mkdir -p \
+        storage/framework/cache \
+        storage/framework/sessions \
+        storage/framework/views \
+        storage/app/public \
+        storage/logs \
+        bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
 
 EXPOSE 80

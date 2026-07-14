@@ -8,10 +8,12 @@ import DispatchForm, { type DispatchValues } from '@/components/admin/settings/d
 import FeaturesForm, { type FeaturesValues } from '@/components/admin/settings/features-form';
 import InvoiceForm, { type InvoiceValues } from '@/components/admin/settings/invoice-form';
 import LocalizationForm, { type LocalizationValues } from '@/components/admin/settings/localization-form';
+import MailForm, { type MailValues } from '@/components/admin/settings/mail-form';
 import PaymentsForm, { type PaymentsValues } from '@/components/admin/settings/payments-form';
 import PayoutsForm, { type PayoutsValues } from '@/components/admin/settings/payouts-form';
 import ReferralsForm, { type ReferralsValues } from '@/components/admin/settings/referrals-form';
 import ReviewsForm, { type ReviewsValues } from '@/components/admin/settings/reviews-form';
+import SmsForm, { type SmsValues } from '@/components/admin/settings/sms-form';
 import SocialForm, { type SocialValues } from '@/components/admin/settings/social-form';
 import SupportForm, { type SupportValues } from '@/components/admin/settings/support-form';
 import TrackingForm, { type TrackingValues } from '@/components/admin/settings/tracking-form';
@@ -93,6 +95,8 @@ export default function SettingsEdit({ group, title, description, groups, values
                             {group === 'reviews' && <ReviewsForm values={values as unknown as ReviewsValues} />}
                             {group === 'referrals' && <ReferralsForm values={values as unknown as ReferralsValues} />}
                             {group === 'support' && <SupportForm values={values as unknown as SupportValues} />}
+                            {group === 'mail' && <MailForm values={values as unknown as MailValues} />}
+                            {group === 'sms' && <SmsForm values={values as unknown as SmsValues} />}
                             {group === 'blog' && <BlogForm values={values as unknown as BlogValues} />}
                             {group === 'cookie' && <CookieForm values={values as unknown as CookieValues} />}
                             {group === 'custom_code' && <CustomCodeForm values={values as unknown as CustomCodeValues} />}

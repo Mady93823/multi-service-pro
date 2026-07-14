@@ -651,6 +651,34 @@ export interface WalletTransaction {
 
 // M22 payments hub: bank/UPI accounts, payout destinations, the admin list row.
 
+/** M23 — the event × channel matrix. `database` and `broadcast` are always on and never appear here. */
+export interface NotificationEventInfo {
+    key: string;
+    label: string;
+    description: string;
+}
+
+export interface NotificationChannelInfo {
+    key: string;
+    label: string;
+    /** False when the install has no SMTP / no SMS gateway / no Firebase — the switch would send nothing. */
+    available: boolean;
+}
+
+export type NotificationMatrix = Record<string, Record<string, boolean>>;
+
+/**
+ * One switch, on its way back to the server. The index signature is not
+ * decoration: Inertia's useForm types its data as FormDataConvertible, and a
+ * plain interface is not assignable to it (M20's landmine).
+ */
+export interface NotificationPreferenceRow {
+    [key: string]: FormDataConvertible;
+    event: string;
+    channel: string;
+    enabled: boolean;
+}
+
 export interface BankAccount {
     id: number;
     label: string;

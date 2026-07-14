@@ -12,11 +12,13 @@ use App\Domain\Settings\Groups\DispatchGroup;
 use App\Domain\Settings\Groups\FeaturesGroup;
 use App\Domain\Settings\Groups\InvoiceGroup;
 use App\Domain\Settings\Groups\LocalizationGroup;
+use App\Domain\Settings\Groups\MailGroup;
 use App\Domain\Settings\Groups\PaymentsGroup;
 use App\Domain\Settings\Groups\PayoutsGroup;
 use App\Domain\Settings\Groups\ReferralsGroup;
 use App\Domain\Settings\Groups\ReviewsGroup;
 use App\Domain\Settings\Groups\SettingsGroup;
+use App\Domain\Settings\Groups\SmsGroup;
 use App\Domain\Settings\Groups\SocialGroup;
 use App\Domain\Settings\Groups\SupportGroup;
 use App\Domain\Settings\Groups\TrackingGroup;
@@ -46,6 +48,8 @@ class SettingsGroupRegistry
         ReviewsGroup::class,
         ReferralsGroup::class,
         SupportGroup::class,
+        MailGroup::class,
+        SmsGroup::class,
         BlogGroup::class,
         CookieGroup::class,
         CustomCodeGroup::class,

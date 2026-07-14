@@ -2,37 +2,26 @@
 
 namespace App\Notifications;
 
+use App\Domain\Comms\Enums\NotificationEvent;
 use App\Models\Booking;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\BroadcastMessage;
-use Illuminate\Notifications\Notification;
 
 /**
  * A dispatch offer reached this provider (M06 → M11). Drives the Jobs badge
  * and a live toast so an online provider sees offers without refreshing.
+ *
+ * Email is off by default for this event (M23): an offer expires in a minute,
+ * so push and SMS are the only channels that can actually catch it.
  */
-class NewJobOfferNotification extends Notification implements ShouldQueue
+class NewJobOfferNotification extends PlatformNotification
 {
-    use Queueable;
-
     public function __construct(public readonly Booking $booking)
     {
         $this->afterCommit();
     }
 
-    /**
-     * @return list<string>
-     */
-    public function via(object $notifiable): array
+    public function event(): NotificationEvent
     {
-        $channels = ['database', 'broadcast'];
-
-        if (FcmChannel::isConfigured()) {
-            $channels[] = FcmChannel::class;
-        }
-
-        return $channels;
+        return NotificationEvent::JobOffer;
     }
 
     /**
@@ -44,23 +33,6 @@ class NewJobOfferNotification extends Notification implements ShouldQueue
             'type' => 'job_offer',
             'booking_id' => $this->booking->id,
             'code' => $this->booking->code,
-            'title' => __('New job offer'),
-            'body' => __('A new booking near you is available — respond before it expires.'),
-            'url' => route('provider.jobs.index'),
-        ];
-    }
-
-    public function toBroadcast(object $notifiable): BroadcastMessage
-    {
-        return new BroadcastMessage($this->toArray($notifiable));
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function toFcm(object $notifiable): array
-    {
-        return [
             'title' => __('New job offer'),
             'body' => __('A new booking near you is available — respond before it expires.'),
             'url' => route('provider.jobs.index'),

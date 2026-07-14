@@ -9,6 +9,7 @@ import {
     Image,
     LayoutGrid,
     LifeBuoy,
+    Mail,
     Map,
     Megaphone,
     Settings,
@@ -116,6 +117,15 @@ export default function AdminLayout({ children, breadcrumbs }: AdminLayoutProps)
             title: t('Media'),
             url: '/admin/media',
             icon: Image,
+        },
+        {
+            title: t('Communications'),
+            url: '/admin/notifications',
+            icon: Mail,
+            children: [
+                { title: t('Notifications'), url: '/admin/notifications' },
+                { title: t('Email templates'), url: '/admin/email-templates' },
+            ],
         },
         {
             title: t('Reports'),

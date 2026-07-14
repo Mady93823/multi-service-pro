@@ -2,39 +2,25 @@
 
 namespace App\Notifications;
 
+use App\Domain\Comms\Enums\NotificationEvent;
 use App\Models\SupportTicket;
 use App\Models\User;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\BroadcastMessage;
-use Illuminate\Notifications\Notification;
 
 /**
  * A new message landed on a support ticket (M16 → M11). Sent to the ticket
  * owner when support replies, and to the assigned admin when the user
  * replies back — the broadcast channel is what makes the ≤2s in-app gate.
  */
-class TicketReplyNotification extends Notification implements ShouldQueue
+class TicketReplyNotification extends PlatformNotification
 {
-    use Queueable;
-
     public function __construct(public readonly SupportTicket $ticket)
     {
         $this->afterCommit();
     }
 
-    /**
-     * @return list<string>
-     */
-    public function via(object $notifiable): array
+    public function event(): NotificationEvent
     {
-        $channels = ['database', 'broadcast'];
-
-        if (FcmChannel::isConfigured()) {
-            $channels[] = FcmChannel::class;
-        }
-
-        return $channels;
+        return NotificationEvent::TicketReply;
     }
 
     /**
@@ -46,23 +32,7 @@ class TicketReplyNotification extends Notification implements ShouldQueue
             'type' => 'ticket_reply',
             'ticket_id' => $this->ticket->id,
             'code' => $this->ticket->code,
-            'title' => __('New reply on ticket :code', ['code' => $this->ticket->code]),
-            'body' => $this->ticket->subject,
-            'url' => $this->url($notifiable),
-        ];
-    }
-
-    public function toBroadcast(object $notifiable): BroadcastMessage
-    {
-        return new BroadcastMessage($this->toArray($notifiable));
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function toFcm(object $notifiable): array
-    {
-        return [
+            'subject' => $this->ticket->subject,
             'title' => __('New reply on ticket :code', ['code' => $this->ticket->code]),
             'body' => $this->ticket->subject,
             'url' => $this->url($notifiable),

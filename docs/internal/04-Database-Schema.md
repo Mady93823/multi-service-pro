@@ -235,6 +235,20 @@ languages                ← M14; code is the lang/{code}.json FILENAME — stri
 notifications            ← Laravel standard database channel table (M11)
   uuid id, type, notifiable_type, notifiable_id, data TEXT, read_at
 
+email_templates          ← M23; OPTIONAL layer — a missing / disabled / broken row
+  id, event_key (uniq),          falls back to the shipped default (D25);
+  subject, body (markdown),      body is markdown source, never HTML
+  is_enabled
+
+notification_preferences ← M23; event × channel switches
+  id, user_id FK nullable cascade (NULL = the platform default an admin sets),
+  event_key, channel [mail|sms|fcm]   ← database + broadcast are NOT switchable
+  is_enabled, uniq(user_id, event_key, channel)
+
+sms_logs                 ← M23; delivery audit (append-only, created_at only)
+  id, user_id FK nullable nullOnDelete, phone, event_key, body,
+  gateway, status [sent|failed], response JSON, idx(status, created_at)
+
 banners                  ← M12; image via medialibrary collection image (PUBLIC disk
   id, title, link_url,      — marketing content, not user uploads); link_url scheme-
   placement [home_hero|home_strip],  restricted http/https (stored-XSS guard)
@@ -271,6 +285,8 @@ activity_logs            ← M13; append-only admin audit (created_at only, no u
 > [!note] **Shipped M14 (2026-07-11, ADR D20).** `pages` stores markdown source only — rendered HTML is never persisted, so the sanitizing renderer stays the single output path and a rule change re-sanitizes all history for free. `languages.code` doubles as a filename: strict pattern validation at the request *and* inside the only two file-touching actions, immutable after creation, `en` row protected (no `is_default` column — the default is code, not data). Deleting a language deletes its `lang/{code}.json`; the current site locale refuses deletion. `faqs` is deliberately plain text.
 
 ## Phase 6 — planned tables (M17–M27, specced 2026-07-12)
+
+**M23 shipped (2026-07-14):** `email_templates` · `notification_preferences` · `sms_logs` — all three listed under **Engagement & platform** above, and all three *optional layers* over behaviour that already worked without them (D25). Two design points worth keeping: `notification_preferences.channel` has **no `database` or `broadcast` value** — the in-app feed and the live bell are not switchable (D34) — and `notification_preferences.user_id` is nullable because the platform default and a user's opt-out are the same row shape with a different owner (the user's wins). SMTP and the SMS credentials are **settings rows, not tables and not `.env`** (two new groups, `mail` and `sms`, secrets write-only per M08).
 
 **M18 shipped (2026-07-13):** `media_assets` (id, name, `uploaded_by` FK nullOnDelete, timestamps) + the medialibrary `library` collection on the **public** disk, one file per asset. Consumers do not reference the row — picking **copies** the file into the consumer's collection and stamps `custom_properties->library_asset_id` on the copy (ADR D29). Usage, deletability and pruning all read that stamp; there is no join table. Banners keep their own `image` collection (now filled from the library).
 
@@ -318,19 +334,6 @@ blog_posts               ← M21; body is MARKDOWN SOURCE (same rule as `pages`)
   idx(published_at, blog_category_id)
 
 (M22's `bank_accounts` + `payout_accounts` shipped 2026-07-14 — see **Money** above.)
-
-email_templates          ← M23; OPTIONAL layer — a missing/broken row falls back to
-  id, event_key (uniq),          the shipped default (D25); body is markdown
-  subject, body (markdown), is_enabled
-
-sms_logs                 ← M23; delivery audit (append-only)
-  id, user_id FK nullable nullOnDelete, phone, event_key, body,
-  gateway, status [queued|sent|failed], response JSON, created_at
-
-notification_preferences ← M23; event × channel toggles; admin defaults + user opt-outs
-  id, user_id FK nullable cascade (null = platform default row),
-  event_key, channel [database|broadcast|mail|sms|fcm], is_enabled
-  uniq(user_id, event_key, channel)
 
 modules                  ← M27; the registry declares modules in CODE; this table
   id, key (uniq), is_enabled     stores only the on/off state. Disabling never

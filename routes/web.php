@@ -296,9 +296,29 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Manual wallet correction (M22) — WalletService is still the only writer.
     Route::post('customers/{customer}/wallet', [Admin\CustomerController::class, 'adjustWallet'])->name('customers.wallet');
 
+    // Communications (M23). Templates are an optional layer over the shipped
+    // emails (D25) — deleting one restores the default, it never stops the mail.
+    Route::get('email-templates', [Admin\EmailTemplateController::class, 'index'])->name('email-templates.index');
+    Route::get('email-templates/{event}', [Admin\EmailTemplateController::class, 'edit'])->name('email-templates.edit');
+    Route::put('email-templates/{event}', [Admin\EmailTemplateController::class, 'update'])->name('email-templates.update');
+    Route::delete('email-templates/{event}', [Admin\EmailTemplateController::class, 'destroy'])->name('email-templates.destroy');
+    // JSON, not Inertia: the preview fires while the admin types and an Inertia
+    // visit would throw the half-written template away (M18's picker rule).
+    Route::post('email-templates/{event}/preview', [Admin\EmailTemplateController::class, 'preview'])->name('email-templates.preview');
+    Route::post('email-templates/{event}/test', [Admin\EmailTemplateController::class, 'test'])
+        ->middleware('throttle:10,1')->name('email-templates.test');
+
+    Route::get('notifications', [Admin\NotificationController::class, 'index'])->name('notifications.index');
+    Route::put('notifications', [Admin\NotificationController::class, 'update'])->name('notifications.update');
+    Route::post('notifications/announce', [Admin\NotificationController::class, 'announce'])
+        ->middleware('throttle:5,1')->name('notifications.announce');
+
     // Settings is one screen per group (ADR D24): a save carries — and can
     // therefore only write — the keys of the group named in the URL.
     Route::get('settings', [Admin\SettingsController::class, 'index'])->name('settings.index');
+    // Declared before settings/{group} or the wildcard swallows it (M21's feed).
+    Route::post('settings/mail/test', [Admin\SettingsController::class, 'testMail'])
+        ->middleware('throttle:10,1')->name('settings.mail.test');
     Route::get('settings/{group}', [Admin\SettingsController::class, 'edit'])->name('settings.edit');
     Route::put('settings/{group}', [Admin\SettingsController::class, 'update'])->name('settings.update');
 

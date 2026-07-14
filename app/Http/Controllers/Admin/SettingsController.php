@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Domain\Activity\ActivityLogger;
+use App\Domain\Comms\Actions\SendTestEmail;
 use App\Domain\Settings\Actions\SaveSettingsGroup;
 use App\Domain\Settings\SettingsGroupRegistry;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\SendTestEmailRequest;
 use App\Http\Requests\Admin\UpdateSettingsRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\UploadedFile;
@@ -60,5 +62,17 @@ class SettingsController extends Controller
         ]);
 
         return back()->with('success', __('Settings saved.'));
+    }
+
+    /**
+     * Prove the SMTP settings from the screen that saved them (M23). Sent
+     * synchronously so a bad host or password comes back as a form error rather
+     * than dying in a worker log.
+     */
+    public function testMail(SendTestEmailRequest $request, SendTestEmail $action): RedirectResponse
+    {
+        $action->handle((string) $request->string('email'));
+
+        return back()->with('success', __('Test email sent.'));
     }
 }

@@ -22,6 +22,11 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
             icon: null,
         },
         {
+            title: t('Notifications'),
+            url: '/settings/notifications',
+            icon: null,
+        },
+        {
             title: t('Appearance'),
             url: '/settings/appearance',
             icon: null,

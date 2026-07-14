@@ -98,6 +98,13 @@ class SettingsFixtures
             'custom_code' => [
                 'enabled' => false,
             ],
+            'mail' => [
+                'port' => 587,
+                'encryption' => 'tls',
+            ],
+            'sms' => [
+                'gateway' => 'none',
+            ],
             'blog' => [
                 'blog_enabled' => true,
                 'blog_posts_per_page' => 9,

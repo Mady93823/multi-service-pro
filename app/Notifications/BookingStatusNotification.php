@@ -3,21 +3,17 @@
 namespace App\Notifications;
 
 use App\Domain\Bookings\Enums\BookingStatus;
+use App\Domain\Comms\Enums\NotificationEvent;
 use App\Models\Booking;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\BroadcastMessage;
-use Illuminate\Notifications\Notification;
 
 /**
  * Booking lifecycle update delivered to the customer (M11): stored in-app,
- * pushed live over Reverb, and — once Firebase is configured — as FCM push.
+ * pushed live over Reverb, and — where the install is configured and the
+ * customer has not opted out (M23) — by email, SMS and FCM push.
  * Queued so the state-machine request never waits on delivery.
  */
-class BookingStatusNotification extends Notification implements ShouldQueue
+class BookingStatusNotification extends PlatformNotification
 {
-    use Queueable;
-
     public function __construct(
         public readonly Booking $booking,
         public readonly BookingStatus $status,
@@ -25,18 +21,9 @@ class BookingStatusNotification extends Notification implements ShouldQueue
         $this->afterCommit();
     }
 
-    /**
-     * @return list<string>
-     */
-    public function via(object $notifiable): array
+    public function event(): NotificationEvent
     {
-        $channels = ['database', 'broadcast'];
-
-        if (FcmChannel::isConfigured()) {
-            $channels[] = FcmChannel::class;
-        }
-
-        return $channels;
+        return NotificationEvent::BookingStatus;
     }
 
     /**
@@ -55,21 +42,6 @@ class BookingStatusNotification extends Notification implements ShouldQueue
             'body' => $body,
             'url' => route('bookings.show', $this->booking->id),
         ];
-    }
-
-    public function toBroadcast(object $notifiable): BroadcastMessage
-    {
-        return new BroadcastMessage($this->toArray($notifiable));
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function toFcm(object $notifiable): array
-    {
-        [$title, $body] = $this->message();
-
-        return ['title' => $title, 'body' => $body, 'url' => route('bookings.show', $this->booking->id)];
     }
 
     /**

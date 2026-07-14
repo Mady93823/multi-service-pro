@@ -2,22 +2,17 @@
 
 namespace App\Notifications;
 
+use App\Domain\Comms\Enums\NotificationEvent;
 use App\Domain\Support\Enums\TicketStatus;
 use App\Models\SupportTicket;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\BroadcastMessage;
-use Illuminate\Notifications\Notification;
 
 /**
  * The ticket owner is told when support resolves or closes their ticket
  * (M16 → M11). Status is snapshotted at construction — the queued job must
  * describe what happened, not whatever the ticket says later.
  */
-class TicketStatusNotification extends Notification implements ShouldQueue
+class TicketStatusNotification extends PlatformNotification
 {
-    use Queueable;
-
     public function __construct(
         public readonly SupportTicket $ticket,
         public readonly TicketStatus $status,
@@ -25,18 +20,9 @@ class TicketStatusNotification extends Notification implements ShouldQueue
         $this->afterCommit();
     }
 
-    /**
-     * @return list<string>
-     */
-    public function via(object $notifiable): array
+    public function event(): NotificationEvent
     {
-        $channels = ['database', 'broadcast'];
-
-        if (FcmChannel::isConfigured()) {
-            $channels[] = FcmChannel::class;
-        }
-
-        return $channels;
+        return NotificationEvent::TicketStatus;
     }
 
     /**
@@ -48,23 +34,7 @@ class TicketStatusNotification extends Notification implements ShouldQueue
             'type' => 'ticket_status',
             'ticket_id' => $this->ticket->id,
             'code' => $this->ticket->code,
-            'title' => $this->title(),
-            'body' => $this->ticket->subject,
-            'url' => route('support.tickets.show', $this->ticket),
-        ];
-    }
-
-    public function toBroadcast(object $notifiable): BroadcastMessage
-    {
-        return new BroadcastMessage($this->toArray($notifiable));
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function toFcm(object $notifiable): array
-    {
-        return [
+            'subject' => $this->ticket->subject,
             'title' => $this->title(),
             'body' => $this->ticket->subject,
             'url' => route('support.tickets.show', $this->ticket),

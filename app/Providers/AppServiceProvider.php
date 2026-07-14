@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Domain\Comms\MailConfigurator;
+use App\Domain\Comms\NotificationPreferences;
 use App\Domain\Geocoding\NominatimGeocoder;
 use App\Domain\Installer\EnvWriter;
 use App\Domain\Installer\InstallLock;
@@ -19,6 +21,9 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(SettingsRegistry::class);
+        // Memoizes the platform matrix: one dispatch fans out to many
+        // notifications, and each one asks the same question (M23).
+        $this->app->singleton(NotificationPreferences::class);
         $this->app->bind(Geocoder::class, NominatimGeocoder::class);
     }
 
@@ -39,6 +44,13 @@ class AppServiceProvider extends ServiceProvider
         // NotifyProvidersOfOffer (M11). Verify with `php artisan event:list`.
 
         $this->bootstrapInstallerEnvironment();
+
+        // SMTP is a settings row, not a .env line (M23): a buyer configures mail
+        // from the browser. Nothing is forced when it is empty — the mailer keeps
+        // whatever the environment said, and the `mail` channel simply never
+        // joins a notification's via() (D14). A long-running queue worker reads
+        // this at boot, so restart workers after changing SMTP.
+        app(MailConfigurator::class)->apply();
     }
 
     /**

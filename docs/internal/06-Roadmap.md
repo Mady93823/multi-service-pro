@@ -74,7 +74,7 @@ The business logic is done; this is the product a buyer sees and the depth an op
 4. ~~**M20 Page builder**~~ — **done 2026-07-14**: `page_blocks` + `BlockRegistry`, 14 typed blocks behind one schema-driven admin form (D22), server-resolved blocks presented through the existing resources (D32); the storefront home *is* a page now.
 5. ~~**M21 Blog**~~ — **done 2026-07-14**: categories, markdown posts, publication as a moment (scheduled posts 404 until their time), public `/blog` + RSS feed, per-post SEO fields for M24.
 6. ~~**M22 Payments hub**~~ — **done 2026-07-14**: `/admin/payments`, offline + bank-transfer payments settled through the existing row-locked `ConfirmPayment` with **no new payment state** (D27), payout accounts that the request still snapshots (D33), admin wallet adjustment through `WalletService`.
-7. **M23 Communications** — SMTP in settings + test send, email templates with shipped fallback (D25), SMS gateway (`SmsGateway` contract), notification matrix, push composer
+7. ~~**M23 Communications**~~ — **done 2026-07-14**: SMTP in settings + synchronous test send, email templates as an optional layer with the shipped default underneath (D25), `SmsGateway` contract (MSG91/Twilio, raw HTTP) that is inert until configured, one `PlatformNotification` base + a single `via()` resolver (D34), event × channel matrix + user opt-outs, announcement composer.
 8. **M24 System settings hub** — SEO + sitemap + schema.org, currency format (D23), timezone UI, API keys, reCaptcha, analytics, cron status, about & update
 9. **M25 Cities** — `cities` table, zones belong to a city, storefront city switcher
 10. **M26 Staff roles & permissions** — granular permissions gating routes + nav + actions; staff accounts

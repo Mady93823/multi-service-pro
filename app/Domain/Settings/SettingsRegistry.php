@@ -130,6 +130,24 @@ class SettingsRegistry
             'blog.posts_per_page' => ['group' => 'blog', 'type' => SettingType::Integer, 'value' => 9],
             'blog.show_author' => ['group' => 'blog', 'type' => SettingType::Boolean, 'value' => true],
             'blog.related_count' => ['group' => 'blog', 'type' => SettingType::Integer, 'value' => 3],
+            // M23. SMTP lives here, not in .env — a buyer configures mail from
+            // the browser. With no host and no from-address the `mail` channel
+            // never joins a notification's via() (D14's rule, D25's fallback).
+            'mail.host' => ['group' => 'mail', 'type' => SettingType::String, 'value' => null],
+            'mail.port' => ['group' => 'mail', 'type' => SettingType::Integer, 'value' => 587],
+            'mail.username' => ['group' => 'mail', 'type' => SettingType::String, 'value' => null],
+            'mail.password' => ['group' => 'mail', 'type' => SettingType::String, 'value' => null],
+            'mail.encryption' => ['group' => 'mail', 'type' => SettingType::String, 'value' => 'tls'],
+            'mail.from_address' => ['group' => 'mail', 'type' => SettingType::String, 'value' => null],
+            'mail.from_name' => ['group' => 'mail', 'type' => SettingType::String, 'value' => null],
+            // M23. SMS: `none` until an operator picks a gateway and pays for it.
+            'sms.gateway' => ['group' => 'sms', 'type' => SettingType::String, 'value' => 'none'],
+            'sms.msg91_auth_key' => ['group' => 'sms', 'type' => SettingType::String, 'value' => null],
+            'sms.msg91_sender' => ['group' => 'sms', 'type' => SettingType::String, 'value' => null],
+            'sms.msg91_route' => ['group' => 'sms', 'type' => SettingType::String, 'value' => '4'],
+            'sms.twilio_sid' => ['group' => 'sms', 'type' => SettingType::String, 'value' => null],
+            'sms.twilio_token' => ['group' => 'sms', 'type' => SettingType::String, 'value' => null],
+            'sms.twilio_from' => ['group' => 'sms', 'type' => SettingType::String, 'value' => null],
             'custom_code.enabled' => ['group' => 'custom_code', 'type' => SettingType::Boolean, 'value' => false],
             'custom_code.css' => ['group' => 'custom_code', 'type' => SettingType::String, 'value' => null],
             'custom_code.js' => ['group' => 'custom_code', 'type' => SettingType::String, 'value' => null],

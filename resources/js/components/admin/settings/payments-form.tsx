@@ -18,14 +18,27 @@ export interface PaymentsValues {
     offline_instructions: string;
     razorpay_key_id: string;
     stripe_publishable_key: string;
+    payu_key: string;
+    payu_mode: string;
+    paypal_client_id: string;
+    paypal_webhook_id: string;
+    paypal_mode: string;
     razorpay_key_secret_set: boolean;
     razorpay_webhook_secret_set: boolean;
     stripe_secret_key_set: boolean;
     stripe_webhook_secret_set: boolean;
+    payu_salt_set: boolean;
+    paypal_client_secret_set: boolean;
 }
 
-/** The four write-only secrets: the server sends `*_set`, never the value. */
-type SecretField = 'razorpay_key_secret' | 'razorpay_webhook_secret' | 'stripe_secret_key' | 'stripe_webhook_secret';
+/** The write-only secrets: the server sends `*_set`, never the value. */
+type SecretField =
+    | 'razorpay_key_secret'
+    | 'razorpay_webhook_secret'
+    | 'stripe_secret_key'
+    | 'stripe_webhook_secret'
+    | 'payu_salt'
+    | 'paypal_client_secret';
 
 type PaymentsForm = {
     tax_label: string;
@@ -36,14 +49,23 @@ type PaymentsForm = {
     offline_instructions: string;
     razorpay_key_id: string;
     stripe_publishable_key: string;
+    payu_key: string;
+    payu_mode: string;
+    paypal_client_id: string;
+    paypal_webhook_id: string;
+    paypal_mode: string;
     razorpay_key_secret: string;
     razorpay_webhook_secret: string;
     stripe_secret_key: string;
     stripe_webhook_secret: string;
+    payu_salt: string;
+    paypal_client_secret: string;
     remove_razorpay_key_secret: boolean;
     remove_razorpay_webhook_secret: boolean;
     remove_stripe_secret_key: boolean;
     remove_stripe_webhook_secret: boolean;
+    remove_payu_salt: boolean;
+    remove_paypal_client_secret: boolean;
 };
 
 export default function PaymentsForm({ values }: { values: PaymentsValues }) {
@@ -58,15 +80,24 @@ export default function PaymentsForm({ values }: { values: PaymentsValues }) {
         offline_instructions: values.offline_instructions,
         razorpay_key_id: values.razorpay_key_id,
         stripe_publishable_key: values.stripe_publishable_key,
+        payu_key: values.payu_key,
+        payu_mode: values.payu_mode,
+        paypal_client_id: values.paypal_client_id,
+        paypal_webhook_id: values.paypal_webhook_id,
+        paypal_mode: values.paypal_mode,
         // Secrets start blank on every load — blank means "keep what is stored".
         razorpay_key_secret: '',
         razorpay_webhook_secret: '',
         stripe_secret_key: '',
         stripe_webhook_secret: '',
+        payu_salt: '',
+        paypal_client_secret: '',
         remove_razorpay_key_secret: false,
         remove_razorpay_webhook_secret: false,
         remove_stripe_secret_key: false,
         remove_stripe_webhook_secret: false,
+        remove_payu_salt: false,
+        remove_paypal_client_secret: false,
     });
 
     const secretField = (field: SecretField, label: string, isSet: boolean) => {
@@ -203,6 +234,75 @@ export default function PaymentsForm({ values }: { values: PaymentsValues }) {
                 </div>
                 {secretField('stripe_secret_key', t('Secret key'), values.stripe_secret_key_set)}
                 {secretField('stripe_webhook_secret', t('Webhook secret'), values.stripe_webhook_secret_set)}
+            </div>
+
+            <div className="space-y-4 rounded-lg border p-4">
+                <h3 className="text-sm font-medium">{t('PayU')}</h3>
+                <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid gap-2">
+                        <Label htmlFor="payu_key">{t('Merchant key')}</Label>
+                        <Input id="payu_key" value={data.payu_key} onChange={(e) => setData('payu_key', e.target.value)} autoComplete="off" />
+                        <InputError message={errors.payu_key} />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="payu_mode">{t('Mode')}</Label>
+                        <select
+                            id="payu_mode"
+                            className="border-input bg-background h-9 rounded-md border px-3 text-sm"
+                            value={data.payu_mode}
+                            onChange={(e) => setData('payu_mode', e.target.value)}
+                        >
+                            <option value="test">{t('Test')}</option>
+                            <option value="live">{t('Live')}</option>
+                        </select>
+                        <InputError message={errors.payu_mode} />
+                    </div>
+                </div>
+                {secretField('payu_salt', t('Merchant salt'), values.payu_salt_set)}
+            </div>
+
+            <div className="space-y-4 rounded-lg border p-4">
+                <h3 className="text-sm font-medium">{t('PayPal')}</h3>
+                <p className="text-muted-foreground text-xs">{t('PayPal cannot settle INR — use it on international installs.')}</p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid gap-2">
+                        <Label htmlFor="paypal_client_id">{t('Client ID')}</Label>
+                        <Input
+                            id="paypal_client_id"
+                            value={data.paypal_client_id}
+                            onChange={(e) => setData('paypal_client_id', e.target.value)}
+                            autoComplete="off"
+                        />
+                        <InputError message={errors.paypal_client_id} />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="paypal_mode">{t('Mode')}</Label>
+                        <select
+                            id="paypal_mode"
+                            className="border-input bg-background h-9 rounded-md border px-3 text-sm"
+                            value={data.paypal_mode}
+                            onChange={(e) => setData('paypal_mode', e.target.value)}
+                        >
+                            <option value="sandbox">{t('Sandbox')}</option>
+                            <option value="live">{t('Live')}</option>
+                        </select>
+                        <InputError message={errors.paypal_mode} />
+                    </div>
+                </div>
+                {secretField('paypal_client_secret', t('Client secret'), values.paypal_client_secret_set)}
+                <div className="grid gap-2">
+                    <Label htmlFor="paypal_webhook_id">{t('Webhook ID')}</Label>
+                    <Input
+                        id="paypal_webhook_id"
+                        value={data.paypal_webhook_id}
+                        onChange={(e) => setData('paypal_webhook_id', e.target.value)}
+                        autoComplete="off"
+                    />
+                    <InputError message={errors.paypal_webhook_id} />
+                    <p className="text-muted-foreground text-xs">
+                        {t('From your PayPal developer dashboard — webhooks are ignored until it is set.')}
+                    </p>
+                </div>
             </div>
 
             <SaveButton processing={processing} />

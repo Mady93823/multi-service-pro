@@ -75,6 +75,15 @@ class SettingsRegistry
             'payments.stripe_publishable_key' => ['group' => 'payments', 'type' => SettingType::String, 'value' => null],
             'payments.stripe_secret_key' => ['group' => 'payments', 'type' => SettingType::String, 'value' => null],
             'payments.stripe_webhook_secret' => ['group' => 'payments', 'type' => SettingType::String, 'value' => null],
+            // D39. PayU (Indian rail #2) and PayPal (international installs —
+            // PayPal cannot settle INR domestically).
+            'payments.payu_key' => ['group' => 'payments', 'type' => SettingType::String, 'value' => null],
+            'payments.payu_salt' => ['group' => 'payments', 'type' => SettingType::String, 'value' => null],
+            'payments.payu_mode' => ['group' => 'payments', 'type' => SettingType::String, 'value' => 'test'],
+            'payments.paypal_client_id' => ['group' => 'payments', 'type' => SettingType::String, 'value' => null],
+            'payments.paypal_client_secret' => ['group' => 'payments', 'type' => SettingType::String, 'value' => null],
+            'payments.paypal_webhook_id' => ['group' => 'payments', 'type' => SettingType::String, 'value' => null],
+            'payments.paypal_mode' => ['group' => 'payments', 'type' => SettingType::String, 'value' => 'sandbox'],
             // M09. Global commission rate; a category may override it.
             'payments.commission_percent' => ['group' => 'payments', 'type' => SettingType::Decimal, 'value' => '20'],
             'payouts.enabled' => ['group' => 'payouts', 'type' => SettingType::Boolean, 'value' => true],

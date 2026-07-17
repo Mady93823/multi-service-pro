@@ -10,6 +10,8 @@ use App\Domain\Payments\Actions\SubmitOfflinePayment;
 use App\Domain\Payments\Enums\PaymentProvider;
 use App\Domain\Payments\Enums\PaymentState;
 use App\Domain\Payments\GatewayManager;
+use App\Domain\Payments\Gateways\PayPalGateway;
+use App\Domain\Payments\Gateways\PayUGateway;
 use App\Domain\Payments\Gateways\RazorpayGateway;
 use App\Domain\Payments\Gateways\StripeGateway;
 use App\Domain\Payments\WalletService;
@@ -31,9 +33,10 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Customer side of online payment (M08): the pay page, gateway session
- * initiation, the Razorpay signature callback and the Stripe return leg.
- * Webhooks live in the top-level WebhookController.
+ * Customer side of online payment (M08, gateways extended D39): the pay page,
+ * gateway session initiation, and each gateway's browser leg — Razorpay's
+ * signature callback, Stripe's return, PayU's cross-site POST return and
+ * PayPal's capture return. Webhooks live in the top-level WebhookController.
  */
 class PaymentController extends Controller
 {
@@ -209,6 +212,86 @@ class PaymentController extends Controller
             ->first();
 
         if ($payment !== null && $payment->status !== PaymentState::Captured && $gateway->isSessionPaid($sessionId)) {
+            $confirm->handle($payment);
+        }
+
+        $paid = $payment !== null && $payment->refresh()->status === PaymentState::Captured;
+
+        return redirect()
+            ->route('bookings.show', $booking)
+            ->with($paid ? 'success' : 'error', $paid
+                ? __('Payment received! Your booking is confirmed.')
+                : __('Your payment is still processing. This page will update once it is confirmed.'));
+    }
+
+    /**
+     * PayU posts the customer back cross-site, so the session cookie does not
+     * ride (SameSite=Lax) and this route is unauthenticated + CSRF-exempt.
+     * Trust comes from the reverse hash over the merchant salt — webhook-grade
+     * proof — and a success still re-asks the verify API before settling
+     * (D39). The redirect out is a top-level GET, which carries the cookie
+     * again, so the customer lands signed in on their booking.
+     */
+    public function payuReturn(Request $request, PayUGateway $gateway, ConfirmPayment $confirm): RedirectResponse
+    {
+        /** @var array<string, mixed> $fields */
+        $fields = $request->post();
+
+        $txnid = (string) ($fields['txnid'] ?? '');
+
+        /** @var Payment|null $payment */
+        $payment = Payment::query()
+            ->where('gateway', PaymentProvider::PayU->value)
+            ->where('gateway_ref', $txnid)
+            ->first();
+
+        if ($payment === null) {
+            abort(404);
+        }
+
+        abort_unless($gateway->verifyResponseHash($fields), 400, 'Invalid PayU response hash.');
+
+        $status = (string) ($fields['status'] ?? '');
+
+        if ($status === 'success' && $payment->status !== PaymentState::Captured && $gateway->isPaymentVerified($txnid)) {
+            $confirm->handle($payment, ['payu' => $fields]);
+        } elseif ($status === 'failure' && $payment->status === PaymentState::Initiated) {
+            $payment->forceFill([
+                'status' => PaymentState::Failed,
+                'payload' => array_merge($payment->payload ?? [], ['failure' => $fields]),
+            ])->save();
+        }
+
+        $paid = $payment->refresh()->status === PaymentState::Captured;
+
+        return redirect()
+            ->route('bookings.show', $payment->booking_id)
+            ->with($paid ? 'success' : 'error', $paid
+                ? __('Payment received! Your booking is confirmed.')
+                : __('The payment did not go through. You can try again from the payment page.'));
+    }
+
+    /**
+     * PayPal approve return. Approval is not money — capturing the order is,
+     * and the capture API response is the confirmation (D39; Stripe's
+     * isSessionPaid idiom). The webhook capture remains the backstop.
+     */
+    public function paypalReturn(
+        Request $request,
+        Booking $booking,
+        PayPalGateway $gateway,
+        ConfirmPayment $confirm,
+    ): RedirectResponse {
+        $this->customerFor($request, $booking);
+
+        $orderId = (string) $request->query('token');
+
+        $payment = $booking->payments()
+            ->where('gateway', PaymentProvider::PayPal->value)
+            ->where('gateway_ref', $orderId)
+            ->first();
+
+        if ($payment !== null && $payment->status !== PaymentState::Captured && $gateway->captureOrder($orderId)) {
             $confirm->handle($payment);
         }
 

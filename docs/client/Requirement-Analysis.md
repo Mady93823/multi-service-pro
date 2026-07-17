@@ -115,6 +115,7 @@ The system is split into 16 clean modules. Each module is independent and expand
 
 ### M08 — Payments & Wallet
 - **Razorpay** payment gateway (client-confirmed): UPI first, plus cards, netbanking, wallets, EMI
+- Additional gateways, each enabled by pasting its keys in admin settings: **PayU** (UPI, cards, netbanking), **Stripe** (cards), **PayPal** (international — not INR)
 - "Pay after service" (cash / UPI on completion) — enabled at launch; admin can disable
 - Customer wallet: top-up, refunds to wallet, pay from wallet
 - Automatic **GST-compliant invoices** (GSTIN, CGST/SGST/IGST breakup, configurable tax rates)

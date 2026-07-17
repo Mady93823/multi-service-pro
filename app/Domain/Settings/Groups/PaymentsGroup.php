@@ -14,6 +14,8 @@ class PaymentsGroup extends SettingsGroup
         'razorpay_webhook_secret' => 'payments.razorpay_webhook_secret',
         'stripe_secret_key' => 'payments.stripe_secret_key',
         'stripe_webhook_secret' => 'payments.stripe_webhook_secret',
+        'payu_salt' => 'payments.payu_salt',
+        'paypal_client_secret' => 'payments.paypal_client_secret',
     ];
 
     public function key(): string
@@ -46,6 +48,13 @@ class PaymentsGroup extends SettingsGroup
             'payments.stripe_publishable_key',
             'payments.stripe_secret_key',
             'payments.stripe_webhook_secret',
+            'payments.payu_key',
+            'payments.payu_salt',
+            'payments.payu_mode',
+            'payments.paypal_client_id',
+            'payments.paypal_client_secret',
+            'payments.paypal_webhook_id',
+            'payments.paypal_mode',
         ];
     }
 
@@ -60,15 +69,24 @@ class PaymentsGroup extends SettingsGroup
             'offline_instructions' => ['nullable', 'string', 'max:2000'],
             'razorpay_key_id' => ['nullable', 'string', 'max:191'],
             'stripe_publishable_key' => ['nullable', 'string', 'max:191'],
+            'payu_key' => ['nullable', 'string', 'max:191'],
+            'payu_mode' => ['required', 'in:test,live'],
+            'paypal_client_id' => ['nullable', 'string', 'max:191'],
+            'paypal_webhook_id' => ['nullable', 'string', 'max:191'],
+            'paypal_mode' => ['required', 'in:sandbox,live'],
             // Write-only. Blank keeps the stored secret; remove_* erases it.
             'razorpay_key_secret' => ['nullable', 'string', 'max:191'],
             'razorpay_webhook_secret' => ['nullable', 'string', 'max:191'],
             'stripe_secret_key' => ['nullable', 'string', 'max:191'],
             'stripe_webhook_secret' => ['nullable', 'string', 'max:191'],
+            'payu_salt' => ['nullable', 'string', 'max:191'],
+            'paypal_client_secret' => ['nullable', 'string', 'max:191'],
             'remove_razorpay_key_secret' => ['boolean'],
             'remove_razorpay_webhook_secret' => ['boolean'],
             'remove_stripe_secret_key' => ['boolean'],
             'remove_stripe_webhook_secret' => ['boolean'],
+            'remove_payu_salt' => ['boolean'],
+            'remove_paypal_client_secret' => ['boolean'],
         ];
     }
 
@@ -84,6 +102,11 @@ class PaymentsGroup extends SettingsGroup
             // Publishable halves of each key pair are safe to render.
             'razorpay_key_id' => $this->settings->string('payments.razorpay_key_id'),
             'stripe_publishable_key' => $this->settings->string('payments.stripe_publishable_key'),
+            'payu_key' => $this->settings->string('payments.payu_key'),
+            'payu_mode' => $this->settings->string('payments.payu_mode', 'test'),
+            'paypal_client_id' => $this->settings->string('payments.paypal_client_id'),
+            'paypal_webhook_id' => $this->settings->string('payments.paypal_webhook_id'),
+            'paypal_mode' => $this->settings->string('payments.paypal_mode', 'sandbox'),
         ];
 
         // Gateway secrets never leave the server: Inertia serializes every prop
@@ -105,6 +128,11 @@ class PaymentsGroup extends SettingsGroup
         $this->settings->set('payments.offline_instructions', $data['offline_instructions'] ?? null);
         $this->settings->set('payments.razorpay_key_id', $data['razorpay_key_id'] ?? null);
         $this->settings->set('payments.stripe_publishable_key', $data['stripe_publishable_key'] ?? null);
+        $this->settings->set('payments.payu_key', $data['payu_key'] ?? null);
+        $this->settings->set('payments.payu_mode', $data['payu_mode']);
+        $this->settings->set('payments.paypal_client_id', $data['paypal_client_id'] ?? null);
+        $this->settings->set('payments.paypal_webhook_id', $data['paypal_webhook_id'] ?? null);
+        $this->settings->set('payments.paypal_mode', $data['paypal_mode']);
 
         foreach (self::SECRETS as $field => $settingKey) {
             $submitted = $data[$field] ?? null;

@@ -667,7 +667,7 @@ export interface ProviderProfile {
 // M08 payments + wallet.
 
 /** Who settled the money — mirrors App\Domain\Payments\Enums\PaymentProvider. */
-export type PaymentProvider = 'razorpay' | 'stripe' | 'cash' | 'wallet' | 'offline';
+export type PaymentProvider = 'razorpay' | 'stripe' | 'payu' | 'paypal' | 'cash' | 'wallet' | 'offline';
 
 /** Mirrors App\Domain\Payments\Enums\PaymentState. */
 export type PaymentState = 'initiated' | 'captured' | 'failed' | 'refunded';
@@ -800,6 +800,17 @@ export interface RazorpaySession {
 export interface StripeSession {
     url: string;
     publishable_key: string;
+}
+
+/** PayU hosted checkout: a signed form the browser auto-submits (D39). */
+export interface PayUSession {
+    action: string;
+    fields: Record<string, string>;
+}
+
+/** PayPal order: the approve link we redirect to (D39). */
+export interface PayPalSession {
+    url: string | null;
 }
 
 // M09 commission, earnings + payouts.

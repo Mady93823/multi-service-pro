@@ -303,6 +303,16 @@ The first real install run found the wizard unusable: every `/install` route 500
 
 **`DB_CONNECTION` defaults to `mysql`, not the starter's `sqlite`.** A buyer who omits it should not land silently on a file database that every deployment doc, backup script and migration here assumes away. The suite pins `sqlite` in `phpunit.xml` explicitly, which is where a test-only choice belongs.
 
+### D39 — PayU and PayPal join behind the same contract; no leg of any gateway trusts the browser (2026-07-17)
+
+Two more gateways, zero new money paths: `PayUGateway` and `PayPalGateway` implement the same `PaymentGateway` contract over the raw HTTP client (D15 — still no vendor SDKs), register in `GatewayManager`, and settle exclusively through the row-locked idempotent `ConfirmPayment`. Credentials live in settings, secrets write-only (`payu_salt`, `paypal_client_secret` — the `SecretExposureTest` regex learned `salt`).
+
+**PayU is a different *shape* of gateway: there is no upstream order.** `session()` signs a form (sha512 request hash over the merchant salt) that the browser POSTs to PayU itself, and PayU POSTs the customer back **cross-site** — the session cookie does not ride (SameSite=Lax), so the return route is unauthenticated, CSRF-exempt (`payments/payu/return` in bootstrap/app.php) and throttled. Trust is the *reverse hash* — webhook-grade proof in a browser-shaped delivery — and a success still re-asks the `verify_payment` API before `ConfirmPayment` runs, because a hash proves who wrote the message, not that the money is still there. PayU's webhook is form-encoded with the proof inside the fields, so `WebhookController::payu()` decodes the raw body (`fieldsFromBody()`) rather than fitting the JSON-plus-signature-header mold.
+
+**PayPal's rule: approval is not money — capture is.** The return leg and the `CHECKOUT.ORDER.APPROVED` webhook both funnel into `captureOrder()`, whose API response is the confirmation (Stripe's `isSessionPaid` idiom); the APPROVED webhook is what captures the closed-browser case the return leg never sees. Webhook authenticity is itself an API call (`verify-webhook-signature` — PayPal publishes no local HMAC), so the transmission headers travel packed as the contract's `$signature` string, and a missing `paypal_webhook_id` fails closed. PayPal cannot settle INR domestically — it exists for international installs (D8) and the admin screen says so.
+
+Replay-idempotency is pinned for both new gateways exactly as P7.1 pinned it for the first two: one payment row, one `BookingPlaced`, one status-history row, however many deliveries.
+
 ## UI sourcing workflow (shoogle.dev)
 
 1. Need a block (e.g., booking form, dashboard, pricing card) → search **shoogle.dev**

@@ -12,6 +12,8 @@ import {
     type Booking,
     type BreadcrumbItem,
     type PayMethods,
+    type PayPalSession,
+    type PayUSession,
     type PaymentProvider,
     type RazorpaySession,
     type SharedData,
@@ -171,6 +173,53 @@ export default function PayPage({ booking, methods, pending_offline: pendingOffl
         }
     }, [booking.id, failed, t]);
 
+    // PayU has no hosted URL to follow: the server signs a form and the
+    // browser must POST it to PayU itself (D39).
+    const payWithPayU = useCallback(async () => {
+        setBusy('payu');
+        setError(null);
+
+        try {
+            const { session } = await postJson<{ session: PayUSession }>(route('payments.initiate', [booking.id, 'payu']));
+
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = session.action;
+
+            Object.entries(session.fields).forEach(([name, value]) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = name;
+                input.value = value;
+                form.appendChild(input);
+            });
+
+            document.body.appendChild(form);
+            form.submit();
+        } catch {
+            failed(t('The payment could not be started. Please try again.'));
+        }
+    }, [booking.id, failed, t]);
+
+    const payWithPayPal = useCallback(async () => {
+        setBusy('paypal');
+        setError(null);
+
+        try {
+            const { session } = await postJson<{ session: PayPalSession }>(route('payments.initiate', [booking.id, 'paypal']));
+
+            if (session.url === null) {
+                failed(t('The payment could not be started. Please try again.'));
+
+                return;
+            }
+
+            window.location.href = session.url;
+        } catch {
+            failed(t('The payment could not be started. Please try again.'));
+        }
+    }, [booking.id, failed, t]);
+
     const payWithWallet = () => {
         setBusy('wallet');
         setError(null);
@@ -258,6 +307,19 @@ export default function PayPage({ booking, methods, pending_offline: pendingOffl
                             </Button>
                         )}
 
+                        {methods.gateways.includes('payu') && (
+                            <Button
+                                variant="outline"
+                                className="w-full justify-start"
+                                size="lg"
+                                disabled={busy !== null || expired}
+                                onClick={() => void payWithPayU()}
+                            >
+                                {busy === 'payu' ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+                                {t('Pay via PayU — UPI, cards, net banking')}
+                            </Button>
+                        )}
+
                         {methods.gateways.includes('stripe') && (
                             <Button
                                 variant="outline"
@@ -268,6 +330,19 @@ export default function PayPage({ booking, methods, pending_offline: pendingOffl
                             >
                                 {busy === 'stripe' ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
                                 {t('Pay by card')}
+                            </Button>
+                        )}
+
+                        {methods.gateways.includes('paypal') && (
+                            <Button
+                                variant="outline"
+                                className="w-full justify-start"
+                                size="lg"
+                                disabled={busy !== null || expired}
+                                onClick={() => void payWithPayPal()}
+                            >
+                                {busy === 'paypal' ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+                                {t('Pay with PayPal')}
                             </Button>
                         )}
 

@@ -114,8 +114,9 @@ Route::middleware(['auth', 'role:customer'])->group(function () {
         ->middleware('throttle:uploads')->name('payments.offline');
     Route::post('bookings/{booking}/pay/razorpay/callback', [Customer\PaymentController::class, 'razorpayCallback'])->name('payments.razorpay.callback');
     Route::get('bookings/{booking}/pay/stripe/return', [Customer\PaymentController::class, 'stripeReturn'])->name('payments.stripe.return');
+    Route::get('bookings/{booking}/pay/paypal/return', [Customer\PaymentController::class, 'paypalReturn'])->name('payments.paypal.return');
     Route::post('bookings/{booking}/pay/{provider}', [Customer\PaymentController::class, 'initiate'])
-        ->whereIn('provider', ['razorpay', 'stripe'])->name('payments.initiate');
+        ->whereIn('provider', ['razorpay', 'stripe', 'payu', 'paypal'])->name('payments.initiate');
 
     Route::get('bookings/{booking}', [Customer\BookingController::class, 'show'])->name('bookings.show');
     Route::post('bookings/{booking}/cancel', [Customer\BookingController::class, 'cancel'])->name('bookings.cancel');
@@ -392,6 +393,17 @@ Route::post('webhooks/razorpay', [WebhookController::class, 'razorpay'])
     ->middleware('throttle:60,1')->name('webhooks.razorpay');
 Route::post('webhooks/stripe', [WebhookController::class, 'stripe'])
     ->middleware('throttle:60,1')->name('webhooks.stripe');
+Route::post('webhooks/payu', [WebhookController::class, 'payu'])
+    ->middleware('throttle:60,1')->name('webhooks.payu');
+Route::post('webhooks/paypal', [WebhookController::class, 'paypal'])
+    ->middleware('throttle:60,1')->name('webhooks.paypal');
+
+// PayU's return leg is a cross-site POST from PayU's checkout page: the
+// session cookie does not ride (SameSite=Lax), so this cannot live in the
+// authenticated group and is CSRF-exempt (bootstrap/app.php). The reverse
+// hash is the proof — webhook trust model, browser-shaped delivery (D39).
+Route::post('payments/payu/return', [Customer\PaymentController::class, 'payuReturn'])
+    ->middleware('throttle:public-write')->name('payments.payu.return');
 
 require __DIR__.'/installer.php';
 require __DIR__.'/settings.php';

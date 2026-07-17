@@ -40,7 +40,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         // Gateway webhooks authenticate by signature, not session (M08).
-        $middleware->validateCsrfTokens(except: ['webhooks/*']);
+        // PayU's return leg is a cross-site POST carrying no session at all —
+        // its reverse hash is the authentication (D39).
+        $middleware->validateCsrfTokens(except: ['webhooks/*', 'payments/payu/return']);
 
         $middleware->alias([
             'role' => RoleMiddleware::class,

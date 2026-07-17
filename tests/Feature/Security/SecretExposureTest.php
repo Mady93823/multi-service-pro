@@ -24,7 +24,8 @@ function secretSettingKeys(): array
         array_keys(SettingsRegistry::defaults()),
         // A publishable key, a site key and a GA4 id are *supposed* to reach the
         // browser — they are public halves. These are the private ones.
-        fn (string $key): bool => preg_match('/(secret|password|_token|auth_key|credentials)/i', $key) === 1,
+        // `salt` entered with PayU (D39): its merchant salt signs every hash.
+        fn (string $key): bool => preg_match('/(secret|password|_token|auth_key|credentials|salt)/i', $key) === 1,
     ));
 }
 
@@ -36,6 +37,8 @@ test('the secret list is the one we think it is', function () {
         'payments.razorpay_webhook_secret',
         'payments.stripe_secret_key',
         'payments.stripe_webhook_secret',
+        'payments.payu_salt',
+        'payments.paypal_client_secret',
         'mail.password',
         'sms.msg91_auth_key',
         'sms.twilio_token',
@@ -87,6 +90,8 @@ test('the public halves of the credential pairs are not treated as secrets', fun
     expect(secretSettingKeys())
         ->not->toContain('payments.razorpay_key_id')
         ->not->toContain('payments.stripe_publishable_key')
+        ->not->toContain('payments.payu_key')
+        ->not->toContain('payments.paypal_client_id')
         ->not->toContain('recaptcha.site_key')
         ->not->toContain('integrations.google_maps_key');
 });

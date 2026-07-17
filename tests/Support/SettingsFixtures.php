@@ -76,6 +76,8 @@ class SettingsFixtures
                 'pay_after_service' => true,
                 'wallet_enabled' => true,
                 'offline_enabled' => false,
+                'payu_mode' => 'test',
+                'paypal_mode' => 'sandbox',
             ],
             'payouts' => [
                 'commission_percent' => 20,

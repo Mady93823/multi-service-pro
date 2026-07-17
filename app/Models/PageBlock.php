@@ -61,7 +61,7 @@ class PageBlock extends Model implements HasMedia
 
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection(self::COLLECTION)->useDisk('public');
+        $this->addMediaCollection(self::COLLECTION);
     }
 
     public function registerMediaConversions(?Media $media = null): void

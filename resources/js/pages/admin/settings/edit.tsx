@@ -20,6 +20,7 @@ import ReviewsForm, { type ReviewsValues } from '@/components/admin/settings/rev
 import SeoForm, { type SeoValues } from '@/components/admin/settings/seo-form';
 import SmsForm, { type SmsValues } from '@/components/admin/settings/sms-form';
 import SocialForm, { type SocialValues } from '@/components/admin/settings/social-form';
+import StorageForm, { type StorageValues } from '@/components/admin/settings/storage-form';
 import SupportForm, { type SupportValues } from '@/components/admin/settings/support-form';
 import TrackingForm, { type TrackingValues } from '@/components/admin/settings/tracking-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -107,6 +108,7 @@ export default function SettingsEdit({ group, title, description, groups, values
                             {group === 'support' && <SupportForm values={values as unknown as SupportValues} />}
                             {group === 'mail' && <MailForm values={values as unknown as MailValues} />}
                             {group === 'sms' && <SmsForm values={values as unknown as SmsValues} />}
+                            {group === 'storage' && <StorageForm values={values as unknown as StorageValues} />}
                             {group === 'blog' && <BlogForm values={values as unknown as BlogValues} />}
                             {group === 'cookie' && <CookieForm values={values as unknown as CookieValues} />}
                             {group === 'custom_code' && <CustomCodeForm values={values as unknown as CustomCodeValues} />}

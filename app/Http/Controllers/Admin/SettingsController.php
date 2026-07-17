@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Domain\Activity\ActivityLogger;
 use App\Domain\Comms\Actions\SendTestEmail;
+use App\Domain\Media\Actions\TestStorageConnection;
 use App\Domain\Settings\Actions\SaveSettingsGroup;
 use App\Domain\Settings\SettingsGroupRegistry;
 use App\Http\Controllers\Controller;
@@ -80,5 +81,16 @@ class SettingsController extends Controller
         $action->handle((string) $request->string('email'));
 
         return back()->with('success', __('Test email sent.'));
+    }
+
+    /**
+     * Probe the stored S3 settings (D40): write, read back, delete.
+     * Synchronous — a bad endpoint is a form error, not a worker log.
+     */
+    public function testStorage(TestStorageConnection $action): RedirectResponse
+    {
+        $action->handle();
+
+        return back()->with('success', __('Storage connection works.'));
     }
 }

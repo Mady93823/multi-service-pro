@@ -50,7 +50,7 @@ class BankAccount extends Model implements HasMedia
      */
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection('qr')->useDisk('public')->singleFile();
+        $this->addMediaCollection('qr')->singleFile();
     }
 
     public function registerMediaConversions(?Media $media = null): void

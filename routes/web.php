@@ -364,6 +364,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Declared before settings/{group} or the wildcard swallows it (M21's feed).
     Route::post('settings/mail/test', [Admin\SettingsController::class, 'testMail'])
         ->middleware('throttle:10,1')->name('settings.mail.test');
+    Route::post('settings/storage/test', [Admin\SettingsController::class, 'testStorage'])
+        ->middleware('throttle:10,1')->name('settings.storage.test');
     Route::get('settings/{group}', [Admin\SettingsController::class, 'edit'])->name('settings.edit');
     Route::put('settings/{group}', [Admin\SettingsController::class, 'update'])->name('settings.update');
 

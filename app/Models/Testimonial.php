@@ -40,7 +40,7 @@ class Testimonial extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         // Marketing content, public disk — same rule as banners.
-        $this->addMediaCollection('avatar')->useDisk('public')->singleFile();
+        $this->addMediaCollection('avatar')->singleFile();
     }
 
     public function registerMediaConversions(?Media $media = null): void

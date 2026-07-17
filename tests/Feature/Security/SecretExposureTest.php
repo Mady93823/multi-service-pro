@@ -44,6 +44,7 @@ test('the secret list is the one we think it is', function () {
         'sms.twilio_token',
         'integrations.fcm_credentials',
         'recaptcha.secret_key',
+        'storage.s3_secret',
     ]);
 });
 

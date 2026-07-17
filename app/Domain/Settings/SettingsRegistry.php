@@ -187,6 +187,16 @@ class SettingsRegistry
             'analytics.ga4_id' => ['group' => 'analytics', 'type' => SettingType::String, 'value' => null],
             'analytics.gtm_id' => ['group' => 'analytics', 'type' => SettingType::String, 'value' => null],
             'analytics.meta_pixel_id' => ['group' => 'analytics', 'type' => SettingType::String, 'value' => null],
+            // D40. Public media storage: local disk or an S3-compatible
+            // bucket (Cloudflare R2 etc). Private files never move.
+            'storage.driver' => ['group' => 'storage', 'type' => SettingType::String, 'value' => 'local'],
+            'storage.s3_key' => ['group' => 'storage', 'type' => SettingType::String, 'value' => null],
+            'storage.s3_secret' => ['group' => 'storage', 'type' => SettingType::String, 'value' => null],
+            'storage.s3_bucket' => ['group' => 'storage', 'type' => SettingType::String, 'value' => null],
+            'storage.s3_region' => ['group' => 'storage', 'type' => SettingType::String, 'value' => 'auto'],
+            'storage.s3_endpoint' => ['group' => 'storage', 'type' => SettingType::String, 'value' => null],
+            'storage.s3_url' => ['group' => 'storage', 'type' => SettingType::String, 'value' => null],
+            'storage.s3_path_style' => ['group' => 'storage', 'type' => SettingType::Boolean, 'value' => false],
             'custom_code.enabled' => ['group' => 'custom_code', 'type' => SettingType::Boolean, 'value' => false],
             'custom_code.css' => ['group' => 'custom_code', 'type' => SettingType::String, 'value' => null],
             'custom_code.js' => ['group' => 'custom_code', 'type' => SettingType::String, 'value' => null],

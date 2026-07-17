@@ -7,6 +7,7 @@ use App\Domain\Comms\NotificationPreferences;
 use App\Domain\Geocoding\NominatimGeocoder;
 use App\Domain\Installer\EnvWriter;
 use App\Domain\Installer\InstallLock;
+use App\Domain\Media\StorageConfigurator;
 use App\Domain\Settings\SettingsRegistry;
 use App\Support\Geocoder;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -84,6 +85,12 @@ class AppServiceProvider extends ServiceProvider
         // joins a notification's via() (D14). A long-running queue worker reads
         // this at boot, so restart workers after changing SMTP.
         app(MailConfigurator::class)->apply();
+
+        // Media storage rides the same idiom (D40): a fully configured
+        // S3-compatible bucket becomes medialibrary's default disk; anything
+        // less stays on the local public disk. Restart workers after changing
+        // it — queued conversions read this at boot too.
+        app(StorageConfigurator::class)->apply();
     }
 
     /**

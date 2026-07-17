@@ -25,6 +25,7 @@ use App\Domain\Settings\Groups\SeoGroup;
 use App\Domain\Settings\Groups\SettingsGroup;
 use App\Domain\Settings\Groups\SmsGroup;
 use App\Domain\Settings\Groups\SocialGroup;
+use App\Domain\Settings\Groups\StorageGroup;
 use App\Domain\Settings\Groups\SupportGroup;
 use App\Domain\Settings\Groups\TrackingGroup;
 
@@ -58,6 +59,7 @@ class SettingsGroupRegistry
         SupportGroup::class,
         MailGroup::class,
         SmsGroup::class,
+        StorageGroup::class,
         IntegrationsGroup::class,
         RecaptchaGroup::class,
         BlogGroup::class,

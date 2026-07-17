@@ -120,6 +120,9 @@ class SettingsFixtures
             'sms' => [
                 'gateway' => 'none',
             ],
+            'storage' => [
+                'driver' => 'local',
+            ],
             'blog' => [
                 'blog_enabled' => true,
                 'blog_posts_per_page' => 9,

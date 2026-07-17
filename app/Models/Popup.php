@@ -55,7 +55,7 @@ class Popup extends Model implements HasMedia
 
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection('image')->useDisk('public')->singleFile();
+        $this->addMediaCollection('image')->singleFile();
     }
 
     public function registerMediaConversions(?Media $media = null): void

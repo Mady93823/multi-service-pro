@@ -313,6 +313,14 @@ Two more gateways, zero new money paths: `PayUGateway` and `PayPalGateway` imple
 
 Replay-idempotency is pinned for both new gateways exactly as P7.1 pinned it for the first two: one payment row, one `BookingPlaced`, one status-history row, however many deliveries.
 
+### D40 — Media storage is a settings row, and only the public disk ever moves (2026-07-17)
+
+`StorageConfigurator` (the `MailConfigurator` idiom): a new `storage` settings group holds an S3-compatible bucket — Cloudflare R2, AWS S3, Spaces, MinIO; one field set covers all four — and when it is **fully** configured, boot registers a `s3media` disk and points `media-library.disk_name` at it. Half-configured degrades to local (D35): a missing bucket must never break an upload. The secret is write-only (`storage.s3_secret`, already inside the `SecretExposureTest` sweep by name).
+
+**Switching affects new uploads only, by construction:** medialibrary stamps every media row with the disk it was written to, so old files keep serving from local while new ones land in the bucket. No migration, nothing strands — pinned by a test. The public-collection models simply dropped their hard-coded `useDisk('public')` so the (now switchable) default decides; **private collections (KYC, payment proofs, review photos, ticket attachments, problem photos) keep their explicit `local` pin and never move** — they are policy-gated files served through `ServesPrivateFiles`, and a public bucket is the opposite of that.
+
+The admin's Test-connection button runs `TestStorageConnection` synchronously — write a probe file with `throw: true`, read it back, delete it — so a bad endpoint is a form error on the screen that saved it, not a worker log (M23's test-send rule). At runtime the disk keeps `throw: false`: a flaky bucket degrades to a broken image, never a 500 (M07's rule). Like SMTP, a long-running queue worker reads this at boot — restart workers after changing it. New dependency: `league/flysystem-aws-s3-v3`.
+
 ## UI sourcing workflow (shoogle.dev)
 
 1. Need a block (e.g., booking form, dashboard, pricing card) → search **shoogle.dev**

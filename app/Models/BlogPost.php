@@ -63,7 +63,7 @@ class BlogPost extends Model implements HasMedia
 
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection(self::COLLECTION)->useDisk('public')->singleFile();
+        $this->addMediaCollection(self::COLLECTION)->singleFile();
     }
 
     public function registerMediaConversions(?Media $media = null): void

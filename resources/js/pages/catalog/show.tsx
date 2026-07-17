@@ -18,6 +18,8 @@ import { FormEventHandler } from 'react';
 interface CatalogShowProps {
     service: Service;
     available_in_zone: boolean;
+    /** Quantity of this service already sitting in the cart, across all lines. */
+    in_cart_qty: number;
     reviews: Paginated<Review> | null;
     review_summary: ReviewSummary | null;
     meta: SeoMetaProps;
@@ -29,11 +31,13 @@ type AddToCartForm = {
     service_id: number;
     qty: number;
     addon_ids: number[];
+    book_now: boolean;
 };
 
 export default function CatalogShow({
     service,
     available_in_zone: availableInZone,
+    in_cart_qty: inCartQty,
     reviews,
     review_summary: reviewSummary,
     meta,
@@ -42,10 +46,11 @@ export default function CatalogShow({
     const money = useMoney();
     const t = useTrans();
 
-    const { data, setData, post, processing } = useForm<AddToCartForm>({
+    const { data, setData, post, processing, transform } = useForm<AddToCartForm>({
         service_id: service.id,
         qty: 1,
         addon_ids: [],
+        book_now: false,
     });
 
     const addons = service.addons ?? [];
@@ -57,9 +62,19 @@ export default function CatalogShow({
         setData('addon_ids', checked ? [...data.addon_ids, addonId] : data.addon_ids.filter((id) => id !== addonId));
     };
 
+    /**
+     * `transform` rather than setData('book_now', …): setData is React state and
+     * would not have landed by the time post() reads the form, while transform
+     * runs at submit time. It is set on every call — it sticks once assigned.
+     */
+    const add = (bookNow: boolean) => {
+        transform((current) => ({ ...current, book_now: bookNow }));
+        post(route('cart.add'));
+    };
+
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        post(route('cart.add'), { preserveScroll: true });
+        add(false);
     };
 
     const assurances = [
@@ -162,6 +177,18 @@ export default function CatalogShow({
                             </p>
                         )}
 
+                        {inCartQty > 0 && (
+                            <p className="bg-muted mt-5 flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm">
+                                <span className="flex items-center gap-2 font-medium">
+                                    <ShoppingCart className="text-primary h-4 w-4 shrink-0" aria-hidden />
+                                    {t(':count already in your cart', { count: inCartQty })}
+                                </span>
+                                <Link href={route('cart.show')} className="text-primary shrink-0 font-semibold hover:underline">
+                                    {t('Go to cart')}
+                                </Link>
+                            </p>
+                        )}
+
                         <form onSubmit={submit} className="mt-5 space-y-5">
                             {addons.length > 0 && (
                                 <div className="space-y-2">
@@ -217,10 +244,24 @@ export default function CatalogShow({
                                 <span className="text-2xl font-bold">{money(total)}</span>
                             </div>
 
-                            <Button type="submit" className="h-12 w-full rounded-xl text-base" size="lg" disabled={processing}>
-                                {processing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
-                                {t('Add to cart')}
-                            </Button>
+                            <div className="space-y-2">
+                                <Button type="submit" className="h-12 w-full rounded-xl text-base" size="lg" disabled={processing}>
+                                    {processing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
+                                    {t('Add to cart')}
+                                </Button>
+
+                                {/* Straight to checkout — booking one service is the common case, and the cart page in the middle of it decides nothing. */}
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="h-12 w-full rounded-xl text-base"
+                                    size="lg"
+                                    disabled={processing}
+                                    onClick={() => add(true)}
+                                >
+                                    {t('Book now')}
+                                </Button>
+                            </div>
 
                             <p className="text-muted-foreground text-center text-xs">{t('No payment now. You choose how to pay at checkout.')}</p>
                         </form>
@@ -301,6 +342,21 @@ export default function CatalogShow({
                     </div>
                 </section>
             )}
+
+            {/* The buy box is a right-hand column, so on a phone it sits below the hero, the description and the reviews — a long scroll away from the one thing this page is for. This keeps the price and the button reachable. */}
+            <div className="bg-background/95 fixed inset-x-0 bottom-0 z-40 flex items-center gap-4 border-t px-4 py-3 backdrop-blur lg:hidden">
+                <div className="min-w-0 flex-1">
+                    <p className="text-muted-foreground text-xs">{t('Total')}</p>
+                    <p className="truncate text-lg font-bold">{money(total)}</p>
+                </div>
+                <Button type="button" size="lg" className="h-11 shrink-0 rounded-xl" disabled={processing} onClick={() => add(false)}>
+                    {processing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
+                    {t('Add to cart')}
+                </Button>
+            </div>
+
+            {/* The bar floats, so the last of the page needs somewhere to go. */}
+            <div className="h-20 lg:hidden" aria-hidden />
         </PublicLayout>
     );
 }

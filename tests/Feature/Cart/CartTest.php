@@ -2,12 +2,13 @@
 
 use App\Models\Service;
 use App\Models\ServiceAddon;
+use App\Models\User;
 
 test('a guest can add a service to the cart and see it', function () {
     $service = Service::factory()->create(['price' => 499]);
 
     $this->post(route('cart.add'), ['service_id' => $service->id, 'qty' => 2])
-        ->assertRedirect();
+        ->assertRedirect(route('cart.show'));
 
     $response = $this->get(route('cart.show'));
 
@@ -90,4 +91,51 @@ test('an inactive service cannot be added at all', function () {
 
     $this->post(route('cart.add'), ['service_id' => $service->id, 'qty' => 1])
         ->assertSessionHasErrors('service_id');
+});
+
+test('book now adds the line and skips the cart page', function () {
+    $customer = User::factory()->customer()->create();
+    $service = Service::factory()->create();
+
+    $this->actingAs($customer)
+        ->post(route('cart.add'), ['service_id' => $service->id, 'qty' => 1, 'book_now' => true])
+        ->assertRedirect(route('checkout.show'));
+
+    // Still a cart underneath: "book now" walks past a page, it is not a
+    // second way of building a booking.
+    $this->actingAs($customer)
+        ->get(route('cart.show'))
+        ->assertInertia(fn ($page) => $page->count('lines', 1));
+});
+
+test('a guest using book now is handed to the checkout guard, not past it', function () {
+    $service = Service::factory()->create();
+
+    $this->post(route('cart.add'), ['service_id' => $service->id, 'qty' => 1, 'book_now' => true])
+        ->assertRedirect(route('checkout.show'));
+
+    $this->get(route('checkout.show'))->assertRedirect(route('login'));
+});
+
+test('the service page reports how much of it the cart already holds', function () {
+    $service = Service::factory()->create();
+    $url = route('catalog.show', [$service->category->slug, $service->slug]);
+
+    $this->get($url)->assertInertia(fn ($page) => $page->where('in_cart_qty', 0));
+
+    $this->post(route('cart.add'), ['service_id' => $service->id, 'qty' => 3]);
+
+    $this->get($url)->assertInertia(fn ($page) => $page->where('in_cart_qty', 3));
+});
+
+test('the in-cart count sums a service across its add-on lines', function () {
+    $service = Service::factory()->create();
+    $addon = ServiceAddon::factory()->for($service)->create();
+
+    // Same service, two lines: one plain, one with the add-on.
+    $this->post(route('cart.add'), ['service_id' => $service->id, 'qty' => 2]);
+    $this->post(route('cart.add'), ['service_id' => $service->id, 'qty' => 1, 'addon_ids' => [$addon->id]]);
+
+    $this->get(route('catalog.show', [$service->category->slug, $service->slug]))
+        ->assertInertia(fn ($page) => $page->where('in_cart_qty', 3));
 });

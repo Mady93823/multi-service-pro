@@ -112,6 +112,19 @@ class CartManager
     }
 
     /**
+     * How many of one service the cart holds, across every line. The same
+     * service with different add-ons sits on separate lines, and the service
+     * page asks about the service, not one add-on combination.
+     */
+    public function qtyForService(int $serviceId): int
+    {
+        return array_sum(array_map(
+            fn (array $line): int => $line['service_id'] === $serviceId ? $line['qty'] : 0,
+            $this->lines(),
+        ));
+    }
+
+    /**
      * Lines resolved against the live catalog. Services or add-ons that were
      * deactivated or deleted since they were added are silently dropped and
      * the session is cleaned up.

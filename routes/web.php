@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\BecomeProviderController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\BookingPhotoController;
 use App\Http\Controllers\CityController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\FaviconController;
 use App\Http\Controllers\FcmTokenController;
 use App\Http\Controllers\GeocodeController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\LocationController;
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentProofController;
@@ -46,6 +48,10 @@ Route::get('blog', [BlogController::class, 'index'])->name('blog.index');
 Route::get('blog/feed', [BlogController::class, 'feed'])->name('blog.feed');
 Route::get('blog/{post:slug}', [BlogController::class, 'show'])->name('blog.show');
 
+// Provider recruitment pitch (M19). The CTA lands on /register?as=provider —
+// the account is created by the ordinary register flow, not a second one.
+Route::get('become-a-provider', [BecomeProviderController::class, 'show'])->name('provider.join');
+
 // Contact form (M19) — a submission opens a support ticket (M16), guests
 // included. Throttled + honeypot: the form is public and bots find it.
 Route::get('contact', [ContactController::class, 'show'])->name('contact.show');
@@ -59,6 +65,11 @@ Route::post('newsletter', [NewsletterController::class, 'store'])
 // City switcher (M25) — a browsing preference in the session, open to guests.
 Route::post('city/{city}', [CityController::class, 'switch'])
     ->middleware('throttle:public-write')->name('city.switch');
+
+// "Use my location" (M25/M03): a GPS fix resolves to a zone (or the nearest
+// one) and its city, both stored in the session. Guests included.
+Route::post('location/detect', [LocationController::class, 'detect'])
+    ->middleware('throttle:public-write')->name('location.detect');
 
 Route::get('services', [Customer\CatalogController::class, 'index'])->name('catalog.index');
 Route::get('services/{category:slug}', [Customer\CatalogController::class, 'category'])->name('catalog.category');

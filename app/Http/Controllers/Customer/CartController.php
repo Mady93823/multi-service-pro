@@ -78,7 +78,16 @@ class CartController extends Controller
             $addonIds,
         );
 
-        return back()->with('success', __('Added to cart.'));
+        // Book now skips the cart page: for a single service it decides
+        // nothing. The line is still added — checkout reads the same cart —
+        // and a guest is bounced to login by the checkout route's own guard.
+        if ($request->boolean('book_now')) {
+            return redirect()->route('checkout.show');
+        }
+
+        // Landing on the cart rather than staying put: the running total and
+        // the one next step are on it. "Continue shopping" is the way back.
+        return redirect()->route('cart.show')->with('success', __('Added to cart.'));
     }
 
     public function update(UpdateCartLineRequest $request, string $key): RedirectResponse

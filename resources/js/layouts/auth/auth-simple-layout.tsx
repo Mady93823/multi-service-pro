@@ -1,6 +1,9 @@
 import AppLogoIcon from '@/components/app-logo-icon';
+import { useTrans } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
+import { ShieldCheck } from 'lucide-react';
 
 interface AuthLayoutProps {
     children: React.ReactNode;
@@ -9,59 +12,110 @@ interface AuthLayoutProps {
     description?: string;
 }
 
+/**
+ * The auth shell for every login / register / password screen.
+ *
+ * It is a two-column split: a brand panel on the left (from `lg` up) and the
+ * form on the right. The panel is admin-owned (M19) — a headline, sub-copy and
+ * image set in Appearance fill it. When none of that is set the panel falls
+ * back to the brand colour, the logo and a neutral, translatable tagline, so a
+ * fresh white-label install still gets a finished-looking login instead of a
+ * bare card. Below `lg` the panel is hidden and the form takes the screen.
+ */
 export default function AuthSimpleLayout({ children, title, description }: AuthLayoutProps) {
-    const { name, site } = usePage<SharedData>().props;
+    const t = useTrans();
+    const { name, site, branding } = usePage<SharedData>().props;
     const { login_headline: headline, login_subcopy: subcopy, login_image_url: image } = site.appearance;
 
-    // The side panel is admin-owned copy (M19). An install that sets none of it
-    // gets the plain centered card this layout has always been.
-    const hasPanel = headline !== null || subcopy !== null || image !== null;
+    const hasCopy = headline !== null || subcopy !== null;
 
-    const form = (
-        <div className="w-full max-w-sm">
-            <div className="flex flex-col gap-8">
-                <div className="flex flex-col items-center gap-4">
-                    <Link href={route('home')} className="flex flex-col items-center gap-2 font-medium">
-                        <div className="mb-1 flex h-9 w-9 items-center justify-center rounded-md">
-                            <AppLogoIcon className="size-9 fill-current text-[var(--foreground)] dark:text-white" />
-                        </div>
-                        <span className="sr-only">{title}</span>
-                    </Link>
-
-                    <div className="space-y-2 text-center">
-                        <h1 className="text-xl font-medium">{title}</h1>
-                        <p className="text-muted-foreground text-center text-sm">{description}</p>
-                    </div>
-                </div>
-                {children}
-            </div>
-        </div>
-    );
-
-    if (!hasPanel) {
-        return <div className="bg-background flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">{form}</div>;
-    }
+    const trust = [t('Verified professionals'), t('Live tracking'), t('Secure payments')];
 
     return (
         <div className="bg-background grid min-h-svh lg:grid-cols-2">
-            <div className="relative hidden flex-col justify-end overflow-hidden p-10 lg:flex">
+            {/* Brand panel — decorative, so hidden from the reading order below lg. */}
+            <aside className="text-primary-foreground relative hidden flex-col justify-between overflow-hidden p-12 lg:flex">
                 {image !== null ? (
                     <>
                         <img src={image} alt="" className="absolute inset-0 h-full w-full object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/40 to-black/20" />
                     </>
                 ) : (
-                    <div className="from-primary/20 to-primary/5 absolute inset-0 bg-gradient-to-br" />
+                    <>
+                        <div className="bg-primary absolute inset-0" />
+                        {/* Soft light so a flat brand fill reads as a designed surface. */}
+                        <div className="bg-highlight/25 absolute -top-24 -right-24 h-96 w-96 rounded-full blur-3xl" />
+                        <div className="absolute -bottom-32 -left-16 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
+                    </>
                 )}
 
-                <div className={`relative space-y-3 ${image !== null ? 'text-white' : ''}`}>
-                    {headline !== null && <h2 className="text-3xl font-semibold">{headline}</h2>}
-                    {subcopy !== null && <p className={image !== null ? 'text-white/80' : 'text-muted-foreground'}>{subcopy}</p>}
-                    {headline === null && subcopy === null && <p className="text-muted-foreground text-lg font-medium">{name}</p>}
+                <BrandLockup logoUrl={branding.logo_url} name={name} invert />
+
+                <div className="relative space-y-5">
+                    <div className="space-y-3">
+                        <h2 className="max-w-md text-3xl font-semibold tracking-tight text-balance">
+                            {headline ?? t('Trusted home services, on demand.')}
+                        </h2>
+                        {subcopy !== null && <p className="text-primary-foreground/80 max-w-md">{subcopy}</p>}
+                    </div>
+
+                    {/* Neutral product facts — only when the admin has not written their own. */}
+                    {!hasCopy && (
+                        <ul className="flex flex-wrap gap-2">
+                            {trust.map((item) => (
+                                <li
+                                    key={item}
+                                    className="ring-primary-foreground/20 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium ring-1"
+                                >
+                                    <ShieldCheck className="h-3.5 w-3.5" />
+                                    {item}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            </aside>
+
+            {/* Form column */}
+            <div className="flex flex-col justify-center px-6 py-10 sm:px-10">
+                <div className="mx-auto w-full max-w-sm">
+                    <div className="mb-8 flex flex-col gap-6">
+                        {/* Brand is on the panel at lg; on smaller screens this is the only mark. */}
+                        <div className="lg:hidden">
+                            <BrandLockup logoUrl={branding.logo_url} name={name} />
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+                            {description !== undefined && description !== '' && <p className="text-muted-foreground text-sm">{description}</p>}
+                        </div>
+                    </div>
+
+                    {children}
                 </div>
             </div>
-
-            <div className="flex items-center justify-center p-6 md:p-10">{form}</div>
         </div>
+    );
+}
+
+function BrandLockup({ logoUrl, name, invert = false }: { logoUrl: string | null; name: string; invert?: boolean }) {
+    return (
+        <Link href={route('home')} className="relative inline-flex items-center gap-2.5 font-semibold">
+            {logoUrl !== null ? (
+                <img src={logoUrl} alt={name} className={cn('h-8 w-auto max-w-40 object-contain', invert && 'brightness-0 invert')} />
+            ) : (
+                <>
+                    <span
+                        className={cn(
+                            'flex h-9 w-9 items-center justify-center rounded-xl',
+                            invert ? 'bg-white/15 text-current' : 'bg-primary text-primary-foreground',
+                        )}
+                    >
+                        <AppLogoIcon className="h-5 w-5 fill-current" />
+                    </span>
+                    <span className="text-lg tracking-tight">{name}</span>
+                </>
+            )}
+        </Link>
     );
 }

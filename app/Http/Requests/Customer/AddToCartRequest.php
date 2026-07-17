@@ -27,6 +27,9 @@ class AddToCartRequest extends FormRequest
                 Rule::exists('services', 'id')->where('is_active', true)->whereNull('deleted_at'),
             ],
             'qty' => ['required', 'integer', 'min:1', 'max:10'],
+            // "Book now": add the line, then land on checkout instead of the
+            // cart. A shortcut past a page, not a second way to book.
+            'book_now' => ['boolean'],
             'addon_ids' => ['array'],
             'addon_ids.*' => [
                 'integer',

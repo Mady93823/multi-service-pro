@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Customer;
 
-use App\Domain\Cities\ActiveCity;
+use App\Domain\Bookings\CartManager;
 use App\Domain\Seo\SchemaBuilder;
 use App\Domain\Seo\SeoMeta;
 use App\Domain\Settings\SettingsRegistry;
@@ -106,6 +106,7 @@ class CatalogController extends Controller
         Service $service,
         SeoMeta $seo,
         SchemaBuilder $schema,
+        CartManager $cart,
     ): Response {
         abort_unless($category->is_active && $service->is_active, 404);
 
@@ -127,6 +128,9 @@ class CatalogController extends Controller
         return Inertia::render('catalog/show', [
             'service' => new ServiceResource($service),
             'available_in_zone' => $available,
+            // Adding the same service twice is a real intention, so the button
+            // stays — this is what lets the page say the cart already has some.
+            'in_cart_qty' => $cart->qtyForService($service->id),
             // M24: the service's own overrides, then the site defaults.
             'meta' => $seo->resolve(
                 url: route('catalog.show', [$category->slug, $service->slug]),
@@ -196,6 +200,6 @@ class CatalogController extends Controller
      */
     protected function customerZoneId(Request $request): ?int
     {
-        return app(ActiveCity::class)->zoneIdFor($request->user(), $this->activeCity($request));
+        return $this->activeZoneId($request, $this->activeCity($request));
     }
 }

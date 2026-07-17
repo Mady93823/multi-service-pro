@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Domain\Blocks\PageBlocks;
-use App\Domain\Cities\ActiveCity;
 use App\Domain\Seo\SchemaBuilder;
 use App\Domain\Seo\SeoMeta;
 use App\Http\Concerns\ResolvesActiveCity;
@@ -28,10 +27,9 @@ class HomeController extends Controller
         BlockPresenter $presenter,
         SeoMeta $seo,
         SchemaBuilder $schema,
-        ActiveCity $cities,
     ): Response {
         $city = $this->activeCity($request);
-        $zoneId = $cities->zoneIdFor($request->user(), $city);
+        $zoneId = $this->activeZoneId($request, $city);
 
         return Inertia::render('home', [
             'blocks' => $presenter->collection($blocks->forHome($zoneId, $city?->id)),

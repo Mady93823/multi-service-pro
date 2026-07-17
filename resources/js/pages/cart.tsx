@@ -6,7 +6,7 @@ import { useMoney } from '@/lib/format';
 import { useTrans } from '@/lib/i18n';
 import { type CartLine, type CartSummary, type SharedData } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { ArrowRight, ImageIcon, Minus, Plus, ShieldCheck, ShoppingCart, Trash2, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ImageIcon, Minus, Plus, ShieldCheck, ShoppingCart, Trash2, TriangleAlert } from 'lucide-react';
 
 interface CartPageProps {
     lines: CartLine[];
@@ -173,6 +173,14 @@ export default function CartPage({ lines, summary, blocked_services: blockedServ
                                 <p className="text-muted-foreground mt-3 text-center text-xs">{t('Your cart is saved while you sign in.')}</p>
                             </>
                         )}
+
+                        {/* Adding a service lands here, so the way back out has to be on this card — not the browser's Back button. */}
+                        <Button asChild variant="ghost" className="mt-2 h-11 w-full rounded-xl" size="lg">
+                            <Link href={route('catalog.index')}>
+                                <ArrowLeft className="h-4 w-4" />
+                                {t('Continue shopping')}
+                            </Link>
+                        </Button>
 
                         <p className="text-muted-foreground mt-4 flex items-center justify-center gap-1.5 text-xs">
                             <ShieldCheck className="h-3.5 w-3.5" aria-hidden />

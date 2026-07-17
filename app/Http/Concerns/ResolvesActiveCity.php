@@ -24,4 +24,21 @@ trait ResolvesActiveCity
             is_numeric($chosen) ? (int) $chosen : null,
         );
     }
+
+    /**
+     * The zone gating the catalog for this request: a "use my location" fix in
+     * the session, else the customer's default address zone (M25).
+     */
+    protected function activeZoneId(Request $request, ?City $city): ?int
+    {
+        $detected = $request->hasSession()
+            ? $request->session()->get(ActiveCity::ZONE_SESSION_KEY)
+            : null;
+
+        return app(ActiveCity::class)->zoneIdFor(
+            $request->user(),
+            $city,
+            is_numeric($detected) ? (int) $detected : null,
+        );
+    }
 }

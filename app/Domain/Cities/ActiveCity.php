@@ -5,6 +5,7 @@ namespace App\Domain\Cities;
 use App\Models\Address;
 use App\Models\City;
 use App\Models\User;
+use App\Models\Zone;
 
 /**
  * Which city a visitor is browsing (M25).
@@ -25,6 +26,13 @@ class ActiveCity
      */
     public const SESSION_KEY = 'city_id';
 
+    /**
+     * Session key holding the zone a GPS "use my location" fix resolved to
+     * (M25). A guest has no address, so this is how a detected service area
+     * survives the next request; it is cleared when the city is switched.
+     */
+    public const ZONE_SESSION_KEY = 'zone_id';
+
     public function __construct(private readonly CityDirectory $directory) {}
 
     public function resolve(?User $user, ?int $sessionCityId): ?City
@@ -43,13 +51,29 @@ class ActiveCity
     }
 
     /**
-     * The zone gate for a browsing customer: their default address's zone, but
-     * only while they are browsing the city that address sits in. Someone who
-     * switched to another town must see that town's catalog, not their own
-     * street's — otherwise the switcher would silently do nothing.
+     * The zone gate for a browsing customer.
+     *
+     * A GPS fix the visitor just took ("use my location") wins — it is the most
+     * specific thing they said, and it is the only zone a guest has. It counts
+     * only while it belongs to the city being browsed, so a stale detection
+     * cannot leak across a city switch. Otherwise it falls back to their default
+     * address's zone, and only while browsing the city that address sits in —
+     * switch town and you see that town's catalog, not your own street's.
      */
-    public function zoneIdFor(?User $user, ?City $city): ?int
+    public function zoneIdFor(?User $user, ?City $city, ?int $sessionZoneId = null): ?int
     {
+        if ($sessionZoneId !== null && $city instanceof City) {
+            $detected = Zone::query()
+                ->active()
+                ->whereKey($sessionZoneId)
+                ->where('city_id', $city->id)
+                ->value('id');
+
+            if ($detected !== null) {
+                return (int) $detected;
+            }
+        }
+
         $address = $this->defaultAddress($user);
 
         if (! $address instanceof Address || $address->zone_id === null) {

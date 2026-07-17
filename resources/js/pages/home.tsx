@@ -1,5 +1,6 @@
 import { PageBlocks } from '@/components/blocks';
 import { SeoHead } from '@/components/seo/seo-head';
+import LocationAutoDetect from '@/components/site/location-auto-detect';
 import PublicLayout from '@/layouts/public-layout';
 import { type RenderedBlock, type SeoMetaProps } from '@/types';
 
@@ -21,6 +22,7 @@ export default function Home({ blocks, meta, schema }: HomeProps) {
         // the storefront `Section` primitive), so the shell must not clamp them.
         <PublicLayout bleed>
             <SeoHead meta={meta} schema={schema} />
+            <LocationAutoDetect />
             <PageBlocks blocks={blocks} />
         </PublicLayout>
     );

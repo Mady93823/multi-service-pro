@@ -50,6 +50,12 @@ export default function Login({ status, canResetPassword }: LoginProps) {
         <AuthLayout title={t('Log in to your account')} description={t('Enter your email and password below to log in')}>
             <Head title={t('Log in')} />
 
+            {status && (
+                <div className="bg-success/10 text-success mb-6 rounded-lg px-4 py-3 text-center text-sm font-medium" role="status">
+                    {status}
+                </div>
+            )}
+
             <form className="flex flex-col gap-6" onSubmit={submit}>
                 <div className="grid gap-6">
                     <div className="grid gap-2">
@@ -91,7 +97,13 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                     </div>
 
                     <div className="flex items-center space-x-3">
-                        <Checkbox id="remember" name="remember" tabIndex={3} />
+                        <Checkbox
+                            id="remember"
+                            name="remember"
+                            tabIndex={3}
+                            checked={data.remember}
+                            onCheckedChange={(checked) => setData('remember', checked === true)}
+                        />
                         <Label htmlFor="remember">{t('Remember me')}</Label>
                     </div>
 
@@ -108,8 +120,6 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                     </TextLink>
                 </div>
             </form>
-
-            {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
         </AuthLayout>
     );
 }

@@ -157,6 +157,9 @@ class CmsSeeder extends Seeder
             MenuLocation::FooterOne->value => [
                 ['label' => 'About Us', 'type' => MenuItemType::Page, 'target' => 'about-us'],
                 ['label' => 'All services', 'type' => MenuItemType::Route, 'target' => 'catalog.index'],
+                // Signed-out only: provider status is chosen at signup, and a
+                // logged-in customer has no upgrade path (product decision).
+                ['label' => 'Become a provider', 'type' => MenuItemType::Route, 'target' => 'provider.join', 'visibility' => MenuVisibility::Guests],
             ],
             MenuLocation::FooterTwo->value => [
                 ['label' => 'Terms & Conditions', 'type' => MenuItemType::Page, 'target' => 'terms-and-conditions'],

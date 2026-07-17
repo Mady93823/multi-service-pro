@@ -24,6 +24,10 @@ class CityController extends Controller
 
         $request->session()->put(ActiveCity::SESSION_KEY, $city->id);
 
+        // A GPS-detected zone belongs to the town it was found in — dropping it
+        // here stops a stale service area leaking across an explicit city switch.
+        $request->session()->forget(ActiveCity::ZONE_SESSION_KEY);
+
         return back()->with('success', __('Now showing :city.', ['city' => $city->name]));
     }
 }

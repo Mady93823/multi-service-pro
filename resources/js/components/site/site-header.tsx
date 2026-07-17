@@ -76,6 +76,10 @@ export default function SiteHeader() {
                 </Button>
             ) : (
                 <>
+                    {/* Provider status is chosen at signup only — shown to guests. */}
+                    <Button asChild variant="ghost" size="sm" className="hidden lg:inline-flex">
+                        <Link href={route('provider.join')}>{t('Become a provider')}</Link>
+                    </Button>
                     <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
                         <Link href={route('login')}>{t('Log in')}</Link>
                     </Button>
@@ -216,6 +220,9 @@ function MobileMenu({ links, open, onOpenChange }: { links: SiteMenuLink[]; open
                             </Button>
                             <Button asChild variant="outline" onClick={() => onOpenChange(false)}>
                                 <Link href={route('login')}>{t('Log in')}</Link>
+                            </Button>
+                            <Button asChild variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
+                                <Link href={route('provider.join')}>{t('Become a provider')}</Link>
                             </Button>
                         </>
                     )}

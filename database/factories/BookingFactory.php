@@ -40,6 +40,8 @@ class BookingFactory extends Factory
                 'lat' => 40.7128,
                 'lng' => -74.006,
             ],
+            'contact_phone' => '9'.fake()->numerify('#########'),
+            'contact_phone_alt' => null,
             'zone_id' => null,
             'scheduled_at' => $scheduled,
             'slot_end_at' => $scheduled->addHour(),

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Domain\Bookings\CartManager;
+use App\Domain\Catalog\Enums\CategoryType;
 use App\Domain\Seo\SchemaBuilder;
 use App\Domain\Seo\SeoMeta;
 use App\Domain\Settings\SettingsRegistry;
@@ -51,9 +52,12 @@ class CatalogController extends Controller
         }
 
         return Inertia::render('catalog/index', [
+            // Event categories live on their own page (/events) — this grid is
+            // the everyday services surface only.
             'categories' => CategoryResource::collection(
                 Category::root()
                     ->active()
+                    ->ofType(CategoryType::Service)
                     ->with(['children' => fn ($query) => $query->where('is_active', true)])
                     ->orderBy('sort_order')
                     ->get()
@@ -64,7 +68,9 @@ class CatalogController extends Controller
                     ->inCity($cityId)
                     ->inZone($zoneId)
                     ->where('is_featured', true)
-                    ->whereHas('category', fn ($query) => $query->where('is_active', true))
+                    ->whereHas('category', fn ($query) => $query
+                        ->where('is_active', true)
+                        ->where('type', CategoryType::Service->value))
                     ->with(['category', 'media'])
                     ->orderBy('sort_order')
                     ->limit(8)
@@ -72,6 +78,43 @@ class CatalogController extends Controller
             ),
             'search' => $search,
             'results' => $results !== null ? ServiceResource::collection($results) : null,
+        ]);
+    }
+
+    /**
+     * The dedicated Event Management page: the same catalog machinery —
+     * zone/city gates, cart, checkout, dispatch — filtered to `event`
+     * categories (weddings, birthdays, kitty parties, ...). A category or
+     * service opened from here uses the ordinary catalog routes; only the
+     * listing surface is its own.
+     */
+    public function events(Request $request): Response
+    {
+        $cityId = $this->activeCity($request)?->id;
+        $zoneId = $this->customerZoneId($request);
+
+        return Inertia::render('catalog/events', [
+            'categories' => CategoryResource::collection(
+                Category::root()
+                    ->active()
+                    ->ofType(CategoryType::Event)
+                    ->with(['children' => fn ($query) => $query->where('is_active', true)])
+                    ->orderBy('sort_order')
+                    ->get()
+            ),
+            'featured' => ServiceResource::collection(
+                Service::query()
+                    ->active()
+                    ->inCity($cityId)
+                    ->inZone($zoneId)
+                    ->whereHas('category', fn ($query) => $query
+                        ->where('is_active', true)
+                        ->where('type', CategoryType::Event->value))
+                    ->with(['category', 'media'])
+                    ->orderBy('sort_order')
+                    ->limit(8)
+                    ->get()
+            ),
         ]);
     }
 

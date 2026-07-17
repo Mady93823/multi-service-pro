@@ -57,6 +57,8 @@ class PlaceBooking
         Address $address,
         CarbonImmutable $scheduledAt,
         PaymentMethod $paymentMethod,
+        string $contactPhone,
+        ?string $contactPhoneAlt,
         ?string $notes,
         array $photos = [],
     ): Booking {
@@ -102,7 +104,7 @@ class PlaceBooking
 
         try {
             $booking = DB::transaction(
-                fn (): Booking => $this->createBooking($customer, $address, $scheduledAt, $paymentMethod, $notes, $lines, $coupon, $initialStatus)
+                fn (): Booking => $this->createBooking($customer, $address, $scheduledAt, $paymentMethod, $contactPhone, $contactPhoneAlt, $notes, $lines, $coupon, $initialStatus)
             );
         } catch (ValidationException $exception) {
             // A coupon that passed at "apply" but fails at placement (cap
@@ -116,6 +118,14 @@ class PlaceBooking
 
         foreach ($photos as $photo) {
             $booking->addMedia($photo)->toMediaCollection('problem_photos');
+        }
+
+        // Booking once fixes the profile too: a customer who registered without
+        // a phone gets the one they just booked with. The column is unique, so
+        // a number another account already owns is skipped silently — the
+        // booking's own snapshot is what the job runs on either way.
+        if ($customer->phone === null && ! User::query()->where('phone', $contactPhone)->exists()) {
+            $customer->forceFill(['phone' => $contactPhone])->save();
         }
 
         $this->cart->clear();
@@ -135,6 +145,8 @@ class PlaceBooking
         Address $address,
         CarbonImmutable $scheduledAt,
         PaymentMethod $paymentMethod,
+        string $contactPhone,
+        ?string $contactPhoneAlt,
         ?string $notes,
         array $lines,
         ?Coupon $coupon,
@@ -165,6 +177,8 @@ class PlaceBooking
                 'lat' => (float) $address->lat,
                 'lng' => (float) $address->lng,
             ],
+            'contact_phone' => $contactPhone,
+            'contact_phone_alt' => $contactPhoneAlt,
             'zone_id' => $address->zone_id,
             'scheduled_at' => $scheduledAt,
             'slot_end_at' => $scheduledAt->addMinutes($this->slots->slotMinutes()),

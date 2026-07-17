@@ -40,6 +40,8 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property string|null $cancellation_fee
  * @property array<string, mixed> $address_snapshot
  * @property array<string, mixed>|null $tax_breakup
+ * @property string|null $contact_phone
+ * @property string|null $contact_phone_alt
  */
 class Booking extends Model implements HasMedia
 {
@@ -52,6 +54,8 @@ class Booking extends Model implements HasMedia
         'provider_id',
         'address_id',
         'address_snapshot',
+        'contact_phone',
+        'contact_phone_alt',
         'zone_id',
         'scheduled_at',
         'slot_end_at',

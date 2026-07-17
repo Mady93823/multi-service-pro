@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domain\Catalog\Enums\CategoryType;
 use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,16 +13,25 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * @property string|null $commission_percent
+ * @property CategoryType $type
  */
 class Category extends Model
 {
     /** @use HasFactory<CategoryFactory> */
     use HasFactory, SoftDeletes;
 
+    // A DB default is not hydrated back onto the model that inserted the row
+    // (the User::$is_active lesson, M17) — without this a freshly created
+    // category reads `type` as null.
+    protected $attributes = [
+        'type' => 'service',
+    ];
+
     protected $fillable = [
         'parent_id',
         'name',
         'slug',
+        'type',
         'icon_path',
         'image_path',
         'sort_order',
@@ -37,6 +47,7 @@ class Category extends Model
         return [
             'is_active' => 'boolean',
             'sort_order' => 'integer',
+            'type' => CategoryType::class,
             // Null means "inherit" — the parent category, then the global
             // payments.commission_percent setting (M09 CommissionResolver).
             'commission_percent' => 'decimal:2',
@@ -83,5 +94,14 @@ class Category extends Model
     public function scopeRoot(Builder $query): Builder
     {
         return $query->whereNull('parent_id');
+    }
+
+    /**
+     * @param  Builder<Category>  $query
+     * @return Builder<Category>
+     */
+    public function scopeOfType(Builder $query, CategoryType $type): Builder
+    {
+        return $query->where('type', $type->value);
     }
 }

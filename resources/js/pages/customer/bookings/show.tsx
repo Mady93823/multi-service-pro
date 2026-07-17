@@ -191,6 +191,12 @@ export default function BookingShow({
                                 <p className="text-muted-foreground">
                                     {booking.address.city} {booking.address.postal_code}
                                 </p>
+                                {booking.contact_phone !== null && (
+                                    <p className="text-muted-foreground mt-2">
+                                        {t('Contact')}: {booking.contact_phone}
+                                        {booking.contact_phone_alt ? ` · ${booking.contact_phone_alt}` : ''}
+                                    </p>
+                                )}
                                 {booking.notes !== null && (
                                     <p className="text-muted-foreground mt-2 text-xs">{t('Notes: :notes', { notes: booking.notes })}</p>
                                 )}

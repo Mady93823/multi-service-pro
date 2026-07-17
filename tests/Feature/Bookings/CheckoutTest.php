@@ -52,6 +52,7 @@ test('placing a booking snapshots everything and opens the history', function ()
         'address_id' => $address->id,
         'scheduled_at' => checkoutSlot(),
         'payment_method' => 'cash',
+        'contact_phone' => '9876500001',
         'notes' => 'Ring the bell twice.',
     ])->assertRedirect();
 
@@ -66,6 +67,7 @@ test('placing a booking snapshots everything and opens the history', function ()
         ->and((string) $booking->total)->toBe('708.00')
         ->and((float) $booking->tax_breakup['cgst'])->toBe(54.0) // json round-trip may drop the .0
         ->and($booking->address_snapshot['line1'])->toBe($address->line1)
+        ->and($booking->contact_phone)->toBe('9876500001')
         ->and($booking->notes)->toBe('Ring the bell twice.');
 
     $item = $booking->items()->sole();
@@ -95,6 +97,7 @@ test('a zone-restricted service blocks an out-of-zone address at checkout', func
         'address_id' => $address->id,
         'scheduled_at' => checkoutSlot(),
         'payment_method' => 'cash',
+        'contact_phone' => '9876500001',
     ])->assertSessionHasErrors('address_id');
 
     expect(Booking::query()->where('customer_id', $customer->id)->exists())->toBeFalse();
@@ -115,6 +118,7 @@ test('an in-zone address passes the gate', function () {
         'address_id' => $address->id,
         'scheduled_at' => checkoutSlot(),
         'payment_method' => 'cash',
+        'contact_phone' => '9876500001',
     ])->assertSessionHasNoErrors();
 
     expect(Booking::query()->where('customer_id', $customer->id)->exists())->toBeTrue();
@@ -133,6 +137,7 @@ test('off-grid slots are rejected', function () {
         'address_id' => $address->id,
         'scheduled_at' => $offGrid,
         'payment_method' => 'cash',
+        'contact_phone' => '9876500001',
     ])->assertSessionHasErrors('scheduled_at');
 });
 
@@ -148,6 +153,7 @@ test('someone else\'s address is rejected', function () {
         'address_id' => $stranger->id,
         'scheduled_at' => checkoutSlot(),
         'payment_method' => 'cash',
+        'contact_phone' => '9876500001',
     ])->assertSessionHasErrors('address_id');
 });
 
@@ -163,6 +169,7 @@ test('problem photos land on the private disk and are policy-guarded', function 
         'address_id' => $address->id,
         'scheduled_at' => checkoutSlot(),
         'payment_method' => 'cash',
+        'contact_phone' => '9876500001',
         'photos' => [
             UploadedFile::fake()->image('before-1.jpg'),
             UploadedFile::fake()->image('before-2.jpg'),

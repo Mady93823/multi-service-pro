@@ -110,6 +110,9 @@ class CheckoutController extends Controller
             ],
             'payment_methods' => PlaceBookingRequest::availableMethods(),
             'wallet_balance' => number_format($this->wallet->balance($user), 2, '.', ''),
+            // Prefill for the mandatory contact number — the profile phone when
+            // there is one; the form field is what actually rides the booking.
+            'contact_phone_default' => $user->phone,
         ]);
     }
 
@@ -134,6 +137,8 @@ class CheckoutController extends Controller
             $address,
             CarbonImmutable::parse((string) $request->validated('scheduled_at'))->utc(),
             $request->paymentMethod(),
+            (string) $request->validated('contact_phone'),
+            $request->validated('contact_phone_alt'),
             $request->validated('notes'),
             $photos,
         );

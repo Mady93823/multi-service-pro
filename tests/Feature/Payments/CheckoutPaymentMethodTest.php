@@ -40,6 +40,7 @@ function checkoutWith(Address $address, string $method): TestResponse
         'address_id' => $address->id,
         'scheduled_at' => app(SlotGenerator::class)->days()[0]['slots'][0]['value'],
         'payment_method' => $method,
+        'contact_phone' => '9876500003',
     ]);
 }
 

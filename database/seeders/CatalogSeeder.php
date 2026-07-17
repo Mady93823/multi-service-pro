@@ -19,7 +19,13 @@ class CatalogSeeder extends Seeder
         foreach ($this->catalog() as $rootIndex => $rootData) {
             $root = Category::withTrashed()->updateOrCreate(
                 ['slug' => Str::slug($rootData['name'])],
-                ['name' => $rootData['name'], 'sort_order' => $rootIndex, 'is_active' => true, 'deleted_at' => null],
+                [
+                    'name' => $rootData['name'],
+                    'type' => $rootData['type'] ?? 'service',
+                    'sort_order' => $rootIndex,
+                    'is_active' => true,
+                    'deleted_at' => null,
+                ],
             );
 
             foreach ($rootData['children'] ?? [] as $childIndex => $childData) {
@@ -28,6 +34,7 @@ class CatalogSeeder extends Seeder
                     [
                         'name' => $childData['name'],
                         'parent_id' => $root->id,
+                        'type' => $root->type->value,
                         'sort_order' => $childIndex,
                         'is_active' => true,
                         'deleted_at' => null,
@@ -300,6 +307,63 @@ class CatalogSeeder extends Seeder
                         'pricing_type' => PricingType::Hourly,
                         'duration' => 120,
                         'short' => 'Full-house electrical safety inspection.',
+                    ],
+                ],
+            ],
+            [
+                // The dedicated Event Management surface (/events) — same
+                // booking machinery, listed on its own page.
+                'name' => 'Event Management',
+                'type' => 'event',
+                'children' => [
+                    [
+                        'name' => 'Wedding & Marriage',
+                        'services' => [
+                            [
+                                'name' => 'Wedding Decoration Package',
+                                'price' => 14999,
+                                'duration' => 480,
+                                'featured' => true,
+                                'short' => 'Stage, mandap and entrance decoration for the big day.',
+                                'addons' => [
+                                    ['name' => 'Fresh flower upgrade', 'price' => 4999],
+                                    ['name' => 'LED name board', 'price' => 1499],
+                                ],
+                            ],
+                            [
+                                'name' => 'Wedding Catering (per 100 guests)',
+                                'price' => 24999,
+                                'pricing_type' => PricingType::Inspection,
+                                'duration' => 480,
+                                'short' => 'Menu tasting and final quote after a planning visit.',
+                            ],
+                        ],
+                    ],
+                    [
+                        'name' => 'Birthday Parties',
+                        'services' => [
+                            [
+                                'name' => 'Birthday Party Setup',
+                                'price' => 2999,
+                                'duration' => 180,
+                                'featured' => true,
+                                'short' => 'Balloon decor, cake table and party props at home.',
+                                'addons' => [
+                                    ['name' => 'Theme decor upgrade', 'price' => 1999],
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'name' => 'Kitty Parties & Get-togethers',
+                        'services' => [
+                            [
+                                'name' => 'Kitty Party Hosting',
+                                'price' => 4999,
+                                'duration' => 240,
+                                'short' => 'Decor, games host and high-tea service for up to 20 guests.',
+                            ],
+                        ],
                     ],
                 ],
             ],

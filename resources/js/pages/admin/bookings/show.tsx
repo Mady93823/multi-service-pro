@@ -429,6 +429,12 @@ export default function AdminBookingShow({
                                 <p>
                                     <span className="text-muted-foreground">{t('Professional')}:</span> {booking.provider?.name ?? '—'}
                                 </p>
+                                {booking.contact_phone !== null && (
+                                    <p>
+                                        <span className="text-muted-foreground">{t('Contact phone')}:</span> {booking.contact_phone}
+                                        {booking.contact_phone_alt ? ` · ${booking.contact_phone_alt}` : ''}
+                                    </p>
+                                )}
                                 <p>
                                     <span className="text-muted-foreground">{t('Address')}:</span> {booking.address.line1}
                                     {booking.address.line2 ? `, ${booking.address.line2}` : ''} · {booking.address.city} {booking.address.postal_code}

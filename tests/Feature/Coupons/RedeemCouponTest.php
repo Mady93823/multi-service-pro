@@ -19,6 +19,7 @@ function placeWithCoupon(string $method = 'cash'): array
         'address_id' => $address->id,
         'scheduled_at' => CheckoutFixtures::slot(),
         'payment_method' => $method,
+        'contact_phone' => '9876500002',
     ]);
 
     return [$customer, $coupon, $response];
@@ -59,6 +60,7 @@ test('a coupon that dies between apply and placement blocks the booking and is d
         'address_id' => $address->id,
         'scheduled_at' => CheckoutFixtures::slot(),
         'payment_method' => 'cash',
+        'contact_phone' => '9876500002',
     ])->assertSessionHasErrors('coupon');
 
     expect(Booking::query()->where('customer_id', $customer->id)->exists())->toBeFalse()

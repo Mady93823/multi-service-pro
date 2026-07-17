@@ -25,6 +25,7 @@ Internal counterpart of the client doc's module list — with build notes and ac
 - Full-text search on services (MySQL FULLTEXT — no external search engine at launch)
 - Related services cross-sell (`service_related` pivot, admin-curated): "people also book" strip on service page + checkout — UC-style upsell
 - ✅ *Done when:* admin CRUDs full tree + services + addons; customer browses/searches; zone-filtered.
+- **Shipped (2026-07-17, D42):** `categories.type` (`service | event`) — the dedicated **Event Management** page at `/events` (weddings, birthdays, kitty parties) lists `event` root categories; `/services` lists `service` ones. Same drill-down/cart/checkout/dispatch on the ordinary `catalog.*` routes; a child always inherits its parent's surface (Create/UpdateCategory enforce, root moves re-stamp children); `events.index` in the menu allowlist + sitemap-when-populated; admin category form "Shown on" select (roots only) + Event badge in the list; demo Event Management tree in `CatalogSeeder`.
 
 ## M03 Locations, Zones & Addresses
 - `zones`: polygon drawn by admin on Leaflet map (leaflet-draw), stored as GeoJSON; point-in-polygon check in PHP (`PointInPolygon` ray casting — D12, portable across MySQL/MariaDB/sqlite)
@@ -46,6 +47,7 @@ Internal counterpart of the client doc's module list — with build notes and ac
 - **Cancellation fee** (settings: free-cancel window, then flat/percent fee): computed at cancel time, snapshotted to `bookings.cancellation_fee`, deducted from refund
 - **Favorites + rebook**: customer favorites a provider (`favorite_providers`); "Book again" from booking history pre-fills cart; dispatch tries favorite first when eligible (settings flag)
 - ✅ *Done when:* full happy path + every cancel path transitions correctly and is logged; OTP gate blocks wrong code; cancellation fee matches settings in tests.
+- **Shipped (2026-07-17, D41):** checkout requires a **contact phone** (+ optional alternate), snapshotted to `bookings.contact_phone`/`contact_phone_alt` (nullable columns, request-layer mandatory); `BookingResource` falls back to the profile phone for pre-column rows; shown on the provider's accepted job card (tel: links — never on an open offer), customer booking page and admin; placing a booking backfills an empty profile phone (unique-safe skip).
 
 ## M05 Provider Onboarding & Management
 - Provider profile: bio, photo, experience, service categories, working hours (JSON), service radius km, base location (lat/lng)

@@ -36,6 +36,7 @@ enum MenuItemType: string
         return [
             'home' => __('Home'),
             'catalog.index' => __('Services'),
+            'events.index' => __('Event Management'),
             'provider.join' => __('Become a provider'),
             'blog.index' => __('Blog'),
             'cart.show' => __('Cart'),

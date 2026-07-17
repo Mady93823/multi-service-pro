@@ -2,6 +2,7 @@
 
 namespace App\Domain\Seo;
 
+use App\Domain\Catalog\Enums\CategoryType;
 use App\Domain\Settings\SettingsRegistry;
 use App\Models\BlogPost;
 use App\Models\Category;
@@ -57,6 +58,12 @@ class SitemapBuilder
             $this->url(url('/'), null, 'daily', '1.0'),
             $this->url(route('catalog.index'), null, 'daily', '0.9'),
         ];
+
+        // The events surface is listed only when something lives on it — the
+        // sitemap walks what the storefront actually shows.
+        if (Category::query()->where('is_active', true)->ofType(CategoryType::Event)->exists()) {
+            $urls[] = $this->url(route('events.index'), null, 'daily', '0.8');
+        }
 
         foreach (Category::query()->where('is_active', true)->get() as $category) {
             $urls[] = $this->url(route('catalog.category', $category->slug), $category->updated_at?->toAtomString(), 'weekly', '0.7');

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Domain\Catalog\Enums\CategoryType;
 use App\Models\Category;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -24,6 +25,7 @@ class CategoryFactory extends Factory
             'parent_id' => null,
             'name' => Str::title($name),
             'slug' => Str::slug($name),
+            'type' => CategoryType::Service,
             'sort_order' => fake()->numberBetween(0, 20),
             'is_active' => true,
         ];
@@ -38,8 +40,17 @@ class CategoryFactory extends Factory
 
     public function childOf(Category $parent): static
     {
+        // Children live on their parent's surface (same rule as the actions).
         return $this->state(fn (array $attributes) => [
             'parent_id' => $parent->id,
+            'type' => $parent->type,
+        ]);
+    }
+
+    public function event(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'type' => CategoryType::Event,
         ]);
     }
 }

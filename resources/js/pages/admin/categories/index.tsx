@@ -23,6 +23,7 @@ function CategoryRow({ category, child = false }: { category: Category; child?: 
                     {child && <CornerDownRight className="text-muted-foreground h-4 w-4" />}
                     {category.icon_url && <img src={category.icon_url} alt="" className="h-6 w-6 rounded object-cover" />}
                     <span className={child ? '' : 'font-medium'}>{category.name}</span>
+                    {category.type === 'event' && !child && <Badge variant="secondary">{t('Event')}</Badge>}
                 </div>
             </TableCell>
             <TableCell className="text-muted-foreground">{category.slug}</TableCell>

@@ -75,6 +75,7 @@ The system is split into 16 clean modules. Each module is independent and expand
 - Service add-ons and extras
 - Search, filters, featured services, service images and descriptions
 - "People also book" related-service suggestions (admin-curated cross-sell)
+- **Event Management page**: a dedicated storefront page for event categories (marriage/wedding, birthday parties, kitty parties and other events) with the same browsing and booking flow as regular services — admin simply marks a category "Event" and it moves to the Events page
 
 ### M03 — Locations, Zones & Addresses
 - Admin defines operating cities and service zones on a map
@@ -90,6 +91,7 @@ The system is split into 16 clean modules. Each module is independent and expand
 - Booking history, invoices, and one-tap **"Book again"** with favourite providers
 - **Job-start OTP**: provider enters a code shown on the customer's screen to start the job — proof the right professional is at the right door (same trust mechanism Urban Company uses)
 - Booking photos: customer attaches photos of the problem; provider uploads before/after proof
+- **Contact number at booking**: a phone number is mandatory at checkout (pre-filled from the profile) plus an optional secondary number — both saved on the booking so the professional can always reach the customer; shown to the provider only after they accept the job
 
 ### M05 — Provider Onboarding & Management
 - Provider registration with KYC document upload (ID, certificates)

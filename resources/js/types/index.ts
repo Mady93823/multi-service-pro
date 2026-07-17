@@ -222,11 +222,15 @@ export interface TranslationEntry {
     value: string;
 }
 
+export type CategoryType = 'service' | 'event';
+
 export interface Category {
     id: number;
     parent_id: number | null;
     name: string;
     slug: string;
+    /** Which storefront surface lists it: the services page or Event Management. */
+    type: CategoryType;
     icon_url: string | null;
     image_url: string | null;
     sort_order: number;
@@ -388,6 +392,8 @@ export interface Booking {
     scheduled_label: string;
     slot_label: string;
     address: AddressSnapshot;
+    contact_phone: string | null;
+    contact_phone_alt: string | null;
     zone?: string | null;
     customer?: { id: number; name: string } | null;
     provider?: { id: number; name: string } | null;

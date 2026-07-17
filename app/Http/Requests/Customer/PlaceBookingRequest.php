@@ -13,6 +13,9 @@ use Illuminate\Validation\Rule;
 
 class PlaceBookingRequest extends FormRequest
 {
+    /** Digits with an optional leading +, allowing spaces and dashes. */
+    public const PHONE_PATTERN = '/^\+?[0-9][0-9\s\-]{6,18}$/';
+
     public function authorize(): bool
     {
         return $this->user() !== null;
@@ -32,6 +35,11 @@ class PlaceBookingRequest extends FormRequest
                 Rule::exists('addresses', 'id')->where('user_id', $user === null ? 0 : $user->id),
             ],
             'scheduled_at' => ['required', 'date', 'after:now'],
+            // The professional must be able to call the doorstep — a booking
+            // without a reachable number is not placeable. The alternate is a
+            // fallback contact (spouse, neighbour) and stays optional.
+            'contact_phone' => ['required', 'string', 'max:20', 'regex:'.self::PHONE_PATTERN],
+            'contact_phone_alt' => ['nullable', 'string', 'max:20', 'regex:'.self::PHONE_PATTERN],
             'payment_method' => ['required', Rule::in(self::availableMethods())],
             'notes' => ['nullable', 'string', 'max:1000'],
             'photos' => ['array', 'max:4'],
@@ -103,6 +111,9 @@ class PlaceBookingRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'contact_phone.required' => __('We need a phone number the professional can reach you on.'),
+            'contact_phone.regex' => __('That phone number does not look right.'),
+            'contact_phone_alt.regex' => __('That phone number does not look right.'),
             'photos.max' => __('You can attach up to 4 photos.'),
             'photos.*.max' => __('Each photo must be 4 MB or smaller.'),
         ];

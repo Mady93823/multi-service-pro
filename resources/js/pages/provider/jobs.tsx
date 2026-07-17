@@ -11,7 +11,7 @@ import { useMoney } from '@/lib/format';
 import { useTrans } from '@/lib/i18n';
 import { type Booking, type BookingStatus, type BreadcrumbItem, type DispatchOffer } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
-import { ArrowRight, CheckCircle2, Clock, MapPin, Navigation, XCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Clock, MapPin, Navigation, Phone, XCircle } from 'lucide-react';
 import { useState } from 'react';
 
 interface ProviderJobsProps {
@@ -276,6 +276,22 @@ function JobCard({ booking }: { booking: Booking }) {
                     <p className="text-muted-foreground text-sm">
                         {t('Customer')}: {booking.customer?.name ?? '—'}
                     </p>
+                    {booking.contact_phone && (
+                        <p className="text-muted-foreground flex items-center gap-1 text-sm">
+                            <Phone className="h-3.5 w-3.5" />
+                            <a href={`tel:${booking.contact_phone}`} className="hover:text-foreground hover:underline">
+                                {booking.contact_phone}
+                            </a>
+                            {booking.contact_phone_alt && (
+                                <>
+                                    <span>·</span>
+                                    <a href={`tel:${booking.contact_phone_alt}`} className="hover:text-foreground hover:underline">
+                                        {booking.contact_phone_alt}
+                                    </a>
+                                </>
+                            )}
+                        </p>
+                    )}
                 </div>
                 <p className="text-right font-semibold">{money(booking.total)}</p>
             </div>

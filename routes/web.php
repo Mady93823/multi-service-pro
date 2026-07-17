@@ -71,6 +71,9 @@ Route::post('location/detect', [LocationController::class, 'detect'])
     ->middleware('throttle:public-write')->name('location.detect');
 
 Route::get('services', [Customer\CatalogController::class, 'index'])->name('catalog.index');
+// Event Management (weddings, birthdays, ...) — same catalog machinery on a
+// dedicated surface; drill-down and booking reuse the catalog.* routes below.
+Route::get('events', [Customer\CatalogController::class, 'events'])->name('events.index');
 Route::get('services/{category:slug}', [Customer\CatalogController::class, 'category'])->name('catalog.category');
 Route::get('services/{category:slug}/{service:slug}', [Customer\CatalogController::class, 'show'])
     ->name('catalog.show')

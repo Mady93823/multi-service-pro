@@ -12,7 +12,7 @@ import { useTrans } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { type Address, type CartSummary, type SlotDay } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Banknote, Check, CreditCard, ImagePlus, Landmark, LoaderCircle, MapPin, TicketPercent, Wallet, X } from 'lucide-react';
+import { Banknote, Check, CreditCard, ImagePlus, Landmark, LoaderCircle, MapPin, Phone, TicketPercent, Wallet, X } from 'lucide-react';
 import { FormEventHandler, type ComponentType, type ReactNode } from 'react';
 
 interface CheckoutLine {
@@ -41,11 +41,15 @@ interface CheckoutPageProps {
     wallet_balance: string;
     coupon: { code: string; discount: string } | null;
     coupon_error: string | null;
+    /** Profile phone, when the customer has one — prefills the mandatory contact field. */
+    contact_phone_default: string | null;
 }
 
 type CheckoutForm = {
     address_id: number | null;
     scheduled_at: string | null;
+    contact_phone: string;
+    contact_phone_alt: string;
     payment_method: string;
     notes: string;
     photos: File[];
@@ -79,6 +83,7 @@ export default function CheckoutPage({
     wallet_balance: walletBalance,
     coupon,
     coupon_error: couponError,
+    contact_phone_default: contactPhoneDefault,
 }: CheckoutPageProps) {
     const t = useTrans();
     const money = useMoney();
@@ -106,6 +111,8 @@ export default function CheckoutPage({
     const { data, setData, post, processing, errors } = useForm<CheckoutForm>({
         address_id: defaultAddress?.address.id ?? null,
         scheduled_at: null,
+        contact_phone: contactPhoneDefault ?? '',
+        contact_phone_alt: '',
         payment_method: paymentMethods.find(selectable) ?? paymentMethods[0] ?? 'cash',
         notes: '',
         photos: [],
@@ -279,6 +286,38 @@ export default function CheckoutPage({
 
                     <Step number={3} title={t('Details for the professional')}>
                         <div className="space-y-5">
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="contact_phone" className="flex items-center gap-1.5">
+                                        <Phone className="h-4 w-4" />
+                                        {t('Contact number')}
+                                    </Label>
+                                    <Input
+                                        id="contact_phone"
+                                        type="tel"
+                                        required
+                                        value={data.contact_phone}
+                                        onChange={(e) => setData('contact_phone', e.target.value)}
+                                        maxLength={20}
+                                        placeholder={t('Number the professional can call')}
+                                    />
+                                    <InputError message={errors.contact_phone} />
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="contact_phone_alt">{t('Alternate number (optional)')}</Label>
+                                    <Input
+                                        id="contact_phone_alt"
+                                        type="tel"
+                                        value={data.contact_phone_alt}
+                                        onChange={(e) => setData('contact_phone_alt', e.target.value)}
+                                        maxLength={20}
+                                        placeholder={t('A backup contact, if any')}
+                                    />
+                                    <InputError message={errors.contact_phone_alt} />
+                                </div>
+                            </div>
+
                             <div className="grid gap-2">
                                 <Label htmlFor="notes">{t('Notes (optional)')}</Label>
                                 <Textarea

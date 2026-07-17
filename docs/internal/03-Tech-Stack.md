@@ -321,6 +321,14 @@ Replay-idempotency is pinned for both new gateways exactly as P7.1 pinned it for
 
 The admin's Test-connection button runs `TestStorageConnection` synchronously — write a probe file with `throw: true`, read it back, delete it — so a bad endpoint is a form error on the screen that saved it, not a worker log (M23's test-send rule). At runtime the disk keeps `throw: false`: a flaky bucket degrades to a broken image, never a 500 (M07's rule). Like SMTP, a long-running queue worker reads this at boot — restart workers after changing it. New dependency: `league/flysystem-aws-s3-v3`.
 
+### D41 — The booking carries its own contact number (2026-07-17)
+
+Checkout now requires a contact phone (an optional alternate rides along) and snapshots both onto the booking — `bookings.contact_phone` / `contact_phone_alt`, nullable in the schema because pre-existing rows have none; the request layer is what makes it mandatory. Snapshot, not reference (the address-snapshot rule): a later profile edit must not rewrite who to call for an old job. `BookingResource` falls back to the customer's profile phone for pre-column bookings, and the number shows only where the job is worked — the provider's *accepted* job card (tel: links), the customer's booking page, admin — never on an open dispatch offer, which deliberately stays city-only. A side effect by design: placing a booking backfills an empty profile phone (unique-safe — a number another account owns is skipped silently, the booking's own snapshot is unaffected).
+
+### D42 — Event Management is a category surface, not a second catalog (2026-07-17)
+
+`categories.type` (`service` | `event`, string-backed enum, default `service`) decides which storefront page lists a root category: `/services` or the dedicated `/events` page (weddings, birthdays, kitty parties). **Everything else is the same machinery** — the drill-down, service pages, zone/city gates, cart, checkout, dispatch, reviews all run on the ordinary `catalog.*` routes; only the listing surface is its own. A child always inherits its parent's type (enforced in `CreateCategory`/`UpdateCategory`, and re-stamped onto children when a root moves), so one tree can never straddle two pages. `events.index` joined the menu-builder allowlist (D30) and the sitemap lists it only while an active event category exists (D35's walk-what-the-storefront-shows rule). The `Category` model carries `protected $attributes = ['type' => 'service']` — the M17 lesson again: a DB default is not hydrated back onto the model that inserted the row.
+
 ## UI sourcing workflow (shoogle.dev)
 
 1. Need a block (e.g., booking form, dashboard, pricing card) → search **shoogle.dev**

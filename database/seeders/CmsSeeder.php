@@ -152,6 +152,7 @@ class CmsSeeder extends Seeder
         $items = [
             MenuLocation::Header->value => [
                 ['label' => 'Services', 'type' => MenuItemType::Route, 'target' => 'catalog.index'],
+                ['label' => 'Events', 'type' => MenuItemType::Route, 'target' => 'events.index'],
                 ['label' => 'Help', 'type' => MenuItemType::Route, 'target' => 'support.tickets.index', 'visibility' => MenuVisibility::SignedIn],
             ],
             MenuLocation::FooterOne->value => [

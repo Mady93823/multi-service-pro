@@ -30,6 +30,11 @@ class BookingResource extends JsonResource
             'slot_label' => $this->scheduled_at->timezone($timezone)->format('g:i A')
                 .' – '.$this->slot_end_at->timezone($timezone)->format('g:i A'),
             'address' => $this->address_snapshot,
+            // Snapshot on the booking; bookings from before the column existed
+            // fall back to the customer's profile phone when it is loaded.
+            'contact_phone' => $this->contact_phone
+                ?? ($this->relationLoaded('customer') ? $this->customer?->phone : null),
+            'contact_phone_alt' => $this->contact_phone_alt,
             'zone' => $this->whenLoaded('zone', fn () => $this->zone?->name),
             'customer' => $this->whenLoaded('customer', fn () => $this->customer === null ? null : [
                 'id' => $this->customer->id,

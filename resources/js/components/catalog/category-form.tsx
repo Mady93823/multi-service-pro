@@ -16,6 +16,8 @@ type CategoryForm = {
     _method?: string;
     name: string;
     parent_id: string;
+    /** Which storefront surface (services page vs Event Management) — roots only. */
+    type: string;
     sort_order: number;
     is_active: boolean;
     icon: File | null;
@@ -37,6 +39,7 @@ export function CategoryForm({ parents, category }: CategoryFormProps) {
         ...(isEdit ? { _method: 'put' } : {}),
         name: category?.name ?? '',
         parent_id: category?.parent_id?.toString() ?? NONE,
+        type: category?.type ?? 'service',
         sort_order: category?.sort_order ?? 0,
         is_active: category?.is_active ?? true,
         icon: null,
@@ -84,6 +87,27 @@ export function CategoryForm({ parents, category }: CategoryFormProps) {
                 </Select>
                 <InputError message={errors.parent_id} />
             </div>
+
+            {data.parent_id === NONE ? (
+                <div className="grid gap-2">
+                    <Label htmlFor="type">{t('Shown on')}</Label>
+                    <Select value={data.type} onValueChange={(value) => setData('type', value)}>
+                        <SelectTrigger id="type">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="service">{t('Services page')}</SelectItem>
+                            <SelectItem value="event">{t('Event Management page')}</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <p className="text-muted-foreground text-xs">
+                        {t('Event categories (weddings, birthdays, kitty parties...) get their own page; booking works the same.')}
+                    </p>
+                    <InputError message={errors.type} />
+                </div>
+            ) : (
+                <p className="text-muted-foreground text-xs">{t('A sub-category is shown wherever its parent is shown.')}</p>
+            )}
 
             <div className="grid gap-2">
                 <Label htmlFor="sort_order">{t('Sort order')}</Label>

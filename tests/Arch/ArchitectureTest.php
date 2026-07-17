@@ -158,6 +158,41 @@ test('listeners are auto-discovered exactly once', function () {
     }
 });
 
+test('the installer environment is bootstrapped before anything can resolve a cache store', function () {
+    // The bug that cost a real install (P7.7). `bootstrapInstallerEnvironment()`
+    // sat in boot(), two lines *after* `defineRateLimiters()` — and touching the
+    // RateLimiter facade resolves a singleton whose factory reads `cache.default`
+    // once and memoizes the store forever. So the limiter captured the *database*
+    // cache before the override could say "file", and every throttled /install
+    // route queried a `cache` table the wizard had not created yet. The wizard
+    // 500'd until the buyer ran `php artisan migrate` by hand, which is the exact
+    // job a web installer exists to do for them.
+    //
+    // A config override that has to beat every other service to the container
+    // belongs in register(). This is a source check because the thing being
+    // asserted is *when* the call happens, and `runningUnitTests()` means the
+    // method itself never does anything under test.
+    $source = (string) file_get_contents(app_path('Providers/AppServiceProvider.php'));
+
+    preg_match('/public function register\(\): void\s*\{(.*?)\n    \}/s', $source, $register);
+    preg_match('/public function boot\(\): void\s*\{(.*?)\n    \}/s', $source, $boot);
+
+    // assertString*, not expect()->toContain(): Pest's toContain() is variadic,
+    // so a "message" passed to it becomes a second needle and the test asserts
+    // its own explanation is in the source. (It did. That is how this was found.)
+    $this->assertStringContainsString(
+        'bootstrapInstallerEnvironment',
+        $register[1] ?? '',
+        'The installer driver overrides must run in register(), before any singleton captures a cache store.',
+    );
+
+    $this->assertStringNotContainsString(
+        'bootstrapInstallerEnvironment',
+        $boot[1] ?? '',
+        'boot() is too late: RateLimiter::for() resolves the limiter against whatever cache.default says at that moment.',
+    );
+});
+
 test('every block type in the registry has a React renderer', function () {
     // The two halves of the block registry (M20) must agree: a PHP block type
     // with no renderer is a block an admin can add and a visitor never sees.

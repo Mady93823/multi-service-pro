@@ -25,7 +25,8 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
-        <env name="APP_INSTALLED" value="true"/>
+        <!-- The suite is an installed app. `notInstalled()` flips it per test. -->
+        <env name="INSTALL" value="true"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <!-- Never reach for a real Reverb server during tests (M07); the

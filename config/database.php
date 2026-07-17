@@ -16,7 +16,12 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    // MySQL 8 / MariaDB is the product's database (client-mandated, and what the
+    // installer's connect step probes). The Laravel starter's `sqlite` fallback
+    // would leave a buyer who omits DB_CONNECTION silently on a file database
+    // that every deployment doc, backup script and migration here assumes away.
+    // The test suite pins sqlite in phpunit.xml explicitly, not by this default.
+    'default' => env('DB_CONNECTION', 'mysql'),
 
     /*
     |--------------------------------------------------------------------------
@@ -59,6 +64,11 @@ return [
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                // A database that is unreachable rather than wrong does not
+                // refuse the connection, it says nothing — and the default is to
+                // wait ~30s for it, on every request, before the error the buyer
+                // needed 30 seconds ago. A mistyped host should be a fast answer.
+                PDO::ATTR_TIMEOUT => (int) env('DB_CONNECT_TIMEOUT', 5),
             ]) : [],
         ],
 

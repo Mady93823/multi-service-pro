@@ -32,13 +32,21 @@ return [
     | Installed Flag
     |--------------------------------------------------------------------------
     |
-    | Escape hatch for the web-installer gate (M15). Normally installation
-    | state is tracked by storage/app/installed.lock; set APP_INSTALLED=true
-    | to bypass the installer in tests or pre-provisioned environments.
+    | The web-installer gate (M15). One line in .env decides it, and the shipped
+    | .env.example carries `INSTALL=false` — so copying the example is the whole
+    | of "start the installer". The last wizard step deletes the line again, and
+    | from then on the app is a normal application.
+    |
+    | Absence means installed, deliberately. The alternative (absent = install
+    | me) turns any .env mishap on a live site into an open wizard over real
+    | customer data; and a .env that is genuinely missing has no APP_KEY and no
+    | credentials, so it cannot serve anything anyway.
     |
     */
 
-    'installed' => env('APP_INSTALLED', false),
+    'installed' => env('INSTALL') === null
+        ? true
+        : filter_var(env('INSTALL'), FILTER_VALIDATE_BOOLEAN),
 
     /*
     |--------------------------------------------------------------------------

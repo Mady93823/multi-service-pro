@@ -26,11 +26,24 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // FIRST. Not in boot(): `RateLimiter::for()` there resolves the limiter
+        // singleton, and its factory reads `cache.default` once and memoizes the
+        // store forever. Overriding the driver two lines later left the limiter
+        // holding a *database* cache — so every throttled /install route queried
+        // a `cache` table that the installer had not created yet, and the wizard
+        // 500'd until you ran `php artisan migrate` by hand. Which is precisely
+        // the thing a web installer exists to spare the buyer.
+        $this->bootstrapInstallerEnvironment();
+
         $this->app->singleton(SettingsRegistry::class);
         // Memoizes the platform matrix: one dispatch fans out to many
         // notifications, and each one asks the same question (M23).
         $this->app->singleton(NotificationPreferences::class);
         $this->app->bind(Geocoder::class, NominatimGeocoder::class);
+        // Resolvable so the installer's .env write is reachable from a test
+        // pointed at a temp file. `base_path('.env')` is real, shared across
+        // parallel workers, and belongs to whoever is running the suite.
+        $this->app->bind(EnvWriter::class, fn (): EnvWriter => EnvWriter::forApp());
     }
 
     /**
@@ -64,8 +77,6 @@ class AppServiceProvider extends ServiceProvider
         // NotifyProvidersOfOffer (M11). Verify with `php artisan event:list`.
 
         $this->defineRateLimiters();
-
-        $this->bootstrapInstallerEnvironment();
 
         // SMTP is a settings row, not a .env line (M23): a buyer configures mail
         // from the browser. Nothing is forced when it is empty — the mailer keeps
@@ -109,10 +120,17 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Keep the web installer (M15) reachable on a fresh upload: before the
-     * lock file exists the database is unusable, so session/cache/queue fall
-     * back to file drivers, and a missing APP_KEY is generated on the fly
-     * (cookie encryption needs one before the wizard can even render).
+     * Keep the web installer (M15) reachable on a fresh upload.
+     *
+     * While `INSTALL=false` is in .env there is no database worth talking to —
+     * the buyer has not typed its credentials yet — so nothing may need one:
+     * session, cache and queue fall back to drivers that only want a writable
+     * disk, and a missing APP_KEY is generated on the fly (cookie encryption
+     * needs one before the wizard can render at all).
+     *
+     * The rule this enforces: a fresh install must reach every wizard screen
+     * with zero commands run. Anything that reaches for the database before the
+     * lock is gone is a bug, not a prerequisite.
      */
     private function bootstrapInstallerEnvironment(): void
     {

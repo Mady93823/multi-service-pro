@@ -7,6 +7,7 @@ use App\Domain\Bookings\CartManager;
 use App\Domain\Cities\ActiveCity;
 use App\Domain\Cms\FooterPages;
 use App\Domain\Cms\SiteContent;
+use App\Domain\Installer\InstallLock;
 use App\Domain\Localization\TranslationLoader;
 use App\Domain\Security\Recaptcha;
 use App\Domain\Settings\SettingsRegistry;
@@ -47,6 +48,21 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        // The wizard draws its own shell and reads none of the props below — and
+        // every one of them that touches the database would be asking a database
+        // the buyer has not typed the credentials for yet. Each read is guarded
+        // and returns a default, but a guard is not free: an unreachable host
+        // costs a full connect timeout *per read*, so a dozen of them turned the
+        // admin step into a 33-second page (P7.7). Not "cheaper" — correct: an
+        // installer that queries the thing it exists to configure is upside down.
+        if (! InstallLock::installed()) {
+            return array_merge(parent::share($request), [
+                'name' => (string) config('app.name'),
+                'translations' => app(TranslationLoader::class)->forLocale(app()->getLocale()),
+                'flash' => ['success' => $request->session()->get('success')],
+            ]);
+        }
+
         $settings = app(SettingsRegistry::class);
         $logoPath = $settings->string('branding.logo_path');
 

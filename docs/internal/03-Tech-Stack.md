@@ -291,6 +291,18 @@ Sixteen modules of policies, form requests and route guards all answer the same 
 
 *(No CSP yet, deliberately. D26 lets an admin paste their own JS into the storefront and M24 loads analytics by ID; any policy shippable today would need `unsafe-inline` and would prove nothing. It is a Phase 7 item of its own, not a header to fake.)*
 
+### D38 — The installer may not touch the database, and one `.env` line is the gate (2026-07-17)
+
+The first real install run found the wizard unusable: every `/install` route 500'd on a missing `cache` table, and the only way forward was `php artisan migrate` — running by hand the exact job the wizard exists to do. An installer with a prerequisite is not an installer.
+
+**The cause was two lines of ordering.** `AppServiceProvider::boot()` called `defineRateLimiters()` and *then* `bootstrapInstallerEnvironment()`. Touching the `RateLimiter` facade resolves a singleton whose factory reads `cache.default` **once** and memoizes the store forever — so the limiter captured the *database* cache, and the override that said `file` arrived two lines too late. Every throttled installer route then queried a table the installer had not created. The override now runs in `register()`, before anything can resolve a store, and an arch test asserts it stays there — the failure is invisible in review and unreachable from a feature test (`runningUnitTests()` skips the method), so the guard is a source check.
+
+**The general rule: while `INSTALL=false` is present, nothing may ask the database anything.** The Inertia middleware was sharing `FooterPages`, `SiteMenus`, cities and popups on the installer's own screens. Each read is guarded and returns a default — but a guard is not free, and an unreachable host costs a full connect timeout *per read*: a dozen guarded reads turned the admin step into a 33-second page. `share()` now returns a minimal prop set when not installed. The wizard's screens read none of it, and an installer that queries the thing it exists to configure is upside down. Same fix in `admin()`: `Schema::hasTable()` against an unconfigured database **blocks** rather than throwing, so it is wrapped and lands the buyer back on the database step.
+
+**Installed state is `INSTALL=false` in `.env`, and absence means installed.** Copying `.env.example` is the whole prerequisite; the admin step deletes the line. The old `storage/app/installed.lock` had the polarity backwards — absence meant *not* installed, so a wiped `storage/` reopened the wizard on a live site. A missing `.env` has no APP_KEY and cannot serve a page, so the new default degrades to dead rather than to open. The one hole left (someone restoring `.env.example` over a trading site) is closed in the database, not the file: `system.installed_at` is machine state, and the admin step refuses when it is set. Deliberately not "does an admin exist" — ticking demo data seeds one, and the first version of that guard would have refused every demo install its own owner account.
+
+**`DB_CONNECTION` defaults to `mysql`, not the starter's `sqlite`.** A buyer who omits it should not land silently on a file database that every deployment doc, backup script and migration here assumes away. The suite pins `sqlite` in `phpunit.xml` explicitly, which is where a test-only choice belongs.
+
 ## UI sourcing workflow (shoogle.dev)
 
 1. Need a block (e.g., booking form, dashboard, pricing card) → search **shoogle.dev**

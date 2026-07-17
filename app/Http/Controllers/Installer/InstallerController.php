@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Installer;
 
+use App\Domain\Installer\DatabaseProbe;
 use App\Domain\Installer\DeploymentGuide;
 use App\Domain\Installer\EnvWriter;
 use App\Domain\Installer\InstallLock;
 use App\Domain\Installer\RequirementsChecker;
+use App\Domain\Settings\Enums\SettingType;
+use App\Domain\Settings\SettingsRegistry;
 use App\Domain\Users\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Installer\StoreAdminRequest;
@@ -27,11 +30,21 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
-use PDO;
 use PDOException;
+use Throwable;
 
 class InstallerController extends Controller
 {
+    /**
+     * Machine state, not a setting: it has no screen, no default and no group.
+     * Same shape as `system.scheduler_last_run` (M24), and deliberately outside
+     * `SettingsRegistry::defaults()` for the same reason — every default key must
+     * be owned by a settings group, and nobody should ever edit this one.
+     */
+    private const INSTALLED_AT = 'system.installed_at';
+
+    public function __construct(private readonly SettingsRegistry $settings) {}
+
     /**
      * Seeded on every install. `InstallerSeedTest` asserts this list stays in
      * step with what a working site actually needs — a module that adds a
@@ -72,37 +85,44 @@ class InstallerController extends Controller
         ]);
     }
 
-    public function storeDatabase(StoreDatabaseRequest $request): RedirectResponse
+    public function storeDatabase(StoreDatabaseRequest $request, DatabaseProbe $probe, EnvWriter $env): RedirectResponse
     {
-        /** @var array{app_name: string, app_url: string, host: string, port: int|string, database: string, username: string, password?: string|null} $data */
-        $data = $request->validated();
-        $password = $data['password'] ?? '';
+        // safe() rather than a hand-written array{} shape over validated(). The
+        // shape was the bug: it promised `app_name`, the rules never asked for
+        // one, so validated() dropped it — and PHPStan believed the docblock over
+        // the FormRequest all the way onto a buyer's screen. safe() still reads
+        // validated data only (an unruled key stays unreadable, which is the
+        // point) but it is typed, so no annotation has to be kept honest by hand.
+        $valid = $request->safe();
+
+        $appName = $valid->string('app_name')->toString();
+        $appUrl = $valid->string('app_url')->toString();
+        $host = $valid->string('host')->toString();
+        $port = $valid->integer('port');
+        $database = $valid->string('database')->toString();
+        $username = $valid->string('username')->toString();
+        $password = $valid->string('password')->toString();
 
         try {
-            new PDO(
-                sprintf('mysql:host=%s;port=%d;dbname=%s', $data['host'], (int) $data['port'], $data['database']),
-                $data['username'],
-                $password,
-                [PDO::ATTR_TIMEOUT => 5, PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION],
-            );
+            $probe->handle($host, $port, $database, $username, $password);
         } catch (PDOException $e) {
             throw ValidationException::withMessages([
                 'database' => __('Could not connect: :message', ['message' => $e->getMessage()]),
             ]);
         }
 
-        $secure = str_starts_with(Str::lower($data['app_url']), 'https://');
+        $secure = str_starts_with(Str::lower($appUrl), 'https://');
 
-        EnvWriter::forApp()->write([
-            'APP_NAME' => $data['app_name'],
-            'APP_URL' => $data['app_url'],
+        $env->write([
+            'APP_NAME' => $appName,
+            'APP_URL' => $appUrl,
             'APP_ENV' => 'production',
             'APP_DEBUG' => 'false',
             'DB_CONNECTION' => 'mysql',
-            'DB_HOST' => $data['host'],
-            'DB_PORT' => (int) $data['port'],
-            'DB_DATABASE' => $data['database'],
-            'DB_USERNAME' => $data['username'],
+            'DB_HOST' => $host,
+            'DB_PORT' => $port,
+            'DB_DATABASE' => $database,
+            'DB_USERNAME' => $username,
             'DB_PASSWORD' => $password,
 
             // A session cookie that can travel over plain HTTP on an HTTPS site
@@ -125,7 +145,7 @@ class InstallerController extends Controller
             'REVERB_APP_KEY' => Str::lower(Str::random(20)),
             'REVERB_APP_SECRET' => Str::lower(Str::random(24)),
             // What the *browser* dials: the site's own host, through the proxy.
-            'REVERB_HOST' => (string) parse_url($data['app_url'], PHP_URL_HOST),
+            'REVERB_HOST' => (string) parse_url($appUrl, PHP_URL_HOST),
             'REVERB_PORT' => $secure ? 443 : 8080,
             'REVERB_SCHEME' => $secure ? 'https' : 'http',
             // What the reverb:start process binds to, behind that proxy.
@@ -168,7 +188,7 @@ class InstallerController extends Controller
                     Artisan::call('db:seed', ['--class' => $seeder, '--force' => true]);
                 }
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             throw ValidationException::withMessages([
                 'migrate' => __('Migration failed: :message', ['message' => $e->getMessage()]),
             ]);
@@ -193,34 +213,62 @@ class InstallerController extends Controller
 
         try {
             Artisan::call('storage:link');
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             report($e);
         }
     }
 
     public function admin(): Response|RedirectResponse
     {
-        if (! Schema::hasTable('users')) {
-            return redirect()->route('install.migrate');
+        // Asking a database that has not been configured yet whether it has a
+        // users table does not fail — it *blocks*, until PHP gives up. A buyer
+        // who refreshes this step, bookmarks it or comes back to it before the
+        // database step gets a hung tab and nothing to read. No table and no
+        // database are the same answer here: you are not ready for this screen.
+        try {
+            $ready = Schema::hasTable('users');
+        } catch (Throwable) {
+            return redirect()->route('install.database');
         }
 
-        return Inertia::render('installer/admin');
+        return $ready
+            ? Inertia::render('installer/admin')
+            : redirect()->route('install.migrate');
     }
 
-    public function storeAdmin(StoreAdminRequest $request): RedirectResponse
+    public function storeAdmin(StoreAdminRequest $request, EnvWriter $env): RedirectResponse
     {
-        /** @var array{name: string, email: string, password: string} $data */
-        $data = $request->validated();
+        $valid = $request->safe();
+
+        // Minting an admin is the one irreversible thing the wizard does, and the
+        // flag that guards it now lives in .env — a file a buyer can restore from
+        // backup or overwrite from the example by accident. Put INSTALL=false back
+        // on a trading site and this step would hand a stranger the business.
+        //
+        // So it asks the *database* whether it has been installed before, which no
+        // .env mishap can answer wrongly. Not "does an admin exist": ticking demo
+        // data seeds one, and that must stay a legitimate first install.
+        if ($this->settings->string(self::INSTALLED_AT) !== '') {
+            throw ValidationException::withMessages([
+                'email' => __('This site is already installed. Remove the INSTALL line from your .env file to close the installer.'),
+            ]);
+        }
 
         $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
+            'name' => $valid->string('name')->toString(),
+            'email' => $valid->string('email')->toString(),
+            'password' => Hash::make($valid->string('password')->toString()),
         ]);
         $user->forceFill(['email_verified_at' => now()])->save();
         $user->assignRole(Role::Admin->value);
 
-        InstallLock::write();
+        // Stamped before the flag is dropped: if the .env write fails, the wizard
+        // stays open but the database already says it is installed — so the retry
+        // is refused and the operator is told to remove the line by hand. Better a
+        // stuck install the operator can see than a wizard that can be reopened.
+        $this->settings->set(self::INSTALLED_AT, now()->toIso8601String(), SettingType::String, 'system');
+
+        InstallLock::write($env);
 
         return redirect()->route('install.finish');
     }

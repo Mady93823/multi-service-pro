@@ -2,32 +2,37 @@
 
 namespace App\Domain\Installer;
 
-use Illuminate\Support\Facades\Storage;
-
 /**
- * The installed marker. Its absence routes every request to the web
- * installer; writing it (last wizard step) opens the application.
+ * The installed marker: a single `INSTALL=false` line in .env.
+ *
+ * A fresh copy of the product is `.env.example` -> `.env`, and the example
+ * carries the line — so unpacking the zip *is* opening the installer, with no
+ * command to run first. The last wizard step deletes the line, and the app is
+ * an application from the next request onward.
+ *
+ * It used to be storage/app/installed.lock, which meant absence = not
+ * installed: a wiped storage directory silently reopened the wizard on a live
+ * site. Absence now means installed, and the only thing that opens the wizard
+ * is somebody putting the line back deliberately.
  */
 class InstallLock
 {
-    private const FILE = 'installed.lock';
+    public const ENV_KEY = 'INSTALL';
 
     public static function installed(): bool
     {
-        // Escape hatch for tests and pre-provisioned environments.
-        // (phpunit delivers booleans as '1', so validate loosely.)
-        if (filter_var(config('app.installed'), FILTER_VALIDATE_BOOLEAN)) {
-            return true;
-        }
-
-        return Storage::disk('local')->exists(self::FILE);
+        return (bool) config('app.installed');
     }
 
-    public static function write(): void
+    /**
+     * Finish the install: drop the line, then forget the cached config that
+     * still remembers it. Without the clear, a buyer who ran `config:cache`
+     * before installing would be left with a wizard that never closes.
+     */
+    public static function write(?EnvWriter $env = null): void
     {
-        Storage::disk('local')->put(self::FILE, (string) json_encode([
-            'installed_at' => now()->toIso8601String(),
-            'version' => '1.0.0',
-        ], JSON_PRETTY_PRINT));
+        ($env ?? EnvWriter::forApp())->remove([self::ENV_KEY]);
+
+        config(['app.installed' => true]);
     }
 }

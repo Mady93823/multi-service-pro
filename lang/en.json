@@ -1472,6 +1472,7 @@
     "This review was hidden by our team.": "This review was hidden by our team.",
     "This review was hidden by our team: :reason": "This review was hidden by our team: :reason",
     "This service is not yet available at your default address.": "This service is not yet available at your default address.",
+    "This site is already installed. Remove the INSTALL line from your .env file to close the installer.": "This site is already installed. Remove the INSTALL line from your .env file to close the installer.",
     "This ticket is already closed.": "This ticket is already closed.",
     "This ticket is closed. Raise a new ticket if you need more help.": "This ticket is closed. Raise a new ticket if you need more help.",
     "This ticket is closed and can no longer be assigned.": "This ticket is closed and can no longer be assigned.",

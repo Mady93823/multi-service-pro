@@ -33,11 +33,23 @@ public/
 .env
 ```
 
-## 3. Create an empty database
+## 3. Copy the example configuration
+
+```
+cp .env.example .env
+```
+
+That is the only command in this guide, and it is the whole of "starting the installer": the example file carries a line reading `INSTALL=false`, and that line is what opens the wizard. The wizard writes the rest of the file for you — database credentials, site URL, WebSocket keys — and deletes the line when it finishes.
+
+Do not fill anything in by hand. If you have no shell access, copy the file with your control panel's file manager and rename it; a `.env` that is a plain copy of `.env.example` is exactly right.
+
+## 4. Create an empty database
 
 Create a database and a user with full rights on it. The installer will not create the database for you — it connects to one that already exists, and it tells you plainly if it cannot.
 
-## 4. Run the wizard
+MySQL 8 or MariaDB 10.6+. Leave it empty; the wizard creates every table.
+
+## 5. Run the wizard
 
 Open your site in a browser. You will be redirected to `/install`.
 
@@ -47,9 +59,11 @@ Open your site in a browser. You will be redirected to `/install`.
 4. **Administrator** — your own login.
 5. **Finish** — the three processes below.
 
-The wizard then locks itself. `/install` will not open again.
+The wizard then closes itself by deleting the `INSTALL` line from your `.env`. `/install` will not open again, and the site is a normal application from that moment.
 
-## 5. The three processes (do not skip this)
+If you ever need the wizard back on a fresh, empty database, put `INSTALL=false` back into `.env`. Do not do this on a site that has traded: the wizard refuses to create a second administrator over a database that has already been installed, and it will tell you to remove the line again.
+
+## 6. The three processes (do not skip this)
 
 The site works without them **and quietly does less** — every page still loads, so nothing tells you they are missing. The finish screen and **Admin → System** both give you these blocks with your own paths in them; copy them from there rather than from here.
 
@@ -63,7 +77,7 @@ Cron goes in the crontab. The queue worker and Reverb need a process supervisor 
 
 Point your web server to proxy WebSocket traffic (`/app` and `/apps`) to port **8080**, where Reverb listens.
 
-## 6. First things to set up in the admin panel
+## 7. First things to set up in the admin panel
 
 Everything below is optional — the site runs with none of it — and everything below is in the browser. You will not edit a config file.
 

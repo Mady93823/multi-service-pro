@@ -12,6 +12,7 @@ import {
     Mail,
     Map,
     Megaphone,
+    PartyPopper,
     ServerCog,
     Settings,
     ShoppingBag,
@@ -52,6 +53,11 @@ export default function AdminLayout({ children, breadcrumbs }: AdminLayoutProps)
                 { title: t('Categories'), url: '/admin/categories' },
                 { title: t('Services'), url: '/admin/services' },
             ],
+        },
+        {
+            title: t('Events'),
+            url: '/admin/events',
+            icon: PartyPopper,
         },
         {
             title: t('Providers'),

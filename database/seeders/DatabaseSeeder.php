@@ -19,6 +19,8 @@ class DatabaseSeeder extends Seeder
             SettingsSeeder::class,
             DemoAccountSeeder::class,
             CatalogSeeder::class,
+            // Drawn covers for the event tree — no-op under tests and without GD.
+            EventImageSeeder::class,
             // A zone belongs to a city (M25), so the cities exist first.
             CitySeeder::class,
             ZoneSeeder::class,

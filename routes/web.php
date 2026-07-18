@@ -234,6 +234,9 @@ Route::get('provider-documents/{document}', [ProviderDocumentController::class, 
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('dashboard', Admin\DashboardController::class)->name('dashboard');
+    // Event Management hub (D42): the event side of the catalog on one screen.
+    // Read-only — every edit links into the ordinary category/service CRUD.
+    Route::get('events', [Admin\EventManagementController::class, 'index'])->name('events.index');
     Route::resource('categories', Admin\CategoryController::class)->except(['show']);
     Route::resource('services', Admin\ServiceController::class)->except(['show']);
     // Locations (M25): zones belong to a city row, not to a typed-in name.

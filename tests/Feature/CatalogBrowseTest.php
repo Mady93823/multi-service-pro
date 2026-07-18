@@ -15,6 +15,16 @@ test('guests can browse the storefront home page', function () {
         ->assertInertia(fn (AssertableInertia $page) => $page->component('catalog/index')->has('categories')->has('featured'));
 });
 
+test('the layout ships a theme-coloured splash while the bundle loads', function () {
+    // Painted in blade so a slow connection sees motion before any JS arrives;
+    // app.tsx removes it after mount. Colour must ride the theme token, never
+    // a hardcoded hue (D8 white-label).
+    $this->get('/')
+        ->assertOk()
+        ->assertSee('id="splash"', false)
+        ->assertSee('var(--primary', false);
+});
+
 test('category page lists only active services', function () {
     $category = Category::factory()->create();
     $active = Service::factory()->create(['category_id' => $category->id]);

@@ -40,6 +40,24 @@ const configureEchoFrom = (reverb: ReverbConfig | undefined) => {
     });
 };
 
+/**
+ * The blade layout paints a splash (theme-coloured, pure CSS) the moment the
+ * HTML arrives, so a slow connection sees motion instead of a blank page while
+ * this bundle downloads. Fade it out once React has taken over.
+ */
+const dismissSplash = () => {
+    const splash = document.getElementById('splash');
+
+    if (!splash) {
+        return;
+    }
+
+    requestAnimationFrame(() => {
+        splash.classList.add('splash-done');
+        window.setTimeout(() => splash.remove(), 350);
+    });
+};
+
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
     resolve: (name) => resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')),
@@ -54,9 +72,13 @@ createInertiaApp({
                 <Toaster position="top-right" richColors />
             </>,
         );
+
+        dismissSplash();
     },
     progress: {
-        color: '#4B5563',
+        // A CSS variable survives the inline style Inertia writes, so the
+        // navigation bar follows the buyer's brand colour too.
+        color: 'var(--primary)',
     },
 });
 

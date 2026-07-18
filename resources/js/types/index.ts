@@ -293,6 +293,7 @@ export interface City {
     center_lat: number;
     center_lng: number;
     is_active: boolean;
+    cash_enabled: boolean;
     sort_order: number;
     zones_count?: number;
     bookings_count?: number;
@@ -305,6 +306,7 @@ export interface Zone {
     city_name?: string;
     geojson: GeoJsonPolygon;
     is_active: boolean;
+    cash_enabled: boolean;
     services_count?: number;
     addresses_count?: number;
 }
@@ -610,6 +612,20 @@ export type OfferStatus = 'offered' | 'accepted' | 'declined' | 'expired';
 
 export type DispatchMode = 'nearest' | 'broadcast' | 'manual';
 
+/**
+ * D41: an open offer carries a decision payload, never the doorstep — the
+ * city only; no street line, no pin, no phone until the job is accepted.
+ */
+export interface OfferBooking {
+    id: number;
+    status: BookingStatus;
+    scheduled_label: string;
+    slot_label: string;
+    total: string;
+    items?: BookingItem[];
+    address: { city: string };
+}
+
 export interface DispatchOffer {
     id: number;
     status: OfferStatus;
@@ -619,7 +635,7 @@ export interface DispatchOffer {
     offered_at: string | null;
     expires_at: string | null;
     provider?: { id: number; name: string } | null;
-    booking?: Booking;
+    booking?: OfferBooking;
 }
 
 // M07 live tracking — the LocationUpdated broadcast payload + polling fallback.

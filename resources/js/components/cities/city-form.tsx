@@ -19,6 +19,7 @@ type CityForm = {
     center_lat: number;
     center_lng: number;
     is_active: boolean;
+    cash_enabled: boolean;
     sort_order: number;
 };
 
@@ -39,6 +40,7 @@ export function CityForm({ city, timezones }: CityFormProps) {
         center_lat: city?.center_lat ?? 12.9716,
         center_lng: city?.center_lng ?? 77.5946,
         is_active: city?.is_active ?? true,
+        cash_enabled: city?.cash_enabled ?? true,
         sort_order: city?.sort_order ?? 0,
     });
 
@@ -128,6 +130,16 @@ export function CityForm({ city, timezones }: CityFormProps) {
                     <Switch id="is_active" checked={data.is_active} onCheckedChange={(checked) => setData('is_active', checked)} />
                     <Label htmlFor="is_active">{t('Active (shown on the storefront)')}</Label>
                 </div>
+            </div>
+
+            <div className="space-y-1">
+                <div className="flex items-center gap-3">
+                    <Switch id="cash_enabled" checked={data.cash_enabled} onCheckedChange={(checked) => setData('cash_enabled', checked)} />
+                    <Label htmlFor="cash_enabled">{t('Accept pay after service (cash) in this city')}</Label>
+                </div>
+                <p className="text-muted-foreground text-sm">
+                    {t('Off, every zone in this city takes online payment only — the per-zone switch cannot re-enable it.')}
+                </p>
             </div>
 
             <div className="flex gap-2">

@@ -22,6 +22,7 @@ class City extends Model
         'center_lat',
         'center_lng',
         'is_active',
+        'cash_enabled',
         'sort_order',
     ];
 
@@ -33,6 +34,7 @@ class City extends Model
      */
     protected $attributes = [
         'is_active' => true,
+        'cash_enabled' => true,
         'sort_order' => 0,
     ];
 
@@ -45,6 +47,7 @@ class City extends Model
             'center_lat' => 'float',
             'center_lng' => 'float',
             'is_active' => 'boolean',
+            'cash_enabled' => 'boolean',
             'sort_order' => 'integer',
         ];
     }

@@ -23,6 +23,7 @@ class ZoneResource extends JsonResource
             'city_name' => $this->whenLoaded('city', fn (): string => $this->city->name),
             'geojson' => $this->geojson,
             'is_active' => $this->is_active,
+            'cash_enabled' => $this->cash_enabled,
             'services_count' => $this->whenCounted('services'),
             'addresses_count' => $this->whenCounted('addresses'),
         ];

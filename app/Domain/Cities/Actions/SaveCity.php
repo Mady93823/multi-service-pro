@@ -32,6 +32,7 @@ class SaveCity
             'center_lat' => (float) $data['center_lat'],
             'center_lng' => (float) $data['center_lng'],
             'is_active' => (bool) ($data['is_active'] ?? true),
+            'cash_enabled' => (bool) ($data['cash_enabled'] ?? true),
             'sort_order' => (int) ($data['sort_order'] ?? 0),
         ]);
 

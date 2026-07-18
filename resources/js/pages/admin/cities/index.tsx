@@ -71,7 +71,12 @@ export default function CitiesIndex({ cities }: CitiesIndexProps) {
                                     </TableCell>
                                     <TableCell className="text-center">{city.bookings_count ?? 0}</TableCell>
                                     <TableCell>
-                                        <Badge variant={city.is_active ? 'default' : 'outline'}>{city.is_active ? t('Active') : t('Hidden')}</Badge>
+                                        <div className="flex flex-wrap gap-1">
+                                            <Badge variant={city.is_active ? 'default' : 'outline'}>
+                                                {city.is_active ? t('Active') : t('Hidden')}
+                                            </Badge>
+                                            {!city.cash_enabled && <Badge variant="secondary">{t('Online only')}</Badge>}
+                                        </div>
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex justify-end gap-1">

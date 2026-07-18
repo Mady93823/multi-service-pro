@@ -1,14 +1,14 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import ProviderLayout from '@/layouts/provider-layout';
-import { haversineMeters, type LatLng } from '@/lib/geo';
+import { googleMapsDirectionsUrl, haversineMeters, type LatLng } from '@/lib/geo';
 import { postJson } from '@/lib/http';
 import { useTrans } from '@/lib/i18n';
 import { TILE_ATTRIBUTION, TILE_URL } from '@/lib/leaflet';
 import { type Booking, type BreadcrumbItem, type TrackingConfig } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { useEchoPresence } from '@laravel/echo-react';
-import { CheckCircle2, Eye, MapPin, Navigation, TriangleAlert } from 'lucide-react';
+import { CheckCircle2, ExternalLink, Eye, MapPin, Navigation, TriangleAlert } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MapContainer, Marker, TileLayer, useMap } from 'react-leaflet';
 
@@ -268,6 +268,21 @@ export default function ProviderJourney({ booking, session, config }: JourneyPro
                     <Button size="lg" className="h-14 text-base" onClick={arrive} disabled={busy}>
                         <CheckCircle2 className="h-5 w-5" />
                         {t('I have arrived')}
+                    </Button>
+                )}
+
+                {/* D44: hand turn-by-turn to the Maps app — our map shows the
+                    customer where the provider is; it does not route. */}
+                {(status === 'accepted' || status === 'en_route') && (
+                    <Button asChild size="lg" variant="outline" className="h-12 text-base">
+                        <a
+                            href={googleMapsDirectionsUrl(destination, `${booking.address.line1}, ${booking.address.city}`)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            <ExternalLink className="h-5 w-5" />
+                            {t('Navigate with Google Maps')}
+                        </a>
                     </Button>
                 )}
             </div>

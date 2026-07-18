@@ -40,6 +40,9 @@ class StoreCityRequest extends FormRequest
             'center_lat' => ['required', 'numeric', 'between:-90,90'],
             'center_lng' => ['required', 'numeric', 'between:-180,180'],
             'is_active' => ['boolean'],
+            // D43: the city-wide cash switch — off closes pay-after-service
+            // for every zone in the town at once.
+            'cash_enabled' => ['boolean'],
             'sort_order' => ['integer', 'min:0', 'max:9999'],
         ];
     }

@@ -64,7 +64,12 @@ export default function ZonesIndex({ zones, cities }: ZonesIndexProps) {
                                     <TableCell className="text-center">{zone.services_count ?? 0}</TableCell>
                                     <TableCell className="text-center">{zone.addresses_count ?? 0}</TableCell>
                                     <TableCell>
-                                        <Badge variant={zone.is_active ? 'default' : 'outline'}>{zone.is_active ? t('Active') : t('Hidden')}</Badge>
+                                        <div className="flex flex-wrap gap-1">
+                                            <Badge variant={zone.is_active ? 'default' : 'outline'}>
+                                                {zone.is_active ? t('Active') : t('Hidden')}
+                                            </Badge>
+                                            {!zone.cash_enabled && <Badge variant="secondary">{t('Online only')}</Badge>}
+                                        </div>
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex justify-end gap-1">

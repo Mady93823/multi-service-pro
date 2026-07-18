@@ -25,6 +25,8 @@ class StoreZoneRequest extends FormRequest
             'name' => ['required', 'string', 'max:120'],
             'geojson' => ['required', 'array', new GeoJsonPolygon],
             'is_active' => ['boolean'],
+            // D43: whether pay-after-service (cash) is offered in this zone.
+            'cash_enabled' => ['boolean'],
         ];
     }
 }

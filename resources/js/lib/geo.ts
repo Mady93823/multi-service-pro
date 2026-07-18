@@ -43,3 +43,18 @@ export function lerp(from: LatLng, to: LatLng, t: number): LatLng {
         lng: from.lng + (to.lng - from.lng) * t,
     };
 }
+
+/**
+ * Google Maps directions deep link (D44). A plain URL — no API key, no SDK —
+ * that opens the Maps app on a phone and a browser tab on desktop. The origin
+ * is deliberately omitted: Maps then navigates from the device's own live
+ * location, which is always fresher than our last tracking ping. Falls back
+ * to a text destination when the snapshot carries no usable pin.
+ */
+export function googleMapsDirectionsUrl(destination: Partial<LatLng>, fallbackQuery?: string): string {
+    const hasPin = typeof destination.lat === 'number' && typeof destination.lng === 'number' && !(destination.lat === 0 && destination.lng === 0);
+
+    const target = hasPin ? `${destination.lat},${destination.lng}` : (fallbackQuery ?? '');
+
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(target)}&travelmode=driving`;
+}

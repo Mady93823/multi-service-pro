@@ -82,6 +82,7 @@ The system is split into 16 clean modules. Each module is independent and expand
 - Services can be enabled/disabled per zone
 - Customer address book with map-pin selection (Leaflet + OpenStreetMap)
 - Automatic address lookup (geocoding)
+- **Payment methods per area**: cash on delivery (pay after service) can be switched off per city or per zone — those areas then accept online payment only; the checkout adjusts automatically to the customer's selected address
 
 ### M04 — Booking Engine
 - Add-to-cart style service selection
@@ -113,6 +114,7 @@ The system is split into 16 clean modules. Each module is independent and expand
 - Positions stream to the customer over WebSockets (Laravel Reverb — Laravel's official realtime server)
 - Customer sees a live map (Leaflet + OpenStreetMap — no Google Maps fees) with a moving provider marker, route trail, distance and ETA
 - Status timeline: *On the way → Arrived → Job started → Completed*
+- **Google Maps navigation for the professional**: one tap on an accepted job opens turn-by-turn directions to the customer's doorstep in the Google Maps app (no API fees — a standard Maps link)
 - Full details in Section 5.
 
 ### M08 — Payments & Wallet

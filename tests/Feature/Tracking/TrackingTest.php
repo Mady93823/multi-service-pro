@@ -202,6 +202,9 @@ test('the journey screen renders for an accepted job', function () {
         ->assertInertia(fn ($page) => $page
             ->component('provider/journey')
             ->where('booking.id', $booking->id)
+            // D44: the Google Maps navigate link is built from this pin.
+            ->has('booking.address.lat')
+            ->has('booking.address.lng')
             ->has('config.ping_interval_seconds'));
 });
 

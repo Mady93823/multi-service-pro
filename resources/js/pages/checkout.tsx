@@ -28,6 +28,8 @@ interface CheckoutAddress {
     blocked_services: string[];
     /** The city the address's zone belongs to (M25) — the slot grid follows it. */
     city_id: number | null;
+    /** D43: whether pay-after-service (cash) is offered where this address is. */
+    cash_allowed: boolean;
 }
 
 interface CheckoutPageProps {
@@ -108,15 +110,24 @@ export default function CheckoutPage({
     const walletShort = Number(walletBalance) < Number(summary.total);
     const selectable = (method: string) => method !== 'wallet' || !walletShort;
 
+    // D43: cash is offered per area — the global list is filtered by the
+    // address actually selected. The request rule re-checks server-side.
+    const cashAllowedFor = (entry: CheckoutAddress | undefined) => entry?.cash_allowed ?? true;
+    const methodsFor = (entry: CheckoutAddress | undefined) => paymentMethods.filter((method) => method !== 'cash' || cashAllowedFor(entry));
+
     const { data, setData, post, processing, errors } = useForm<CheckoutForm>({
         address_id: defaultAddress?.address.id ?? null,
         scheduled_at: null,
         contact_phone: contactPhoneDefault ?? '',
         contact_phone_alt: '',
-        payment_method: paymentMethods.find(selectable) ?? paymentMethods[0] ?? 'cash',
+        payment_method: methodsFor(defaultAddress).find(selectable) ?? methodsFor(defaultAddress)[0] ?? 'cash',
         notes: '',
         photos: [],
     });
+
+    const selectedEntry = addresses.find((entry) => entry.address.id === data.address_id);
+    const offeredMethods = methodsFor(selectedEntry);
+    const cashHidden = paymentMethods.includes('cash') && !offeredMethods.includes('cash');
 
     /**
      * Slots are drawn in the city's own clock (M25), so picking an address in
@@ -125,6 +136,13 @@ export default function CheckoutPage({
      */
     const chooseAddress = (addressId: number, cityId: number | null) => {
         setData('address_id', addressId);
+
+        // D43: the new address may not take cash — swap to the first online
+        // method instead of carrying a selection the server will refuse.
+        const entry = addresses.find((candidate) => candidate.address.id === addressId);
+        if (data.payment_method === 'cash' && !cashAllowedFor(entry)) {
+            setData('payment_method', methodsFor(entry).find(selectable) ?? methodsFor(entry)[0] ?? '');
+        }
 
         if (cityId === (slotCity?.id ?? null)) {
             return;
@@ -354,11 +372,13 @@ export default function CheckoutPage({
 
                     <Step number={4} title={t('Payment')}>
                         <div className="space-y-3">
-                            {paymentMethods.length === 0 && (
+                            {offeredMethods.length === 0 && (
                                 <p className="text-muted-foreground text-sm">{t('No payment method is available right now.')}</p>
                             )}
 
-                            {paymentMethods.map((method) => {
+                            {cashHidden && <p className="text-muted-foreground text-sm">{t('Only online payment is available in this area.')}</p>}
+
+                            {offeredMethods.map((method) => {
                                 const meta = methodMeta[method];
 
                                 if (meta === undefined) {
@@ -509,7 +529,13 @@ export default function CheckoutPage({
                             type="submit"
                             className="mt-6 h-12 w-full rounded-xl text-base"
                             size="lg"
-                            disabled={processing || data.address_id === null || data.scheduled_at === null || paymentMethods.length === 0}
+                            disabled={
+                                processing ||
+                                data.address_id === null ||
+                                data.scheduled_at === null ||
+                                offeredMethods.length === 0 ||
+                                !offeredMethods.includes(data.payment_method)
+                            }
                         >
                             {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
                             {submitLabel}

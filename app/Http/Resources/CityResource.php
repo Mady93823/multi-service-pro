@@ -25,6 +25,7 @@ class CityResource extends JsonResource
             'center_lat' => $this->center_lat,
             'center_lng' => $this->center_lng,
             'is_active' => $this->is_active,
+            'cash_enabled' => $this->cash_enabled,
             'sort_order' => $this->sort_order,
             'zones_count' => $this->whenCounted('zones'),
         ];

@@ -21,6 +21,7 @@ class ZoneFactory extends Factory
             'name' => fake()->unique()->streetName(),
             'geojson' => self::squareAround(12.9716, 77.5946),
             'is_active' => true,
+            'cash_enabled' => true,
         ];
     }
 
@@ -51,5 +52,10 @@ class ZoneFactory extends Factory
     public function inactive(): static
     {
         return $this->state(fn () => ['is_active' => false]);
+    }
+
+    public function cashDisabled(): static
+    {
+        return $this->state(fn () => ['cash_enabled' => false]);
     }
 }

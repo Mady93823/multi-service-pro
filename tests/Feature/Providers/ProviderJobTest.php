@@ -113,6 +113,37 @@ test('a provider cannot advance a booking that is not theirs', function () {
         ->assertNotFound();
 });
 
+test('an open offer never carries the doorstep — city only, no pin, no phone', function () {
+    $provider = jobProvider();
+    jobOfferFor($provider);
+
+    // D41: the offer payload (not just the card) must stay city-only —
+    // Inertia serializes every prop into the page HTML.
+    $this->actingAs($provider)
+        ->get(route('provider.jobs.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('offers.0.booking.address.city')
+            ->missing('offers.0.booking.address.line1')
+            ->missing('offers.0.booking.address.lat')
+            ->missing('offers.0.booking.address.lng')
+            ->missing('offers.0.booking.contact_phone'));
+});
+
+test('an accepted job carries the address pin the navigate link needs', function () {
+    $provider = jobProvider();
+    Booking::factory()->status(BookingStatus::Accepted)->withProvider($provider)->create();
+
+    // D44: once the job is taken, the doorstep is the provider's to reach.
+    $this->actingAs($provider)
+        ->get(route('provider.jobs.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('jobs.0.address.lat')
+            ->has('jobs.0.address.lng')
+            ->has('jobs.0.contact_phone'));
+});
+
 test('an unapproved provider is bounced from the jobs screen', function () {
     $user = User::factory()->provider()->create();
     ProviderProfile::factory()->for($user)->create(); // pending

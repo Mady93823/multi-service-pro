@@ -24,6 +24,17 @@ class Zone extends Model
         'name',
         'geojson',
         'is_active',
+        'cash_enabled',
+    ];
+
+    /**
+     * A zone inserted with the column default still has to read `true` back on
+     * the instance that inserted it (landmine: a DB default is not hydrated).
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'cash_enabled' => true,
     ];
 
     /**
@@ -34,6 +45,7 @@ class Zone extends Model
         return [
             'geojson' => 'array',
             'is_active' => 'boolean',
+            'cash_enabled' => 'boolean',
         ];
     }
 
@@ -79,5 +91,18 @@ class Zone extends Model
     public function contains(float $lat, float $lng): bool
     {
         return is_array($this->geojson) && PointInPolygon::contains($this->geojson, $lat, $lng);
+    }
+
+    /**
+     * Whether pay-after-service (cash) is offered here (D43): the zone AND its
+     * city must both allow it — the city flag closes a whole town in one
+     * click, the zone flag handles a single area. Online methods are never
+     * gated by geography.
+     */
+    public function allowsCash(): bool
+    {
+        $this->loadMissing('city');
+
+        return $this->cash_enabled && $this->city->cash_enabled;
     }
 }

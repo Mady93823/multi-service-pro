@@ -7,6 +7,7 @@ use App\Domain\Payments\Enums\PaymentProvider;
 use App\Domain\Payments\GatewayManager;
 use App\Domain\Settings\SettingsRegistry;
 use App\Models\BankAccount;
+use App\Models\Zone;
 use App\Support\UploadRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -40,11 +41,35 @@ class PlaceBookingRequest extends FormRequest
             // fallback contact (spouse, neighbour) and stays optional.
             'contact_phone' => ['required', 'string', 'max:20', 'regex:'.self::PHONE_PATTERN],
             'contact_phone_alt' => ['nullable', 'string', 'max:20', 'regex:'.self::PHONE_PATTERN],
-            'payment_method' => ['required', Rule::in(self::availableMethods())],
+            // D43: the offer is judged against the address actually being
+            // booked — a cash post for an online-only area must 422 here, the
+            // checkout picker filtering the option out is only presentation.
+            'payment_method' => ['required', Rule::in(self::availableMethods($this->payloadZone()))],
             'notes' => ['nullable', 'string', 'max:1000'],
             'photos' => ['array', 'max:4'],
             'photos.*' => UploadRules::image(),
         ];
+    }
+
+    /**
+     * The zone of the address being booked, resolved from the raw payload —
+     * rules() runs before validation, so this must never throw. A missing or
+     * foreign address returns null (the address_id rule fails on its own) and
+     * the method list falls back to the global one.
+     */
+    private function payloadZone(): ?Zone
+    {
+        $addressId = $this->input('address_id');
+
+        if (! is_numeric($addressId)) {
+            return null;
+        }
+
+        return $this->user()
+            ?->addresses()
+            ->with('zone.city')
+            ->find((int) $addressId)
+            ?->zone;
     }
 
     /**
@@ -55,14 +80,19 @@ class PlaceBookingRequest extends FormRequest
      * These are the form values; the booking column stores the coarse
      * cash|gateway|wallet|offline enum via paymentMethod().
      *
+     * With a zone, cash is additionally gated by geography (D43): the global
+     * flag decides whether the product takes cash at all, the zone decides
+     * whether this area does. No zone (site-wide contexts) means the global
+     * flag alone.
+     *
      * @return list<string>
      */
-    public static function availableMethods(): array
+    public static function availableMethods(?Zone $zone = null): array
     {
         $settings = app(SettingsRegistry::class);
         $methods = [];
 
-        if ($settings->boolean('payments.pay_after_service', true)) {
+        if ($settings->boolean('payments.pay_after_service', true) && ($zone === null || $zone->allowsCash())) {
             $methods[] = PaymentMethod::Cash->value;
         }
 

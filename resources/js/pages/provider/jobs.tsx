@@ -8,10 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import ProviderLayout from '@/layouts/provider-layout';
 import { useMoney } from '@/lib/format';
+import { googleMapsDirectionsUrl } from '@/lib/geo';
 import { useTrans } from '@/lib/i18n';
-import { type Booking, type BookingStatus, type BreadcrumbItem, type DispatchOffer } from '@/types';
+import { type Booking, type BookingItem, type BookingStatus, type BreadcrumbItem, type DispatchOffer } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
-import { ArrowRight, CheckCircle2, Clock, MapPin, Navigation, Phone, XCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Clock, ExternalLink, MapPin, Navigation, Phone, XCircle } from 'lucide-react';
 import { useState } from 'react';
 
 interface ProviderJobsProps {
@@ -25,7 +26,7 @@ interface PageErrors {
     [key: string]: unknown;
 }
 
-function serviceSummary(booking: Booking): string {
+function serviceSummary(booking: { items?: BookingItem[] }): string {
     return (booking.items ?? []).map((item) => `${item.name} × ${item.qty}`).join(', ');
 }
 
@@ -297,6 +298,20 @@ function JobCard({ booking }: { booking: Booking }) {
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
                 {forwardButton()}
+                {/* D44: turn-by-turn belongs to the Maps app; shown once the
+                    job is taken and still involves getting there. */}
+                {(booking.status === 'accepted' || booking.status === 'en_route') && (
+                    <Button asChild size="sm" variant="outline">
+                        <a
+                            href={googleMapsDirectionsUrl(booking.address, `${booking.address.line1}, ${booking.address.city}`)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            <ExternalLink className="h-4 w-4" />
+                            {t('Navigate')}
+                        </a>
+                    </Button>
+                )}
                 {booking.status === 'assigned' && <DeclineJobDialog bookingId={booking.id} />}
             </div>
         </div>

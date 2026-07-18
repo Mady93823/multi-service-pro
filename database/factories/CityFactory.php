@@ -26,6 +26,7 @@ class CityFactory extends Factory
             'center_lat' => 12.9716,
             'center_lng' => 77.5946,
             'is_active' => true,
+            'cash_enabled' => true,
             'sort_order' => 0,
         ];
     }
@@ -33,6 +34,11 @@ class CityFactory extends Factory
     public function inactive(): static
     {
         return $this->state(fn () => ['is_active' => false]);
+    }
+
+    public function cashDisabled(): static
+    {
+        return $this->state(fn () => ['cash_enabled' => false]);
     }
 
     public function timezone(string $timezone): static

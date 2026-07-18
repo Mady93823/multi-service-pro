@@ -93,6 +93,10 @@ class CheckoutController extends Controller
                 // but politely blocked with the offending service names.
                 'blocked_services' => $this->cart->blockedServiceNames($lines, $address->zone_id),
                 'city_id' => $address->zone?->city_id,
+                // D43: whether pay-after-service is offered at this address —
+                // the picker filters cash out per selection; the request rule
+                // is the enforcement.
+                'cash_allowed' => $address->zone?->allowsCash() ?? true,
             ])->all(),
             'slot_days' => $this->slots->days($slotCity),
             'slot_city' => $slotCity === null ? null : [

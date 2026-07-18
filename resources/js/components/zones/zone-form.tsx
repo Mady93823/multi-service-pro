@@ -16,6 +16,7 @@ type ZoneForm = {
     name: string;
     geojson: GeoJsonPolygon | null;
     is_active: boolean;
+    cash_enabled: boolean;
 };
 
 interface ZoneFormProps {
@@ -32,6 +33,7 @@ export function ZoneForm({ zone, cities }: ZoneFormProps) {
         name: zone?.name ?? '',
         geojson: zone?.geojson ?? null,
         is_active: zone?.is_active ?? true,
+        cash_enabled: zone?.cash_enabled ?? true,
     });
 
     const submit: FormEventHandler = (e) => {
@@ -95,6 +97,16 @@ export function ZoneForm({ zone, cities }: ZoneFormProps) {
             <div className="flex items-center gap-3">
                 <Switch id="is_active" checked={data.is_active} onCheckedChange={(checked) => setData('is_active', checked)} />
                 <Label htmlFor="is_active">{t('Active (customers inside this area are served)')}</Label>
+            </div>
+
+            <div className="space-y-1">
+                <div className="flex items-center gap-3">
+                    <Switch id="cash_enabled" checked={data.cash_enabled} onCheckedChange={(checked) => setData('cash_enabled', checked)} />
+                    <Label htmlFor="cash_enabled">{t('Accept pay after service (cash) in this zone')}</Label>
+                </div>
+                <p className="text-muted-foreground text-sm">
+                    {t('Off, customers here can only pay online. The city has its own switch that overrides every zone in it.')}
+                </p>
             </div>
 
             <div className="flex gap-2">

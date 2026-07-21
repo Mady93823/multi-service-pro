@@ -31,7 +31,8 @@ A single sign-up screen serves all three. A customer sees the shopfront; a profe
 | Guide | For whom | What it covers |
 |---|---|---|
 | **This document** | Everyone | How the platform is organised and everything it does |
-| **Installation Guide** | Whoever sets up the server | Installing from a browser, and the three background processes |
+| **Production VPS Setup** | Whoever sets up the server | Getting the platform live on a VPS with your own domain and HTTPS, start to finish |
+| **Installation Guide** | Whoever sets up the server | The browser install wizard, and the three background processes |
 | **Administrator Manual** | You | Running the marketplace day to day |
 | **Professional Guide** | Your service professionals | Getting approved, taking jobs, getting paid |
 | **Customer Guide** | Your customers | Booking, tracking, paying, reviewing |

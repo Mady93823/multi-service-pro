@@ -19,9 +19,12 @@ export default function Finish({ deployment }: { deployment: Deployment }) {
                         <CardTitle>{t('Installation complete')}</CardTitle>
                         <CardDescription>{t('Sign in with the administrator account you just created.')}</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="space-y-2">
                         <Button asChild className="w-full">
                             <Link href="/login">{t('Go to login')}</Link>
+                        </Button>
+                        <Button asChild variant="outline" className="w-full">
+                            <a href="/">{t('Go to home page')}</a>
                         </Button>
                     </CardContent>
                 </Card>

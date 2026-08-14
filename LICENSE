@@ -1,0 +1,104 @@
+ServePro — Educational Use License
+Version 1.0
+
+Copyright (c) 2026 Mady93823 (https://github.com/Mady93823)
+All rights reserved.
+
+This software and its accompanying documentation (the "Software") are made
+available publicly so that others may read, run and learn from them. It is
+source-available, not open source. The terms below are the whole of the
+permission granted.
+
+
+1. GRANT
+
+Subject to every condition and restriction in this License, you are granted a
+worldwide, royalty-free, non-exclusive, non-transferable, revocable license to:
+
+  a) download, copy and store the Software;
+  b) install, compile and run the Software on hardware you control, including a
+     local machine or a private server not reachable by the public;
+  c) read, study and analyse the Software;
+  d) modify the Software and create derivative works from it; and
+  e) use the Software and any derivative works for personal study, academic
+     coursework, classroom teaching, technical evaluation, portfolio review and
+     private, non-commercial experimentation.
+
+These are collectively the "Permitted Purposes".
+
+
+2. RESTRICTIONS
+
+You may NOT, without prior written permission from the copyright holder:
+
+  a) use the Software, in whole or in part, in production, meaning any use that
+     serves real end users, processes real bookings, or handles real money or
+     real personal data;
+  b) use the Software for any commercial purpose, or for the benefit of any
+     business, client or employer, whether or not a fee is charged;
+  c) host, deploy or otherwise make the Software available to third parties,
+     including as a hosted, managed or software-as-a-service offering;
+  d) sell, rent, lease, sublicense, or distribute the Software or any derivative
+     work of it, whether standalone, bundled, or as part of a larger product;
+  e) publish, upload or redistribute copies of the Software or of substantial
+     portions of it, including to a public code repository, a marketplace, or a
+     template or theme store;
+  f) remove, obscure or alter any copyright, authorship or license notice
+     contained in the Software; or
+  g) use the name of the copyright holder, or any trademark, brand name or logo
+     appearing in the Software, to endorse or promote any product or service.
+
+Publishing a written description of the Software — a blog post, a review, a
+lecture, a comparison, an academic paper — accompanied by short excerpts of code
+for the purpose of commentary or instruction, with attribution, is permitted.
+
+
+3. DERIVATIVE WORKS
+
+Any derivative work you create remains subject to this License in full. You may
+use it for the Permitted Purposes only, and you may not distribute it. Every
+copy of the Software or of a derivative work that you make must retain this
+License file unmodified.
+
+
+4. THIRD-PARTY COMPONENTS
+
+The Software depends on third-party packages, libraries, fonts and assets that
+are not covered by this License and remain governed by their own license terms
+(for example, the Laravel framework and React are distributed under the MIT
+License). This License applies only to the original work of the copyright
+holder contained in this repository. It grants you no rights in any third-party
+component, trademark, or in any brand, logo or content belonging to any client
+or customer of the copyright holder.
+
+
+5. COMMERCIAL LICENSING
+
+Rights not granted above are expressly reserved. A separate commercial license,
+which may permit production and commercial use, is available on request from the
+copyright holder. Contact the copyright holder through the repository listed
+above before putting the Software to any use outside the Permitted Purposes.
+
+
+6. TERMINATION
+
+This License terminates automatically and immediately if you breach any of its
+terms. On termination you must cease all use of the Software and destroy every
+copy in your possession. Sections 4, 7 and 8 survive termination.
+
+
+7. NO WARRANTY
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. The Software is published
+for study; it is not certified, audited or warranted as fit for handling real
+payments, real personal data, or any regulated activity.
+
+
+8. LIMITATION OF LIABILITY
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
